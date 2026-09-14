@@ -2,9 +2,13 @@
 
 ### Sincra
 
-Plataforma de gestión de comunicaciones y pedidos multicanal para pequeño comercio: bandeja unificada (Gmail, Outlook, WhatsApp, Instagram, Messenger), clientes, pedidos, calendario, mapa y agentes de IA.
+Multichannel communications and order management platform for small businesses: unified inbox (Gmail, Outlook, WhatsApp, Instagram, Messenger), clients, orders, calendar, map and AI agents.
 
-🚧 **En desarrollo** — proyecto final del programa IT Academy (Barcelona Activa)
+🚧 **In development** — final project for the IT Academy program (Barcelona Activa)
+
+🔗 [Live app](https://sincra-saas.vercel.app) · Backend: `https://sincra-backend.onrender.com`
+
+> **Note**: the backend is hosted on Render's free tier, which spins down after 15 minutes of inactivity. The first request after some idle time may take 30-60 seconds to respond.
 
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![React Router](https://img.shields.io/badge/React_Router-CA4245?logo=reactrouter&logoColor=white)
@@ -22,59 +26,59 @@ Plataforma de gestión de comunicaciones y pedidos multicanal para pequeño come
 
 </div>
 
-## Estado actual
+## Current status
 
-Este proyecto está en construcción activa.
+This project is under active development.
 
-El desglose completo de tareas técnicas está en el [tablero de Trello](https://trello.com/b/FyBlMo8n/proyecto-final-sass).
+The full technical task breakdown lives on the [Trello board](https://trello.com/invite/b/6a9fce6e9b31dcfbe1203341/ATTI86c98b1ea44d7b06c5aa8f52f89a99f015D4E7AD/proyecto-final-sass).
 
-## Qué resuelve
+## What it solves
 
-Sincra centraliza las comunicaciones de un pequeño comercio (email, WhatsApp, Instagram, Messenger) en una única bandeja, permite convertir cualquier conversación en un pedido con un clic, y añade agentes de IA que clasifican, sugieren respuestas y extraen datos de pedido automáticamente — todo con confirmación humana obligatoria antes de aplicar cualquier sugerencia.
+Sincra centralizes a small business's communications (email, WhatsApp, Instagram, Messenger) into a single inbox, lets you turn any conversation into an order with one click, and adds AI agents that classify, suggest replies and extract order data automatically — all with mandatory human confirmation before applying any suggestion.
 
-### Funcionalidades previstas
+### Planned features
 
-- **Bandeja unificada**: todas las conversaciones (email real vía Gmail/Outlook, WhatsApp/Instagram/Messenger simulados en este MVP) en un solo lugar, con filtros, etiquetas y plantillas de respuesta
-- **Clientes y mapa**: ficha de cliente con historial completo, geolocalización y detección de duplicados entre canales
-- **Pedidos**: conversión directa de una conversación en pedido, con seguimiento de estado
-- **Calendario**: seguimientos y entregas, con sincronización opcional a Google Calendar
-- **Estadísticas**: rendimiento por canal, tiempos de respuesta, actividad de la IA
-- **Agentes de IA**: clasificador de conversaciones, respuesta sugerida, extractor de pedidos y resumen de cliente
-- **Equipo**: roles de administrador y empleado, con invitaciones por email
+- **Unified inbox**: every conversation (real email via Gmail/Outlook, WhatsApp/Instagram/Messenger simulated in this MVP) in one place, with filters, labels and reply templates
+- **Clients and map**: client profile with full history, geolocation and duplicate detection across channels
+- **Orders**: direct conversion from a conversation into an order, with status tracking
+- **Calendar**: follow-ups and deliveries, with optional Google Calendar sync
+- **Statistics**: performance by channel, response times, AI activity
+- **AI agents**: conversation classifier, suggested reply, order extractor and client summary
+- **Team**: admin and employee roles, with email invitations
 
 ## Tech stack
 
-| Categoría            | Tecnología                                                                                |
-| -------------------- | ----------------------------------------------------------------------------------------- |
-| Framework frontend   | [React 19](https://react.dev/)                                                            |
-| Lenguaje             | [TypeScript](https://www.typescriptlang.org/)                                             |
-| Bundler              | [Vite](https://vitejs.dev/)                                                               |
-| Estilos              | [Tailwind CSS v4](https://tailwindcss.com/)                                               |
-| Enrutado             | [React Router](https://reactrouter.com/)                                                  |
-| Estado remoto        | [TanStack Query](https://tanstack.com/query)                                              |
-| Estado global        | [Zustand](https://github.com/pmndrs/zustand)                                              |
-| Framework backend    | [Express](https://expressjs.com/)                                                         |
-| ORM                  | [Prisma](https://www.prisma.io/)                                                          |
-| Base de datos        | [PostgreSQL](https://www.postgresql.org/) (hosteada en [Supabase](https://supabase.com/)) |
-| Autenticación        | Backend propio — JWT en cookie httpOnly + bcrypt                                          |
-| Email real           | Gmail API y Microsoft Graph (OAuth)                                                       |
-| IA                   | [API de Anthropic](https://docs.claude.com/)                                              |
-| Testing              | [Vitest](https://vitest.dev/) + Testing Library + Supertest                               |
-| Control de versiones | Git + GitHub (GitFlow)                                                                    |
+| Category           | Technology                                                                              |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| Frontend framework | [React 19](https://react.dev/)                                                          |
+| Language           | [TypeScript](https://www.typescriptlang.org/)                                           |
+| Bundler            | [Vite](https://vitejs.dev/)                                                             |
+| Styling            | [Tailwind CSS v4](https://tailwindcss.com/)                                             |
+| Routing            | [React Router](https://reactrouter.com/)                                                |
+| Remote state       | [TanStack Query](https://tanstack.com/query)                                            |
+| Global state       | [Zustand](https://github.com/pmndrs/zustand)                                            |
+| Backend framework  | [Express](https://expressjs.com/)                                                       |
+| ORM                | [Prisma](https://www.prisma.io/)                                                        |
+| Database           | [PostgreSQL](https://www.postgresql.org/) (hosted on [Supabase](https://supabase.com/)) |
+| Authentication     | Custom backend — JWT in httpOnly cookie + bcrypt                                        |
+| Real email         | Gmail API and Microsoft Graph (OAuth)                                                   |
+| AI                 | [Anthropic API](https://docs.claude.com/)                                               |
+| Testing            | [Vitest](https://vitest.dev/) + Testing Library + Supertest                             |
+| Version control    | Git + GitHub (GitFlow)                                                                  |
 
-## Empezar en local
+## Getting started
 
-> ⚠️ El proyecto aún no tiene todas las piezas montadas — estas instrucciones se irán completando a medida que exista algo que instalar y arrancar.
+> ⚠️ The project doesn't have every piece in place yet — these instructions will keep being filled in as there's something to install and run.
 
-### Requisitos previos
+### Prerequisites
 
 - Node.js >= 20
 - npm >= 9
-- Una base de datos PostgreSQL (recomendado: [Supabase](https://supabase.com/), plan gratuito)
-- Credenciales OAuth de Google Cloud Console y Azure App Registration (para Gmail/Outlook)
-- Una clave de API de [Anthropic](https://console.anthropic.com/)
+- A PostgreSQL database (recommended: [Supabase](https://supabase.com/), free tier)
+- OAuth credentials from Google Cloud Console and Azure App Registration (for Gmail/Outlook)
+- An [Anthropic](https://console.anthropic.com/) API key
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/gemmaadev/sincra-saas.git
@@ -88,7 +92,7 @@ cd backend
 npm install
 ```
 
-Crea un archivo `.env` en `backend/` (ver `.env.example` para la lista completa de variables).
+Create a `.env` file in `backend/` (see `.env.example` for the full list of variables — includes `DATABASE_URL` and `DIRECT_URL`, both required for Supabase with Prisma).
 
 ```bash
 npm run dev
@@ -101,15 +105,15 @@ cd frontend
 npm install
 ```
 
-Crea un archivo `.env` en `frontend/` (ver `.env.example`).
+Create a `.env` file in `frontend/` (see `.env.example`).
 
 ```bash
 npm run dev
 ```
 
-La app estará disponible en la URL que muestre la terminal (normalmente `http://localhost:5173`).
+The app will be available at the URL shown in your terminal (typically `http://localhost:5173`).
 
-## Estructura del proyecto
+## Project structure
 
 ```
 sincra-saas/
@@ -155,18 +159,18 @@ sincra-saas/
             └── settings/
 ```
 
-## Decisiones de arquitectura
+## Architecture decisions
 
-- **Arquitectura basada en features**, tanto en frontend como en backend — cada dominio (auth, clientes, comunicaciones, pedidos...) agrupa sus propios componentes/hooks/tipos (frontend) o controladores/modelos (backend)
-- **Auth propio en vez de un proveedor externo** (Firebase, Auth0...) — JWT firmado por el propio backend, guardado en cookie httpOnly, con bcrypt para el hash de contraseñas. Decisión tomada para tener control total sobre roles (admin/empleado) e invitaciones de equipo sin depender de la configuración de un tercero
-- **Patrón ChannelAdapter** — Gmail y Outlook se conectan de verdad vía OAuth; WhatsApp, Instagram y Messenger están simulados en este MVP con la misma interfaz común (`fetchMessages`/`sendMessage`), de modo que sustituirlos por las APIs oficiales de Meta en el futuro no requiere tocar el resto de la arquitectura
-- **Confirmación humana obligatoria para toda sugerencia de IA** — ningún agente (clasificador, respuesta sugerida, extractor de pedido) aplica cambios por sí solo; todo pasa por una acción explícita de la persona usuaria
-- **Vinculación de comunicaciones a clientes por coincidencia exacta**, y **detección de duplicados entre canales por coincidencia de nombre** como una sugerencia aparte que también requiere confirmación — evita fusionar clientes distintos por error
+- **Feature-based architecture** on both frontend and backend — each domain (auth, clients, communications, orders...) owns its own components/hooks/types (frontend) or controllers/models (backend)
+- **Custom auth instead of an external provider** (Firebase, Auth0...) — JWT signed by the backend itself, stored in an httpOnly cookie, with bcrypt for password hashing. Chosen to keep full control over roles (admin/employee) and team invitations without depending on a third party's setup
+- **ChannelAdapter pattern** — Gmail and Outlook connect for real via OAuth; WhatsApp, Instagram and Messenger are simulated in this MVP behind the same common interface (`fetchMessages`/`sendMessage`), so swapping them for the official Meta APIs later won't require touching the rest of the architecture
+- **Mandatory human confirmation for every AI suggestion** — no agent (classifier, suggested reply, order extractor) applies changes on its own; everything goes through an explicit user action
+- **Communications linked to clients by exact match**, and **cross-channel duplicate detection by name match** surfaced as a separate suggestion that also requires confirmation — prevents merging distinct clients by mistake
 
-_(Esta sección se irá ampliando con las decisiones reales tomadas durante el desarrollo — por ejemplo, por qué se descartó la sincronización con Google Calendar del MVP, o qué agentes de IA se priorizaron.)_
+_(This section will keep growing with real decisions made along the way — for example, why Google Calendar sync was dropped from the MVP, or which AI agents were prioritized.)_
 
-## Autora
+## Author
 
 **Gemma Maeso** · [@gemmaadev](https://github.com/gemmaadev)
 
-Proyecto desarrollado como parte del programa **IT Academy** de Barcelona Activa
+Project built as part of the **IT Academy** program by Barcelona Activa
