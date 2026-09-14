@@ -44,23 +44,23 @@ Sincra centraliza las comunicaciones de un pequeño comercio (email, WhatsApp, I
 
 ## Tech stack
 
-| Categoría            | Tecnología                                                                         |
-| -------------------- | ---------------------------------------------------------------------------------- |
-| Framework frontend   | [React 19](https://react.dev/)                                                     |
-| Lenguaje             | [TypeScript](https://www.typescriptlang.org/)                                      |
-| Bundler              | [Vite](https://vitejs.dev/)                                                        |
-| Estilos              | [Tailwind CSS v4](https://tailwindcss.com/)                                        |
-| Enrutado             | [React Router](https://reactrouter.com/)                                           |
-| Estado remoto        | [TanStack Query](https://tanstack.com/query)                                       |
-| Estado global        | [Zustand](https://github.com/pmndrs/zustand)                                       |
-| Framework backend    | [Express](https://expressjs.com/)                                                  |
-| ORM                  | [Prisma](https://www.prisma.io/)                                                   |
-| Base de datos        | [PostgreSQL](https://www.postgresql.org/) (hosteada en [Neon](https://neon.tech/)) |
-| Autenticación        | Backend propio — JWT en cookie httpOnly + bcrypt                                   |
-| Email real           | Gmail API y Microsoft Graph (OAuth)                                                |
-| IA                   | [API de Anthropic](https://docs.claude.com/)                                       |
-| Testing              | [Vitest](https://vitest.dev/) + Testing Library + Supertest                        |
-| Control de versiones | Git + GitHub (GitFlow)                                                             |
+| Categoría            | Tecnología                                                                                |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Framework frontend   | [React 19](https://react.dev/)                                                            |
+| Lenguaje             | [TypeScript](https://www.typescriptlang.org/)                                             |
+| Bundler              | [Vite](https://vitejs.dev/)                                                               |
+| Estilos              | [Tailwind CSS v4](https://tailwindcss.com/)                                               |
+| Enrutado             | [React Router](https://reactrouter.com/)                                                  |
+| Estado remoto        | [TanStack Query](https://tanstack.com/query)                                              |
+| Estado global        | [Zustand](https://github.com/pmndrs/zustand)                                              |
+| Framework backend    | [Express](https://expressjs.com/)                                                         |
+| ORM                  | [Prisma](https://www.prisma.io/)                                                          |
+| Base de datos        | [PostgreSQL](https://www.postgresql.org/) (hosteada en [Supabase](https://supabase.com/)) |
+| Autenticación        | Backend propio — JWT en cookie httpOnly + bcrypt                                          |
+| Email real           | Gmail API y Microsoft Graph (OAuth)                                                       |
+| IA                   | [API de Anthropic](https://docs.claude.com/)                                              |
+| Testing              | [Vitest](https://vitest.dev/) + Testing Library + Supertest                               |
+| Control de versiones | Git + GitHub (GitFlow)                                                                    |
 
 ## Empezar en local
 
@@ -70,7 +70,7 @@ Sincra centraliza las comunicaciones de un pequeño comercio (email, WhatsApp, I
 
 - Node.js >= 20
 - npm >= 9
-- Una base de datos PostgreSQL (recomendado: [Neon](https://neon.tech/), plan gratuito)
+- Una base de datos PostgreSQL (recomendado: [Supabase](https://supabase.com/), plan gratuito)
 - Credenciales OAuth de Google Cloud Console y Azure App Registration (para Gmail/Outlook)
 - Una clave de API de [Anthropic](https://console.anthropic.com/)
 
