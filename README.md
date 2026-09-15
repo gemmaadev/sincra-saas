@@ -78,6 +78,16 @@ Sincra centralizes a small business's communications (email, WhatsApp, Instagram
 - OAuth credentials from Google Cloud Console and Azure App Registration (for Gmail/Outlook)
 - An [Anthropic](https://console.anthropic.com/) API key
 
+## Environment variables
+
+See `.env.example` in both `backend/` and `frontend/` for the full list. Here's where to get each credential:
+
+- **`DATABASE_URL` / `DIRECT_URL`** — Supabase dashboard → your project → "Connect" button → ORM tab → Prisma. Copy both the pooled (port 6543) and direct (port 5432) connection strings.
+- **`JWT_SECRET`** — any long random string, e.g. generated with `openssl rand -base64 32`.
+- **`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`** — [Google Cloud Console](https://console.cloud.google.com/) → create a project → APIs & Services → Credentials → OAuth 2.0 Client ID.
+- **`MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET`** — [Azure Portal](https://portal.azure.com/) → App registrations → New registration.
+- **`ANTHROPIC_API_KEY`** — [Anthropic Console](https://console.anthropic.com/) → API Keys.
+
 ### 1. Clone the repository
 
 ```bash
