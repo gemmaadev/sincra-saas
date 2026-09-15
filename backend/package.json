@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "build": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
