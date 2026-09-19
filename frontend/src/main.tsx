@@ -6,11 +6,14 @@ import '@mantine/core/styles.css'
 import './index.css'
 import { theme } from '@/shared/config/mantine-theme'
 import { router } from '@/app/router'
+import { ErrorBoundary } from '@/app/providers/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme}>
-      <RouterProvider router={router} />
-    </MantineProvider>
+    <ErrorBoundary>
+      <MantineProvider theme={theme}>
+        <RouterProvider router={router} />
+      </MantineProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

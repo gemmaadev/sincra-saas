@@ -20,44 +20,50 @@ import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { ProtectedRoute } from './ProtectedRoute'
+import { ErrorFallback } from '../../shared/components/error-fallback/ErrorFallback'
 
 export const router = createBrowserRouter([
-  // Public site: navbar + footer (Landing and 404 share this shell)
   {
-    element: <SiteLayout />,
+    errorElement: <ErrorFallback />,
     children: [
-      { path: '/', element: <LandingPage /> },
-      { path: '*', element: <NotFoundPage /> },
-    ],
-  },
-
-  // Auth — split screen: each page mounts its own <AuthLayout leftPanel={...}>
-  { path: '/login', element: <LoginPage /> },
-  { path: '/register', element: <RegisterPage /> },
-  { path: '/onboarding', element: <OnboardingPage /> },
-  { path: '/forgot-password', element: <ForgotPasswordPage /> },
-  { path: '/reset-password', element: <ResetPasswordPage /> },
-
-  // Auth — simple, no side panel
-  { path: '/verify-email', element: <VerifyEmailPage /> },
-
-  // Protected app: requires a session, sidebar + header
-  {
-    element: <ProtectedRoute />,
-    children: [
+      // Public site: navbar + footer (Landing and 404 share this shell)
       {
-        element: <AppLayout />,
+        element: <SiteLayout />,
         children: [
-          { path: '/inbox', element: <InboxPage /> },
-          { path: '/clients', element: <ClientsPage /> },
-          { path: '/orders', element: <OrdersPage /> },
-          { path: '/calendar', element: <CalendarPage /> },
-          { path: '/map', element: <MapPage /> },
-          { path: '/stats', element: <StatsPage /> },
-          { path: '/team', element: <TeamPage /> },
-          { path: '/automations', element: <AutomationsPage /> },
-          { path: '/settings', element: <SettingsPage /> },
-          { path: '/profile', element: <ProfilePage /> },
+          { path: '/', element: <LandingPage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
+
+      // Auth — split screen: each page mounts its own <AuthLayout leftPanel={...}>
+      { path: '/login', element: <LoginPage /> },
+      { path: '/register', element: <RegisterPage /> },
+      { path: '/onboarding', element: <OnboardingPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password', element: <ResetPasswordPage /> },
+
+      // Auth — simple, no side panel
+      { path: '/verify-email', element: <VerifyEmailPage /> },
+
+      // Protected app: requires a session, sidebar + header
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              { path: '/inbox', element: <InboxPage /> },
+              { path: '/clients', element: <ClientsPage /> },
+              { path: '/orders', element: <OrdersPage /> },
+              { path: '/calendar', element: <CalendarPage /> },
+              { path: '/map', element: <MapPage /> },
+              { path: '/stats', element: <StatsPage /> },
+              { path: '/team', element: <TeamPage /> },
+              { path: '/automations', element: <AutomationsPage /> },
+              { path: '/settings', element: <SettingsPage /> },
+              { path: '/profile', element: <ProfilePage /> },
+            ],
+          },
         ],
       },
     ],
