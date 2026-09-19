@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
-import { Button } from './Button'
+import { SincraButton } from './SincraButton'
 
 describe('Button', () => {
   // Given a Button with children text
   // When it is rendered
   // Then the text should be visible on screen
   it('renders its children', () => {
-    render(<Button>Guardar</Button>)
+    render(<SincraButton>Guardar</SincraButton>)
     expect(screen.getByText('Guardar')).toBeInTheDocument()
   })
 
@@ -15,7 +15,7 @@ describe('Button', () => {
   // When it is rendered
   // Then it should be disabled and marked as busy for screen readers
   it('disables itself and sets aria-busy when loading', () => {
-    render(<Button loading>Guardar</Button>)
+    render(<SincraButton loading>Guardar</SincraButton>)
     const button = screen.getByRole('button')
     expect(button).toBeDisabled()
     expect(button).toHaveAttribute('aria-busy', 'true')
@@ -26,7 +26,7 @@ describe('Button', () => {
   // Then the handler should be called once
   it('calls onClick when clicked', () => {
     const onClick = vi.fn()
-    render(<Button onClick={onClick}>Guardar</Button>)
+    render(<SincraButton onClick={onClick}>Guardar</SincraButton>)
     screen.getByRole('button').click()
     expect(onClick).toHaveBeenCalledOnce()
   })
@@ -37,9 +37,9 @@ describe('Button', () => {
   it('does not call onClick when disabled', () => {
     const onClick = vi.fn()
     render(
-      <Button disabled onClick={onClick}>
+      <SincraButton disabled onClick={onClick}>
         Guardar
-      </Button>,
+      </SincraButton>,
     )
     screen.getByRole('button').click()
     expect(onClick).not.toHaveBeenCalled()

@@ -1,12 +1,13 @@
 import { buttonVariants, buttonDisabledVariants, buttonSizes } from './button.variants'
 import type { ButtonProps } from './button.types'
 
-export function Button({
+export function SincraButton({
   variant = 'primary',
   size = 'md',
   loading = false,
   disabled = false,
   className = '',
+  icon,
   children,
   ref,
   ...props
@@ -33,6 +34,7 @@ export function Button({
         />
       )}
       {children}
+      {icon}
     </button>
   )
 }
