@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router'
 import { SiteNavbar } from './components/SiteNavbar'
+import { SiteFooter } from './components/SiteFooter'
 
 export function SiteLayout() {
   return (
@@ -10,8 +11,7 @@ export function SiteLayout() {
         <Outlet />
       </main>
 
-      {/* Placeholder — replaced with the real <SiteFooter /> later */}
-      <footer className="border-t border-neutral-100 p-4 text-sm text-ink-muted">© Sincra</footer>
+      <SiteFooter />
     </div>
   )
 }
