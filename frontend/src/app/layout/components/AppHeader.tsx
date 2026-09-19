@@ -2,7 +2,7 @@ import { Search } from 'lucide-react'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 
-export function HeaderApp() {
+export function AppHeader() {
   return (
     <header className="flex items-center justify-between border-b border-neutral-100 px-6 py-3 gap-3">
       <div className="max-w-2xl flex-1">
