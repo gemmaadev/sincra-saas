@@ -6,7 +6,7 @@ import { SiteLayout } from './SiteLayout'
 describe('SiteLayout', () => {
   // Given a SiteLayout wrapping a page via Outlet
   // When it is rendered
-  // Then the page content should appear inside the shell
+  // Then the page content should appear inside the shell, alongside the navbar and footer
   it('renders its child route content', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -18,6 +18,6 @@ describe('SiteLayout', () => {
       </MemoryRouter>,
     )
     expect(screen.getByText('Page content')).toBeInTheDocument()
-    expect(screen.getByText('Sincra')).toBeInTheDocument()
+    expect(screen.getAllByText('Sincra').length).toBeGreaterThan(0)
   })
 })
