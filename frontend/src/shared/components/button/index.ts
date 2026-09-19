@@ -1,2 +1,2 @@
-export * from './Button'
+export * from './SincraButton'
 export * from './button.types'
