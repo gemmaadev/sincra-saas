@@ -33,13 +33,13 @@ export const router = createBrowserRouter([
 
   // Auth — split screen: each page mounts its own <AuthLayout leftPanel={...}>
   { path: '/login', element: <LoginPage /> },
-  { path: '/registro', element: <RegisterPage /> },
+  { path: '/register', element: <RegisterPage /> },
   { path: '/onboarding', element: <OnboardingPage /> },
-  { path: '/recuperar-contrasena', element: <ForgotPasswordPage /> },
-  { path: '/nueva-contrasena', element: <ResetPasswordPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
 
   // Auth — simple, no side panel
-  { path: '/verificar-email', element: <VerifyEmailPage /> },
+  { path: '/verify-email', element: <VerifyEmailPage /> },
 
   // Protected app: requires a session, sidebar + header
   {
@@ -48,16 +48,16 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: '/bandeja', element: <InboxPage /> },
-          { path: '/clientes', element: <ClientsPage /> },
-          { path: '/pedidos', element: <OrdersPage /> },
-          { path: '/calendario', element: <CalendarPage /> },
-          { path: '/mapa', element: <MapPage /> },
-          { path: '/estadisticas', element: <StatsPage /> },
-          { path: '/equipo', element: <TeamPage /> },
-          { path: '/automatizaciones', element: <AutomationsPage /> },
-          { path: '/ajustes', element: <SettingsPage /> },
-          { path: '/perfil', element: <ProfilePage /> },
+          { path: '/inbox', element: <InboxPage /> },
+          { path: '/clients', element: <ClientsPage /> },
+          { path: '/orders', element: <OrdersPage /> },
+          { path: '/calendar', element: <CalendarPage /> },
+          { path: '/map', element: <MapPage /> },
+          { path: '/stats', element: <StatsPage /> },
+          { path: '/team', element: <TeamPage /> },
+          { path: '/automations', element: <AutomationsPage /> },
+          { path: '/settings', element: <SettingsPage /> },
+          { path: '/profile', element: <ProfilePage /> },
         ],
       },
     ],

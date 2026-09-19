@@ -8,11 +8,24 @@ import {
   UserCog,
   Sparkles,
   Settings,
+  MoveRight,
 } from 'lucide-react'
 import { SiWhatsapp, SiInstagram, SiMessenger, SiGmail } from 'react-icons/si'
 import { SidebarItem } from './SidebarItem'
 import { Card } from '@/shared/components/card'
-import { Button } from '@/shared/components/button'
+import { SincraButton } from '@/shared/components/button'
+
+const navItems = [
+  { to: '/inbox', icon: <Inbox size={18} />, label: 'Bandeja', badge: 12 },
+  { to: '/clients', icon: <Users size={18} />, label: 'Clientes' },
+  { to: '/orders', icon: <ShoppingCart size={18} />, label: 'Pedidos', badge: 3 },
+  { to: '/calendar', icon: <Calendar size={18} />, label: 'Calendario' },
+  { to: '/map', icon: <Map size={18} />, label: 'Mapa' },
+  { to: '/stats', icon: <BarChart3 size={18} />, label: 'Estadísticas' },
+  { to: '/team', icon: <UserCog size={18} />, label: 'Equipo' },
+  { to: '/automations', icon: <Sparkles size={18} />, label: 'Automatizaciones' },
+  { to: '/settings', icon: <Settings size={18} />, label: 'Ajustes' },
+]
 
 const channels = [
   { icon: <SiGmail size={16} />, label: 'Gmail', count: 6 },
@@ -34,19 +47,9 @@ export function Sidebar() {
       <span className="text-lg font-bold text-primary">Sincra</span>
 
       <nav className="flex flex-col gap-1">
-        <SidebarItem to="/bandeja" icon={<Inbox size={18} />} label="Bandeja" badge={12} />
-        <SidebarItem to="/clientes" icon={<Users size={18} />} label="Clientes" />
-        <SidebarItem to="/pedidos" icon={<ShoppingCart size={18} />} label="Pedidos" badge={3} />
-        <SidebarItem to="/calendario" icon={<Calendar size={18} />} label="Calendario" />
-        <SidebarItem to="/mapa" icon={<Map size={18} />} label="Mapa" />
-        <SidebarItem to="/estadisticas" icon={<BarChart3 size={18} />} label="Estadísticas" />
-        <SidebarItem to="/equipo" icon={<UserCog size={18} />} label="Equipo" />
-        <SidebarItem
-          to="/automatizaciones"
-          icon={<Sparkles size={18} />}
-          label="Automatizaciones"
-        />
-        <SidebarItem to="/ajustes" icon={<Settings size={18} />} label="Ajustes" />
+        {navItems.map((item) => (
+          <SidebarItem key={item.to} {...item} />
+        ))}
       </nav>
 
       <div className="flex flex-col gap-2">
@@ -76,7 +79,9 @@ export function Sidebar() {
             {label.name}
           </div>
         ))}
-        <button className="px-3 text-left text-sm text-primary">+ Ver todas</button>
+        <SincraButton variant="text" className="justify-start">
+          Ver todas
+        </SincraButton>
       </div>
 
       <Card padding="sm" className="mt-auto flex flex-col gap-2">
@@ -87,9 +92,9 @@ export function Sidebar() {
         <p className="text-xs text-ink-muted">
           Te ayuda a priorizar, clasificar y responder más rápido.
         </p>
-        <Button variant="text" size="sm">
-          Ver sugerencias →
-        </Button>
+        <SincraButton variant="text" size="sm" icon={<MoveRight size={16} />}>
+          Ver sugerencias
+        </SincraButton>
       </Card>
     </aside>
   )
