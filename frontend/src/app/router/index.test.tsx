@@ -10,7 +10,7 @@ describe('Router', () => {
   it('renders the landing page at /', () => {
     const testRouter = createMemoryRouter(router.routes, { initialEntries: ['/'] })
     render(<RouterProvider router={testRouter} />)
-    expect(screen.getByText('Landing page')).toBeInTheDocument()
+    expect(screen.getByText(/Gestiona tus comunicaciones y pedidos multicanal/)).toBeInTheDocument()
   })
 
   // Given the app's route configuration
