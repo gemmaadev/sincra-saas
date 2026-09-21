@@ -5,9 +5,9 @@ import { SincraButton } from '@/shared/components/button'
 
 const navLinks = [
   { href: '#product', label: 'Producto' },
+  { href: '#channels', label: 'Canales' },
   { href: '#features', label: 'Funcionalidades' },
   { href: '#pricing', label: 'Precios' },
-  { href: '#resources', label: 'Recursos' },
   { href: '#contact', label: 'Contacto' },
 ]
 
