@@ -3,6 +3,7 @@ import { ChannelsSection } from '@/features/landing/components/ChannelsSection'
 import { DemoSection } from '@/features/landing/components/DemoSection'
 import { FeaturesSection } from '@/features/landing/components/FeaturesSection'
 import { PricingSection } from '@/features/landing/components/PricingSection'
+import { CtaSection } from '@/features/landing/components/CtaSection'
 
 export default function LandingPage() {
   return (
@@ -12,6 +13,7 @@ export default function LandingPage() {
       <DemoSection />
       <FeaturesSection />
       <PricingSection />
+      <CtaSection />
     </div>
   )
 }
