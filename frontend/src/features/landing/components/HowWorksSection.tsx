@@ -31,7 +31,7 @@ const INBOX_MESSAGES = [
   {
     color: 'var(--color-instagram)',
     sender: 'Luis',
-    text: 'Pedido #12345',
+    text: '¿Cuándo llega mi pedido?',
     time: '08:52',
     unread: true,
   },
