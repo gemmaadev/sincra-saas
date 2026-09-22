@@ -18,7 +18,7 @@ import { TeamPage } from '@/pages/TeamPage'
 import { AutomationsPage } from '@/pages/AutomationsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 import { ProfilePage } from '@/pages/ProfilePage'
-import { NotFoundPage } from '@/pages/NotFoundPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { ProtectedRoute } from './ProtectedRoute'
 import { ErrorFallback } from '../../shared/components/error-fallback/ErrorFallback'
 

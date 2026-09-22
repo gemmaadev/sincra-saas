@@ -19,7 +19,7 @@ describe('Router', () => {
   it('renders the 404 page for an unknown route', () => {
     const testRouter = createMemoryRouter(router.routes, { initialEntries: ['/does-not-exist'] })
     render(<RouterProvider router={testRouter} />)
-    expect(screen.getByText('Página no encontrada')).toBeInTheDocument()
+    expect(screen.getByText(/no existe/)).toBeInTheDocument()
   })
 
   // Given a route that throws an error during render

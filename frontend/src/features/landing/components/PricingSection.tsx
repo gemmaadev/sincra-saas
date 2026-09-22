@@ -50,7 +50,7 @@ export function PricingSection() {
             </div>
             <span className="text-sm text-ink-muted">por negocio</span>
             <SincraButton variant="primary" onClick={() => navigate('/register')}>
-              Empezar gratis
+              Empezar ahora
             </SincraButton>
           </div>
 
