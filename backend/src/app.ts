@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import { errorHandler } from './middleware/errorHandler'
 
 const app = express()
 
@@ -16,5 +17,7 @@ app.use(cookieParser())
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
 })
+
+app.use(errorHandler)
 
 export default app
