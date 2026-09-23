@@ -10,7 +10,7 @@ export function CtaSection() {
         <h2 className="max-w-2xl text-4xl font-bold text-white max-sm:text-3xl">
           ¿Listo para centralizar tus comunicaciones y vender más?
         </h2>
-        <p className="max-w-xl text-lg text-white/80 max-lg:text-base">
+        <p className="max-w-xl text-lg text-white max-lg:text-base">
           Únete ahora y asegura el precio fundador de 35 €/mes para siempre.
         </p>
         <div className="flex flex-row gap-4 max-sm:flex-col">

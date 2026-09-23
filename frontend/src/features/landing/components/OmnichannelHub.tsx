@@ -91,8 +91,7 @@ const BUBBLES = [
     popDelay: '.5s',
     floatDuration: 5,
     floatDelay: 1.2,
-    color: 'var(--color-whatsapp)',
-    icon: <SiWhatsapp />,
+    icon: <SiWhatsapp className="text-whatsapp" aria-hidden="true" />,
   },
   {
     left: '16.03%',
@@ -101,8 +100,7 @@ const BUBBLES = [
     popDelay: '.3s',
     floatDuration: 4.4,
     floatDelay: 0.6,
-    color: 'var(--color-instagram)',
-    icon: <SiInstagram />,
+    icon: <SiInstagram className="text-instagram" aria-hidden="true" />,
   },
   {
     left: '42.88%',
@@ -111,8 +109,7 @@ const BUBBLES = [
     popDelay: '.65s',
     floatDuration: 4.8,
     floatDelay: 1.6,
-    color: 'var(--color-gmail)',
-    icon: <SiGmail />,
+    icon: <SiGmail className="text-gmail" aria-hidden="true" />,
   },
   {
     left: '69.94%',
@@ -121,8 +118,7 @@ const BUBBLES = [
     popDelay: '.8s',
     floatDuration: 5.2,
     floatDelay: 0.9,
-    color: 'var(--color-outlook)',
-    icon: <PiMicrosoftOutlookLogoFill />,
+    icon: <PiMicrosoftOutlookLogoFill className="text-outlook" aria-hidden="true" />,
   },
   {
     left: '59.62%',
@@ -131,8 +127,7 @@ const BUBBLES = [
     popDelay: '1.05s',
     floatDuration: 5.6,
     floatDelay: 1.4,
-    color: 'var(--color-messenger)',
-    icon: <SiMessenger />,
+    icon: <SiMessenger className="text-messenger" aria-hidden="true" />,
   },
 ]
 
@@ -163,7 +158,7 @@ const CHAT_CARDS = [
     message: 'Hola, ¿tienen en stock la chaqueta?',
     time: '10:24',
     color: 'var(--color-whatsapp)',
-    icon: <SiWhatsapp />,
+    icon: <SiWhatsapp aria-label="WhatsApp" role="img" />,
     extraStatus: <SeenTicks />,
   },
   {
@@ -175,7 +170,7 @@ const CHAT_CARDS = [
     message: '¿Cuándo llega mi pedido? #12345',
     time: '08:52',
     color: 'var(--color-instagram)',
-    icon: <SiInstagram />,
+    icon: <SiInstagram aria-label="Instagram" role="img" />,
   },
   {
     left: '67.3%',
@@ -186,7 +181,7 @@ const CHAT_CARDS = [
     message: 'Quisiera un presupuesto para 50 unidades.',
     time: '09:47',
     color: 'var(--color-outlook)',
-    icon: <PiMicrosoftOutlookLogoFill />,
+    icon: <PiMicrosoftOutlookLogoFill aria-label="Outlook" role="img" />,
   },
 ]
 
@@ -197,7 +192,6 @@ function FloatingBubble({
   popDelay,
   floatDuration,
   floatDelay,
-  color,
   children,
 }: {
   left: string
@@ -206,7 +200,6 @@ function FloatingBubble({
   popDelay: string
   floatDuration: number
   floatDelay: number
-  color: string
   children: ReactNode
 }) {
   return (
@@ -232,7 +225,6 @@ function FloatingBubble({
           alignItems: 'center',
           justifyContent: 'center',
           animation: `hubFloat calc(${floatDuration}s / var(--speed)) ease-in-out ${floatDelay}s infinite`,
-          color,
           fontSize: '2rem',
         }}
       >
@@ -297,7 +289,9 @@ function ChatCard({
           />
         </div>
         <div style={{ flex: '1 1 auto', minWidth: '0' }}>
-          <div style={{ fontSize: '1.35cqw', lineHeight: '1.45', color: '#3c3a52' }}>{message}</div>
+          <div style={{ fontSize: '1.35cqw', lineHeight: '1.45', color: 'var(--color-ink)' }}>
+            {message}
+          </div>
           <div
             style={{
               display: 'flex',
@@ -311,7 +305,7 @@ function ChatCard({
             <span style={{ width: '1.7cqw', height: '1.7cqw', color, fontSize: '1.3cqw' }}>
               {icon}
             </span>
-            <span style={{ fontSize: '1.15cqw', color: '#9a98ad' }}>{time}</span>
+            <span style={{ fontSize: '1.15cqw', color: 'var(--color-ink-muted)' }}>{time}</span>
           </div>
         </div>
       </div>
@@ -462,7 +456,6 @@ export function OmnichannelHub({
             popDelay={bubble.popDelay}
             floatDuration={bubble.floatDuration}
             floatDelay={bubble.floatDelay}
-            color={bubble.color}
           >
             {bubble.icon}
           </FloatingBubble>

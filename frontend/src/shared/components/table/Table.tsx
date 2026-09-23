@@ -10,7 +10,7 @@ export function Table<T>({ columns, data, onRowClick, emptyState, getRowKey }: T
       <thead>
         <tr className="border-b border-neutral-100 text-ink-muted">
           {columns.map((column) => (
-            <th key={column.key} className="px-4 py-2 font-medium">
+            <th key={column.key} scope="col" className="px-4 py-2 font-medium">
               {column.header}
             </th>
           ))}
@@ -21,7 +21,15 @@ export function Table<T>({ columns, data, onRowClick, emptyState, getRowKey }: T
           <tr
             key={getRowKey(row)}
             onClick={() => onRowClick?.(row)}
-            className={`border-b border-neutral-50 ${onRowClick ? 'cursor-pointer hover:bg-surface-hover' : ''}`}
+            onKeyDown={(e) => {
+              if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                onRowClick(row)
+              }
+            }}
+            tabIndex={onRowClick ? 0 : undefined}
+            role={onRowClick ? 'button' : undefined}
+            className={`border-b border-neutral-50 ${onRowClick ? 'cursor-pointer hover:bg-surface-hover focus:outline-2 focus:outline-primary' : ''}`}
           >
             {columns.map((column) => (
               <td key={column.key} className="px-4 py-3 text-ink">

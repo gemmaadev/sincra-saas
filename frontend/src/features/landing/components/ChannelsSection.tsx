@@ -4,11 +4,23 @@ import { Section } from '@/shared/components/section'
 import { OmnichannelHub } from './OmnichannelHub'
 
 const CHANNELS = [
-  { icon: <SiGmail size={28} className="text-gmail" />, label: 'Gmail' },
-  { icon: <PiMicrosoftOutlookLogoFill size={28} className="text-outlook" />, label: 'Outlook' },
-  { icon: <SiWhatsapp size={28} className="text-whatsapp" />, label: 'WhatsApp' },
-  { icon: <SiInstagram size={28} className="text-instagram" />, label: 'Instagram' },
-  { icon: <SiMessenger size={28} className="text-messenger" />, label: 'Messenger' },
+  { icon: <SiGmail size={28} className="text-gmail" aria-hidden="true" />, label: 'Gmail' },
+  {
+    icon: <PiMicrosoftOutlookLogoFill size={28} className="text-outlook" aria-hidden="true" />,
+    label: 'Outlook',
+  },
+  {
+    icon: <SiWhatsapp size={28} className="text-whatsapp" aria-hidden="true" />,
+    label: 'WhatsApp',
+  },
+  {
+    icon: <SiInstagram size={28} className="text-instagram" aria-hidden="true" />,
+    label: 'Instagram',
+  },
+  {
+    icon: <SiMessenger size={28} className="text-messenger" aria-hidden="true" />,
+    label: 'Messenger',
+  },
 ]
 
 export function ChannelsSection() {

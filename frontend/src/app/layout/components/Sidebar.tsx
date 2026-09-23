@@ -16,22 +16,31 @@ import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 
 const navItems = [
-  { to: '/inbox', icon: <Inbox size={18} />, label: 'Bandeja', badge: 12 },
-  { to: '/clients', icon: <Users size={18} />, label: 'Clientes' },
-  { to: '/orders', icon: <ShoppingCart size={18} />, label: 'Pedidos', badge: 3 },
-  { to: '/calendar', icon: <Calendar size={18} />, label: 'Calendario' },
-  { to: '/map', icon: <Map size={18} />, label: 'Mapa' },
-  { to: '/stats', icon: <BarChart3 size={18} />, label: 'Estadísticas' },
-  { to: '/team', icon: <UserCog size={18} />, label: 'Equipo' },
-  { to: '/automations', icon: <Sparkles size={18} />, label: 'Automatizaciones' },
-  { to: '/settings', icon: <Settings size={18} />, label: 'Ajustes' },
+  { to: '/inbox', icon: <Inbox size={18} aria-hidden="true" />, label: 'Bandeja', badge: 12 },
+  { to: '/clients', icon: <Users size={18} aria-hidden="true" />, label: 'Clientes' },
+  {
+    to: '/orders',
+    icon: <ShoppingCart size={18} aria-hidden="true" />,
+    label: 'Pedidos',
+    badge: 3,
+  },
+  { to: '/calendar', icon: <Calendar size={18} aria-hidden="true" />, label: 'Calendario' },
+  { to: '/map', icon: <Map size={18} aria-hidden="true" />, label: 'Mapa' },
+  { to: '/stats', icon: <BarChart3 size={18} aria-hidden="true" />, label: 'Estadísticas' },
+  { to: '/team', icon: <UserCog size={18} aria-hidden="true" />, label: 'Equipo' },
+  {
+    to: '/automations',
+    icon: <Sparkles size={18} aria-hidden="true" />,
+    label: 'Automatizaciones',
+  },
+  { to: '/settings', icon: <Settings size={18} aria-hidden="true" />, label: 'Ajustes' },
 ]
 
 const channels = [
-  { icon: <SiGmail size={16} />, label: 'Gmail', count: 6 },
-  { icon: <SiWhatsapp size={16} />, label: 'WhatsApp', count: 4 },
-  { icon: <SiInstagram size={16} />, label: 'Instagram', count: 1 },
-  { icon: <SiMessenger size={16} />, label: 'Messenger', count: 1 },
+  { icon: <SiGmail size={16} aria-hidden="true" />, label: 'Gmail', count: 6 },
+  { icon: <SiWhatsapp size={16} aria-hidden="true" />, label: 'WhatsApp', count: 4 },
+  { icon: <SiInstagram size={16} aria-hidden="true" />, label: 'Instagram', count: 1 },
+  { icon: <SiMessenger size={16} aria-hidden="true" />, label: 'Messenger', count: 1 },
 ]
 
 const labels = [
@@ -86,13 +95,13 @@ export function Sidebar() {
 
       <Card padding="sm" className="mt-auto flex flex-col gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <Sparkles size={16} className="text-primary" />
+          <Sparkles size={16} className="text-primary" aria-hidden="true" />
           IA de Sincra
         </span>
         <p className="text-xs text-ink-muted">
           Te ayuda a priorizar, clasificar y responder más rápido.
         </p>
-        <SincraButton variant="text" size="sm" icon={<MoveRight size={16} />}>
+        <SincraButton variant="text" size="sm" icon={<MoveRight size={16} aria-hidden="true" />}>
           Ver sugerencias
         </SincraButton>
       </Card>

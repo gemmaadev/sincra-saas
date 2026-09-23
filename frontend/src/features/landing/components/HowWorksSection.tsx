@@ -83,7 +83,7 @@ export function HowWorksSection() {
         const numberBadge = stepNumberRefs.current[stepIndex]
 
         if (card) {
-          card.style.opacity = isActive ? '1' : '.5'
+          card.style.opacity = isActive ? '1' : '.50'
           card.style.background = '#fff'
           card.style.borderColor = isActive ? 'var(--color-primary)' : 'var(--color-neutral-200)'
         }
@@ -142,7 +142,7 @@ export function HowWorksSection() {
                   ref={(element) => {
                     stepCardRefs.current[stepIndex] = element
                   }}
-                  className="flex gap-4 rounded-2xl border p-5 transition-[background,border-color,opacity] duration-500"
+                  className="flex gap-4 rounded-2xl border bg-white p-5 transition-[background,border-color,opacity] duration-500"
                 >
                   <span
                     ref={(element) => {

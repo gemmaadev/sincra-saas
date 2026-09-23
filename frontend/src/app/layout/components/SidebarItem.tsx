@@ -15,7 +15,7 @@ export function SidebarItem({ to, icon, label, badge }: SidebarItemProps) {
       className={({ isActive }) =>
         `flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
           isActive
-            ? 'bg-primary/10 text-primary'
+            ? 'bg-primary/10 text-primary-dark'
             : 'text-ink-muted hover:bg-surface-hover hover:text-ink'
         }`
       }

@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react'
+import { Link } from 'react-router'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 
@@ -13,7 +14,13 @@ export function AppHeader() {
         />
       </div>
       <div className="flex items-center gap-4">
-        <Avatar name="Laura García" size="md" />
+        <Link
+          to="/profile"
+          aria-label="Ir a mi perfil"
+          className="rounded-full focus:outline-2 focus:outline-primary focus:outline-offset-2"
+        >
+          <Avatar name="Laura García" size="md" />
+        </Link>
       </div>
     </header>
   )
