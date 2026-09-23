@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
 import { requireRole } from './requireRole'
-import { AppError } from '../shared/errors/AppError'
+import { AppError } from '../shared/AppError'
 
 describe('requireRole', () => {
   // Given a request from a user with the required role
