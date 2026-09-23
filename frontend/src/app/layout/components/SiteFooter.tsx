@@ -22,22 +22,16 @@ export function SiteFooter() {
   return (
     <footer className="flex flex-col gap-8 border-t border-neutral-100 px-6 py-12">
       <div className="grid grid-cols-4 gap-8 max-md:grid-cols-1">
-        <div className="flex flex-col gap-3">
-          <span className="text-lg font-bold text-primary">Sincra</span>
-          <p className="text-sm text-ink-muted">
-            La plataforma de comunicación y pedidos para pequeños negocios.
-          </p>
-          <div className="flex gap-3">
-            <a href="#" aria-label="Instagram" className="text-ink-muted hover:text-primary">
-              <SiInstagram size={20} />
-            </a>
-            <a href="#" aria-label="Facebook" className="text-ink-muted hover:text-primary">
-              <SiFacebook size={20} />
-            </a>
-            <a href="#" aria-label="LinkedIn" className="text-ink-muted hover:text-primary">
-              <SlSocialLinkedin size={20} />
-            </a>
-          </div>
+        <div className="flex gap-3">
+          <a href="#" aria-label="Instagram" className="text-ink-muted hover:text-primary">
+            <SiInstagram size={20} aria-hidden="true" />
+          </a>
+          <a href="#" aria-label="Facebook" className="text-ink-muted hover:text-primary">
+            <SiFacebook size={20} aria-hidden="true" />
+          </a>
+          <a href="#" aria-label="LinkedIn" className="text-ink-muted hover:text-primary">
+            <SlSocialLinkedin size={20} aria-hidden="true" />
+          </a>
         </div>
 
         {footerColumns.map((column) => (
