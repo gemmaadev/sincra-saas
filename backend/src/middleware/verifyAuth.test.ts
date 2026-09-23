@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
 import { verifyAuth } from './verifyAuth'
 import { signToken } from '../shared/jwt'
-import { AppError } from '../shared/errors/AppError'
+import { AppError } from '../shared/AppError'
 
 function createMockRequest(token?: string): Request {
   return { cookies: token ? { token } : {} } as Request

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import { verifyToken } from '../shared/jwt'
-import { AppError } from '../shared/errors/AppError'
+import { AppError } from '../shared/AppError'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

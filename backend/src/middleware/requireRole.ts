@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
-import { AppError } from '../shared/errors/AppError'
+import { AppError } from '../shared/AppError'
 
 export function requireRole(role: 'admin' | 'employee') {
   return (req: Request, res: Response, next: NextFunction) => {
