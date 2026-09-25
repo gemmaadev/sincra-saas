@@ -16,6 +16,7 @@ interface LoginFormData {
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  const [loginError] = useState(false)
 
   const {
     register,
@@ -46,7 +47,13 @@ export default function LoginPage() {
           <p className="text-ink-muted">Accede a tu cuenta de Sincra</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {loginError && (
+          <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">
+            Email o contraseña incorrectos. Inténtalo de nuevo.
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="email" className="font-medium text-ink">
               Correo electrónico
@@ -66,7 +73,6 @@ export default function LoginPage() {
             />
             {errors.email && <p className="text-sm text-error">{errors.email.message}</p>}
           </div>
-
           <div className="flex flex-col gap-1">
             <label htmlFor="password" className="font-medium text-ink">
               Contraseña
@@ -90,7 +96,6 @@ export default function LoginPage() {
             </div>
             {errors.password && <p className="text-sm text-error">{errors.password.message}</p>}
           </div>
-
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm text-ink-muted">
               <input type="checkbox" {...register('remember')} />
@@ -100,7 +105,6 @@ export default function LoginPage() {
               ¿Has olvidado tu contraseña?
             </Link>
           </div>
-
           <SincraButton type="submit" variant="primary">
             Entrar
           </SincraButton>
