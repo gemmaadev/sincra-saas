@@ -1,12 +1,12 @@
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router'
-import { Eye, EyeOff } from 'lucide-react'
-import { useState } from 'react'
 import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
+import { Input, PasswordInput } from '@/shared/components/input'
 import { MicrosoftIcon } from '@/shared/components/icon/OAuthIcons'
 import { FcGoogle } from 'react-icons/fc'
 import { SincraLogo } from '@/shared/components/logo'
+import { useState } from 'react'
 
 interface LoginFormData {
   email: string
@@ -15,7 +15,6 @@ interface LoginFormData {
 }
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
   const [loginError] = useState(false)
 
   const {
@@ -35,7 +34,7 @@ export default function LoginPage() {
         <div className="flex h-full flex-col justify-center gap-6 bg-primary p-12 text-white">
           <SincraLogo size={28} variant="white" />
           <h2 className="text-3xl font-bold">¡Nos alegra verte de nuevo!</h2>
-          <p className="text-xl text-white">
+          <p className="text-xl text-white/90">
             Vuelve a tu bandeja: tus conversaciones, clientes y pedidos te están esperando.
           </p>
         </div>
@@ -54,48 +53,27 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="font-medium text-ink">
-              Correo electrónico
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="tu@email.com"
-              className="rounded-lg border border-neutral-200 px-3 py-2"
-              {...register('email', {
-                required: 'El email es obligatorio',
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: 'Introduce un email válido',
-                },
-              })}
-            />
-            {errors.email && <p className="text-sm text-error">{errors.email.message}</p>}
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="font-medium text-ink">
-              Contraseña
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Introduce tu contraseña"
-                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"
-                {...register('password', { required: 'La contraseña es obligatoria' })}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.password && <p className="text-sm text-error">{errors.password.message}</p>}
-          </div>
+          <Input
+            label="Correo electrónico"
+            type="email"
+            placeholder="tu@email.com"
+            error={errors.email?.message}
+            {...register('email', {
+              required: 'El email es obligatorio',
+              pattern: {
+                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: 'Introduce un email válido',
+              },
+            })}
+          />
+
+          <PasswordInput
+            label="Contraseña"
+            placeholder="Introduce tu contraseña"
+            error={errors.password?.message}
+            registration={register('password', { required: 'La contraseña es obligatoria' })}
+          />
+
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm text-ink-muted">
               <input type="checkbox" {...register('remember')} />
@@ -105,6 +83,7 @@ export default function LoginPage() {
               ¿Has olvidado tu contraseña?
             </Link>
           </div>
+
           <SincraButton type="submit" variant="primary">
             Entrar
           </SincraButton>
