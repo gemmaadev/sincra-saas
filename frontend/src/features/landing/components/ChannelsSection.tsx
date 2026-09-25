@@ -1,27 +1,6 @@
-import { SiGmail, SiWhatsapp, SiInstagram, SiMessenger } from 'react-icons/si'
-import { PiMicrosoftOutlookLogoFill } from 'react-icons/pi'
 import { Section } from '@/shared/components/section'
+import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import { OmnichannelHub } from './OmnichannelHub'
-
-const CHANNELS = [
-  { icon: <SiGmail size={28} className="text-gmail" aria-hidden="true" />, label: 'Gmail' },
-  {
-    icon: <PiMicrosoftOutlookLogoFill size={28} className="text-outlook" aria-hidden="true" />,
-    label: 'Outlook',
-  },
-  {
-    icon: <SiWhatsapp size={28} className="text-whatsapp" aria-hidden="true" />,
-    label: 'WhatsApp',
-  },
-  {
-    icon: <SiInstagram size={28} className="text-instagram" aria-hidden="true" />,
-    label: 'Instagram',
-  },
-  {
-    icon: <SiMessenger size={28} className="text-messenger" aria-hidden="true" />,
-    label: 'Messenger',
-  },
-]
 
 export function ChannelsSection() {
   return (
@@ -38,10 +17,10 @@ export function ChannelsSection() {
           </p>
 
           <div className="flex flex-wrap gap-6 pt-4">
-            {CHANNELS.map((channel) => (
-              <div key={channel.label} className="flex flex-col items-center gap-2">
-                {channel.icon}
-                <span className="text-sm text-ink-muted">{channel.label}</span>
+            {CHANNEL_BRANDS.map(({ id, name, icon: Icon, colorClassName }) => (
+              <div key={id} className="flex flex-col items-center gap-2">
+                <Icon size={28} className={colorClassName} aria-hidden="true" />
+                <span className="text-sm text-ink-muted">{name}</span>
               </div>
             ))}
           </div>
