@@ -1,8 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
-import { errorHandler } from './middleware/errorHandler'
-import { asyncHandler } from './shared/asyncHandler'
+import { errorHandler } from './shared/handlers/errorHandler'
+import { asyncHandler } from './shared/handlers/asyncHandler'
 
 const app = express()
 

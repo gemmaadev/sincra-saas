@@ -26,27 +26,49 @@ model Business {
   sector      String?
   description String?
   country     String   @default("ES")
+  phone       String?
+  address     String?
+  schedule    String?
+  nif         String?
+  email       String?
+  stripeId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  createdBy   String?
+  updatedBy   String?
 
-  users User[]
+  memberships BusinessMember[]
 }
 
 model User {
-  id           String     @id @default(uuid())
-  businessId   String
-  name         String
-  email        String     @unique
-  passwordHash String?
-  role         Role       @default(EMPLOYEE)
-  status       UserStatus @default(PENDING)
-  avatarUrl    String?
-  googleId     String?    @unique
-  microsoftId  String?    @unique
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  passwordHash   String?
+  googleId       String?  @unique
+  microsoftId    String?  @unique
+  invitationCode String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  memberships BusinessMember[]
+}
+
+model BusinessMember {
+  id            String     @id @default(uuid())
+  businessId    String
+  userId        String
+  role          Role       @default(EMPLOYEE)
+  status        UserStatus @default(PENDING)
+  avatarUrl     String?
+  phone         String?
+  businessEmail String?
+  createdAt     DateTime   @default(now())
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([businessId, userId])
   @@index([businessId])
+  @@index([userId])
 }

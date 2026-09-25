@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Menu, X } from 'lucide-react'
 import { SincraButton } from '@/shared/components/button'
+import { SincraLogo } from '@/shared/components/logo'
 
 const navLinks = [
   { href: '#product', label: 'Producto' },
@@ -18,8 +19,8 @@ export function SiteNavbar() {
   return (
     <nav className="border-b border-neutral-100 px-6 py-4">
       <div className="flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold text-primary">
-          Sincra
+        <Link to="/">
+          <SincraLogo size={28} />
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
