@@ -51,8 +51,15 @@ export default function OnboardingPage() {
         <OnboardingStepper steps={ONBOARDING_STEPS} currentStep={currentStep} />
 
         {currentStep === 1 && <BusinessStep data={data} onChange={updateData} onNext={goNext} />}
-        {currentStep === 2 && <ChannelsStep onBack={goBack} onNext={goNext} />}
-        {currentStep === 3 && <DoneStep />}
+        {currentStep === 2 && (
+          <ChannelsStep
+            connectedChannels={data.connectedChannels}
+            onChange={(connectedChannels) => updateData({ connectedChannels })}
+            onBack={goBack}
+            onNext={goNext}
+          />
+        )}
+        {currentStep === 3 && <DoneStep data={data} />}
       </main>
     </div>
   )
