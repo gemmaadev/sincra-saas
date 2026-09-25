@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { errorHandler } from '../../middleware/errorHandler'
+import { errorHandler } from './errorHandler'
 import { AppError } from '../AppError'
 
 function createMockResponse() {
