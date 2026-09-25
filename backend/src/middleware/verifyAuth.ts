@@ -7,7 +7,8 @@ declare global {
   namespace Express {
     interface Request {
       userId?: string
-      role?: 'admin' | 'employee'
+      businessId?: string
+      role?: 'ADMIN' | 'EMPLOYEE'
     }
   }
 }
@@ -22,6 +23,7 @@ export function verifyAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const payload = verifyToken(token)
     req.userId = payload.userId
+    req.businessId = payload.businessId
     req.role = payload.role
     next()
   } catch {
