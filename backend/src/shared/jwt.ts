@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken'
 
 interface TokenPayload {
   userId: string
-  role: 'admin' | 'employee'
+  businessId: string
+  role: 'ADMIN' | 'EMPLOYEE'
 }
 
 const JWT_SECRET = process.env.JWT_SECRET

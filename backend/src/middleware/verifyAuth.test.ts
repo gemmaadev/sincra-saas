@@ -11,16 +11,17 @@ function createMockRequest(token?: string): Request {
 describe('verifyAuth', () => {
   // Given a request with a valid JWT cookie
   // When it passes through verifyAuth
-  // Then it should inject userId/role into the request and call next()
-  it('injects userId and role, and calls next() with a valid token', () => {
-    const token = signToken({ userId: '1', role: 'admin' })
+  // Then it should inject userId/businessId/role into the request and call next()
+  it('injects userId, businessId and role, and calls next() with a valid token', () => {
+    const token = signToken({ userId: '1', businessId: 'biz-1', role: 'ADMIN' })
     const req = createMockRequest(token)
     const next = vi.fn() as NextFunction
 
     verifyAuth(req, {} as Response, next)
 
     expect(req.userId).toBe('1')
-    expect(req.role).toBe('admin')
+    expect(req.businessId).toBe('biz-1')
+    expect(req.role).toBe('ADMIN')
     expect(next).toHaveBeenCalledOnce()
   })
 

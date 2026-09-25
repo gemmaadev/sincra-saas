@@ -8,10 +8,10 @@ describe('requireRole', () => {
   // When it passes through requireRole
   // Then it should call next()
   it('calls next() when the user has the required role', () => {
-    const req = { role: 'admin' } as Request
+    const req = { role: 'ADMIN' } as Request
     const next = vi.fn() as NextFunction
 
-    requireRole('admin')(req, {} as Response, next)
+    requireRole('ADMIN')(req, {} as Response, next)
 
     expect(next).toHaveBeenCalledOnce()
   })
@@ -20,13 +20,13 @@ describe('requireRole', () => {
   // When it passes through requireRole
   // Then it should throw a 403 AppError
   it('throws a 403 AppError when the user does not have the required role', () => {
-    const req = { role: 'employee' } as Request
+    const req = { role: 'EMPLOYEE' } as Request
 
-    expect(() => requireRole('admin')(req, {} as Response, vi.fn() as NextFunction)).toThrow(
+    expect(() => requireRole('ADMIN')(req, {} as Response, vi.fn() as NextFunction)).toThrow(
       AppError,
     )
     try {
-      requireRole('admin')(req, {} as Response, vi.fn() as NextFunction)
+      requireRole('ADMIN')(req, {} as Response, vi.fn() as NextFunction)
     } catch (error) {
       expect((error as AppError).statusCode).toBe(403)
     }
