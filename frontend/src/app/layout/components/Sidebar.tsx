@@ -14,6 +14,8 @@ import { SiWhatsapp, SiInstagram, SiMessenger, SiGmail } from 'react-icons/si'
 import { SidebarItem } from './SidebarItem'
 import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
+import { SincraLogo } from '@/shared/components/logo'
+import { Link } from 'react-router'
 
 const navItems = [
   { to: '/inbox', icon: <Inbox size={18} aria-hidden="true" />, label: 'Bandeja', badge: 12 },
@@ -53,8 +55,9 @@ const labels = [
 export function Sidebar() {
   return (
     <aside className="flex w-64 flex-col gap-6 overflow-y-auto border-r border-neutral-100 bg-surface-sidebar p-4 max-md:hidden">
-      <span className="text-lg font-bold text-primary">Sincra</span>
-
+      <Link to="/">
+        <SincraLogo size={28} />
+      </Link>
       <nav className="flex flex-col gap-1">
         {navItems.map((item) => (
           <SidebarItem key={item.to} {...item} />
