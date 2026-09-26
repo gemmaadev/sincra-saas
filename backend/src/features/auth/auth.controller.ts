@@ -5,8 +5,10 @@ import { AppError } from '../../shared/AppError'
 import {
   getUserBusinesses,
   findUserWithBusinesses,
+  findUserByEmail,
   findMembership,
   comparePassword,
+  registerBusinessOwner,
 } from './auth.service'
 
 interface LoginBody {
@@ -57,6 +59,49 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       role: m.role,
     })),
   })
+})
+
+interface RegisterBody {
+  name: string
+  email: string
+  password: string
+  businessName: string
+  sector?: string
+  description?: string
+  country?: string
+}
+
+export const register = asyncHandler(async (req: Request, res: Response) => {
+  const { name, email, password, businessName, sector, description, country } =
+    req.body as RegisterBody
+
+  if (!name || !email || !password || !businessName) {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
+  const existingUser = await findUserByEmail(email)
+  if (existingUser) {
+    throw new AppError('Ya existe una cuenta con este email', 409, 'EMAIL_TAKEN')
+  }
+
+  const { user, business, membership } = await registerBusinessOwner({
+    name,
+    email,
+    password,
+    businessName,
+    sector,
+    description,
+    country,
+  })
+
+  const token = signToken({
+    userId: user.id,
+    businessId: business.id,
+    role: membership.role,
+  })
+
+  res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+  res.status(201).json({ success: true })
 })
 
 export const getMyBusinesses = asyncHandler(async (req: Request, res: Response) => {
