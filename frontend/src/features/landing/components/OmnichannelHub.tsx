@@ -1,7 +1,5 @@
-// TODO: Refactor
 import type { CSSProperties, ReactNode } from 'react'
-import { SiGmail, SiWhatsapp, SiInstagram, SiMessenger } from 'react-icons/si'
-import { PiMicrosoftOutlookLogoFill } from 'react-icons/pi'
+import { CHANNEL_BRANDS, type ChannelId } from '@/shared/channels/channels'
 
 const CSS = `
 @keyframes hubDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
@@ -91,7 +89,7 @@ const BUBBLES = [
     popDelay: '.5s',
     floatDuration: 5,
     floatDelay: 1.2,
-    icon: <SiWhatsapp className="text-whatsapp" aria-hidden="true" />,
+    channelId: 'whatsapp',
   },
   {
     left: '16.03%',
@@ -100,7 +98,7 @@ const BUBBLES = [
     popDelay: '.3s',
     floatDuration: 4.4,
     floatDelay: 0.6,
-    icon: <SiInstagram className="text-instagram" aria-hidden="true" />,
+    channelId: 'instagram',
   },
   {
     left: '42.88%',
@@ -109,7 +107,7 @@ const BUBBLES = [
     popDelay: '.65s',
     floatDuration: 4.8,
     floatDelay: 1.6,
-    icon: <SiGmail className="text-gmail" aria-hidden="true" />,
+    channelId: 'gmail',
   },
   {
     left: '69.94%',
@@ -118,7 +116,7 @@ const BUBBLES = [
     popDelay: '.8s',
     floatDuration: 5.2,
     floatDelay: 0.9,
-    icon: <PiMicrosoftOutlookLogoFill className="text-outlook" aria-hidden="true" />,
+    channelId: 'outlook',
   },
   {
     left: '59.62%',
@@ -127,7 +125,7 @@ const BUBBLES = [
     popDelay: '1.05s',
     floatDuration: 5.6,
     floatDelay: 1.4,
-    icon: <SiMessenger className="text-messenger" aria-hidden="true" />,
+    channelId: 'messenger',
   },
 ]
 
@@ -148,7 +146,19 @@ function SeenTicks() {
   )
 }
 
-const CHAT_CARDS = [
+interface ChatCardData {
+  left: string
+  top: string
+  width: string
+  delay: string
+  avatarIndex: number
+  message: string
+  time: string
+  channelId: ChannelId
+  extraStatus?: ReactNode
+}
+
+const CHAT_CARDS: ChatCardData[] = [
   {
     left: '66.24%',
     top: '8.54%',
@@ -157,8 +167,7 @@ const CHAT_CARDS = [
     avatarIndex: 0,
     message: 'Hola, ¿tienen en stock la chaqueta?',
     time: '10:24',
-    color: 'var(--color-whatsapp)',
-    icon: <SiWhatsapp aria-label="WhatsApp" role="img" />,
+    channelId: 'whatsapp',
     extraStatus: <SeenTicks />,
   },
   {
@@ -169,8 +178,7 @@ const CHAT_CARDS = [
     avatarIndex: 1,
     message: '¿Cuándo llega mi pedido? #12345',
     time: '08:52',
-    color: 'var(--color-instagram)',
-    icon: <SiInstagram aria-label="Instagram" role="img" />,
+    channelId: 'instagram',
   },
   {
     left: '67.3%',
@@ -180,8 +188,7 @@ const CHAT_CARDS = [
     avatarIndex: 2,
     message: 'Quisiera un presupuesto para 50 unidades.',
     time: '09:47',
-    color: 'var(--color-outlook)',
-    icon: <PiMicrosoftOutlookLogoFill aria-label="Outlook" role="img" />,
+    channelId: 'outlook',
   },
 ]
 
@@ -242,7 +249,7 @@ function ChatCard({
   avatarSrc,
   message,
   time,
-  color,
+  colorClassName,
   icon,
   extraStatus,
 }: {
@@ -253,7 +260,7 @@ function ChatCard({
   avatarSrc?: string
   message: string
   time: string
-  color: string
+  colorClassName: string
   icon: ReactNode
   extraStatus?: ReactNode
 }) {
@@ -302,7 +309,10 @@ function ChatCard({
             }}
           >
             {extraStatus}
-            <span style={{ width: '1.7cqw', height: '1.7cqw', color, fontSize: '1.3cqw' }}>
+            <span
+              className={colorClassName}
+              style={{ width: '1.7cqw', height: '1.7cqw', fontSize: '1.3cqw' }}
+            >
               {icon}
             </span>
             <span style={{ fontSize: '1.15cqw', color: 'var(--color-ink-muted)' }}>{time}</span>
@@ -447,36 +457,44 @@ export function OmnichannelHub({
           </div>
         </div>
 
-        {BUBBLES.map((bubble) => (
-          <FloatingBubble
-            key={bubble.left + bubble.top}
-            left={bubble.left}
-            top={bubble.top}
-            width={bubble.width}
-            popDelay={bubble.popDelay}
-            floatDuration={bubble.floatDuration}
-            floatDelay={bubble.floatDelay}
-          >
-            {bubble.icon}
-          </FloatingBubble>
-        ))}
+        {BUBBLES.map((bubble) => {
+          const brand = CHANNEL_BRANDS.find((b) => b.id === bubble.channelId)!
+          const Icon = brand.icon
+          return (
+            <FloatingBubble
+              key={bubble.channelId}
+              left={bubble.left}
+              top={bubble.top}
+              width={bubble.width}
+              popDelay={bubble.popDelay}
+              floatDuration={bubble.floatDuration}
+              floatDelay={bubble.floatDelay}
+            >
+              <Icon className={brand.colorClassName} aria-hidden="true" />
+            </FloatingBubble>
+          )
+        })}
 
         {showChats &&
-          CHAT_CARDS.map((card) => (
-            <ChatCard
-              key={card.left + card.top}
-              left={card.left}
-              top={card.top}
-              width={card.width}
-              delay={card.delay}
-              avatarSrc={avatars[card.avatarIndex]}
-              message={card.message}
-              time={card.time}
-              color={card.color}
-              icon={card.icon}
-              extraStatus={card.extraStatus}
-            />
-          ))}
+          CHAT_CARDS.map((card) => {
+            const brand = CHANNEL_BRANDS.find((b) => b.id === card.channelId)!
+            const Icon = brand.icon
+            return (
+              <ChatCard
+                key={card.channelId}
+                left={card.left}
+                top={card.top}
+                width={card.width}
+                delay={card.delay}
+                avatarSrc={avatars[card.avatarIndex]}
+                message={card.message}
+                time={card.time}
+                colorClassName={brand.colorClassName}
+                icon={<Icon aria-label={brand.name} role="img" />}
+                extraStatus={card.extraStatus}
+              />
+            )
+          })}
       </div>
     </>
   )

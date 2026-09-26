@@ -4,8 +4,10 @@ import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { Input, PasswordInput } from '@/shared/components/input'
+import { saveRegisterCredentials } from '@/features/auth/utils/registerCredentials'
 
 interface RegisterFormData {
+  name: string
   email: string
   password: string
   confirmPassword: string
@@ -30,12 +32,7 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>()
 
   const onSubmit = (data: RegisterFormData) => {
-    // We store the credentials in local state (they are not sent to the backend yet)
-    // The rest of the registration is completed during onboarding
-    sessionStorage.setItem(
-      'registerCredentials',
-      JSON.stringify({ email: data.email, password: data.password }),
-    )
+    saveRegisterCredentials({ name: data.name, email: data.email, password: data.password })
     navigate('/onboarding')
   }
 
@@ -71,6 +68,15 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+          <Input
+            label="Nombre de usuario"
+            placeholder="Tu nombre"
+            error={errors.name?.message}
+            {...register('name', {
+              required: 'Tu nombre es obligatorio',
+            })}
+          />
+
           <Input
             label="Correo electrónico"
             type="email"

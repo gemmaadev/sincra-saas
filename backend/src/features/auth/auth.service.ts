@@ -37,8 +37,57 @@ export async function findUserWithBusinesses(email: string) {
   })
 }
 
+export async function findUserByEmail(email: string) {
+  return prisma.user.findUnique({ where: { email } })
+}
+
 export async function findMembership(userId: string, businessId: string) {
   return prisma.businessMember.findUnique({
     where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
+  })
+}
+
+interface RegisterInput {
+  name: string
+  email: string
+  password: string
+  businessName: string
+  sector?: string
+  description?: string
+  country?: string
+}
+
+export async function registerBusinessOwner(input: RegisterInput) {
+  const passwordHash = await hashPassword(input.password)
+
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        passwordHash,
+      },
+    })
+
+    const business = await tx.business.create({
+      data: {
+        name: input.businessName,
+        sector: input.sector,
+        description: input.description,
+        country: input.country ?? 'ES',
+        createdBy: user.id,
+      },
+    })
+
+    const membership = await tx.businessMember.create({
+      data: {
+        businessId: business.id,
+        userId: user.id,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    })
+
+    return { user, business, membership }
   })
 }
