@@ -5,6 +5,7 @@ import OnboardingPage from './OnboardingPage'
 import { TOTAL_CHANNELS_COUNT } from '@/features/onboarding/onboarding.constants'
 
 const mockNavigate = vi.fn()
+const mockRegisterBusiness = vi.fn()
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>()
@@ -14,9 +15,19 @@ vi.mock('react-router', async (importOriginal) => {
   }
 })
 
+vi.mock('@/features/auth/hooks/useRegisterBusiness', () => ({
+  useRegisterBusiness: () => ({
+    registerBusiness: mockRegisterBusiness,
+    isSubmitting: false,
+    error: null,
+  }),
+}))
+
 describe('OnboardingPage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
+    mockRegisterBusiness.mockClear()
+    mockRegisterBusiness.mockResolvedValue(true)
   })
 
   it('Scenario: the flow starts on the business step', () => {
