@@ -17,6 +17,7 @@ describe('RegisterPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
     await waitFor(() => {
+      expect(screen.getByText('Tu nombre es obligatorio')).toBeInTheDocument()
       expect(screen.getByText('El email es obligatorio')).toBeInTheDocument()
       expect(screen.getByText('La contraseña es obligatoria')).toBeInTheDocument()
       expect(screen.getByText('Repite tu contraseña')).toBeInTheDocument()
@@ -73,6 +74,9 @@ describe('RegisterPage', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.change(screen.getByLabelText('Nombre de usuario'), {
+      target: { value: 'Laura' },
+    })
     fireEvent.change(screen.getByLabelText('Correo electrónico'), {
       target: { value: 'laura@tienda.com' },
     })
@@ -84,6 +88,7 @@ describe('RegisterPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
     await waitFor(() => {
+      expect(screen.queryByText('Tu nombre es obligatorio')).not.toBeInTheDocument()
       expect(screen.queryByText('El email es obligatorio')).not.toBeInTheDocument()
       expect(screen.queryByText('Las contraseñas no coinciden')).not.toBeInTheDocument()
     })
