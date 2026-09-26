@@ -12,12 +12,12 @@ interface OnboardingStepperProps {
 
 export function OnboardingStepper({ steps, currentStep }: OnboardingStepperProps) {
   return (
-    <div className="flex w-full items-start">
-      {steps.map((step, index) => (
-        <div key={step.number} className="contents">
-          <div className="flex shrink-0 flex-col items-center gap-1.5">
+    <div className="flex w-full flex-col gap-1.5">
+      <div className="flex items-center">
+        {steps.map((step, index) => (
+          <div key={step.number} className="contents">
             <span
-              className={`flex size-10 items-center justify-center rounded-full text-base font-semibold ${
+              className={`flex size-10 shrink-0 items-center justify-center rounded-full text-base font-semibold ${
                 step.number <= currentStep
                   ? 'bg-primary text-white'
                   : 'bg-neutral-100 text-ink-muted'
@@ -25,11 +25,21 @@ export function OnboardingStepper({ steps, currentStep }: OnboardingStepperProps
             >
               {step.number < currentStep ? <Check size={16} /> : step.number}
             </span>
-            <span className="text-xs font-medium text-ink-muted">{step.label}</span>
+            {index < steps.length - 1 && <div className="h-px flex-1 bg-neutral-200" />}
           </div>
-          {index < steps.length - 1 && <div className="mt-5 h-px flex-1 bg-neutral-200" />}
-        </div>
-      ))}
+        ))}
+      </div>
+
+      <div className="flex items-start">
+        {steps.map((step, index) => (
+          <div key={step.number} className="contents">
+            <span className="w-10 shrink-0 text-center text-xs font-medium text-ink-muted">
+              {step.label}
+            </span>
+            {index < steps.length - 1 && <div className="flex-1" />}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
