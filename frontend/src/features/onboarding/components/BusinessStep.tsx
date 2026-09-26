@@ -8,9 +8,17 @@ interface BusinessStepProps {
   data: OnboardingData
   onChange: (fields: Partial<OnboardingData>) => void
   onNext: () => void
+  isSubmitting?: boolean
+  error?: string | null
 }
 
-export function BusinessStep({ data, onChange, onNext }: BusinessStepProps) {
+export function BusinessStep({
+  data,
+  onChange,
+  onNext,
+  isSubmitting = false,
+  error = null,
+}: BusinessStepProps) {
   return (
     <form
       onSubmit={(event) => {
@@ -69,8 +77,10 @@ export function BusinessStep({ data, onChange, onNext }: BusinessStepProps) {
         </span>
       </div>
 
-      <SincraButton type="submit" variant="primary" disabled={!data.businessName}>
-        Siguiente →
+      {error && <p className="text-sm text-error">{error}</p>}
+
+      <SincraButton type="submit" variant="primary" disabled={!data.businessName || isSubmitting}>
+        {isSubmitting ? 'Creando tu cuenta...' : 'Siguiente →'}
       </SincraButton>
     </form>
   )
