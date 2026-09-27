@@ -8,6 +8,7 @@ import OnboardingPage from '@/pages/OnboardingPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
+import { SelectBusinessPage } from '@/pages/SelectBusinessPage'
 import { InboxPage } from '@/pages/InboxPage'
 import { ClientsPage } from '@/pages/ClientsPage'
 import { OrdersPage } from '@/pages/OrdersPage'
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
 
       // Auth — simple, no side panel
       { path: '/verify-email', element: <VerifyEmailPage /> },
+      { path: '/select-business', element: <SelectBusinessPage /> },
 
       // Protected app: requires a session, sidebar + header
       {
