@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
@@ -21,45 +21,39 @@ function renderWithAuth(authValue: AuthContextValue) {
 }
 
 describe('ProtectedRoute', () => {
-  // Given a logged-in user
-  // When they navigate to a protected route
-  // Then the protected content should be shown
   it('renders the protected content when there is a user', () => {
     renderWithAuth({
       user: { id: '1', name: 'Laura', email: 'laura@tiendadelaura.com', role: 'admin' },
+      business: null,
       isAuthenticated: true,
       loading: false,
-      login: () => {},
-      logout: () => {},
+      login: vi.fn().mockResolvedValue(undefined),
+      logout: vi.fn().mockResolvedValue(undefined),
     })
     expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
   })
 
-  // Given no logged-in user
-  // When they navigate to a protected route
-  // Then they should be redirected to the login page
   it('redirects to /login when there is no user', () => {
     renderWithAuth({
       user: null,
+      business: null,
       isAuthenticated: false,
       loading: false,
-      login: () => {},
-      logout: () => {},
+      login: vi.fn().mockResolvedValue(undefined),
+      logout: vi.fn().mockResolvedValue(undefined),
     })
     expect(screen.getByText('Página de login')).toBeInTheDocument()
     expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument()
   })
 
-  // Given the auth state is still being determined
-  // When the user navigates to a protected route
-  // Then a loading indicator should be shown instead of content or a redirect
   it('shows a loading state while auth is being determined', () => {
     renderWithAuth({
       user: null,
+      business: null,
       isAuthenticated: false,
       loading: true,
-      login: () => {},
-      logout: () => {},
+      login: vi.fn().mockResolvedValue(undefined),
+      logout: vi.fn().mockResolvedValue(undefined),
     })
     expect(screen.getByText('Cargando...')).toBeInTheDocument()
   })

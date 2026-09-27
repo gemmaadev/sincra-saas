@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Building2 } from 'lucide-react'
 import { api, ApiError } from '@/shared/services'
+import type { SuccessResponse } from '@/shared/types'
 import { SECTOR_OPTIONS } from '@/features/onboarding/onboarding.constants'
 import { ExitHeader } from '@/shared/components/exit-header/ExitHeader'
 import { Card } from '@/shared/components/card'
@@ -49,7 +50,7 @@ export function SelectBusinessPage() {
     setError(null)
     setSelectingId(businessId)
     try {
-      await api.post('/auth/select-business', { businessId })
+      await api.post<SuccessResponse>('/auth/select-business', { businessId })
       navigate('/inbox')
     } catch (err) {
       setError(

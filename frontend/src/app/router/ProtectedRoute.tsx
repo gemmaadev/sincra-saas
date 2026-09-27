@@ -1,14 +1,14 @@
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { Navigate, Outlet } from 'react-router'
- 
+
 export function ProtectedRoute() {
-  const { user, loading } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
 
   if (loading) {
     return <p className="p-6 text-ink-muted">Cargando...</p>
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
