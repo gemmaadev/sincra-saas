@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { login, getMyBusinesses, selectBusiness } from './auth.controller'
+import { login, register, getMyBusinesses, selectBusiness, me } from './auth.controller'
 import * as authService from './auth.service'
 import { AppError } from '../../shared/AppError'
+
+function createMockRequest(overrides: Record<string, unknown> = {}): Request {
+  return overrides as unknown as Request
+}
 
 function createMockResponse() {
   const res = {} as Response
@@ -28,7 +32,7 @@ describe('login', () => {
     } as never)
     vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
 
-    const req = { body: { email: 'laura@test.com', password: '1234' } } as Request
+    const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
 
     await login(req, res, vi.fn() as NextFunction)
@@ -51,7 +55,7 @@ describe('login', () => {
     } as never)
     vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
 
-    const req = { body: { email: 'laura@test.com', password: '1234' } } as Request
+    const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
 
     await login(req, res, vi.fn() as NextFunction)
@@ -65,7 +69,7 @@ describe('login', () => {
   it('throws a 401 AppError when the email does not exist', async () => {
     vi.spyOn(authService, 'findUserWithBusinesses').mockResolvedValue(null)
 
-    const req = { body: { email: 'no-existe@test.com', password: '1234' } } as Request
+    const req = createMockRequest({ body: { email: 'no-existe@test.com', password: '1234' } })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -85,7 +89,7 @@ describe('login', () => {
     } as never)
     vi.spyOn(authService, 'comparePassword').mockResolvedValue(false)
 
-    const req = { body: { email: 'laura@test.com', password: 'incorrecta' } } as Request
+    const req = createMockRequest({ body: { email: 'laura@test.com', password: 'incorrecta' } })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -105,7 +109,7 @@ describe('login', () => {
     } as never)
     vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
 
-    const req = { body: { email: 'laura@test.com', password: '1234' } } as Request
+    const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -126,13 +130,118 @@ describe('login', () => {
       memberships: [],
     } as never)
 
-    const req = { body: { email: 'laura@test.com', password: '1234' } } as Request
+    const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
     const next = vi.fn()
 
     await login(req, res, next as NextFunction)
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('register', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const validBody = {
+    name: 'Laura',
+    email: 'laura@test.com',
+    password: 'password123',
+    businessName: 'Tienda de Laura',
+  }
+
+  // Given valid registration data for an email that isn't taken yet
+  // When registering a new business owner
+  // Then it should create the account and set a full session cookie
+  it('registers successfully and sets a session cookie', async () => {
+    vi.spyOn(authService, 'findUserByEmail').mockResolvedValue(null)
+    vi.spyOn(authService, 'registerBusinessOwner').mockResolvedValue({
+      user: { id: 'user-1' },
+      business: { id: 'biz-1' },
+      membership: { role: 'ADMIN' },
+    } as never)
+
+    const req = createMockRequest({ body: validBody })
+    const res = createMockResponse()
+
+    await register(req, res, vi.fn() as NextFunction)
+
+    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given a request missing a required field
+  // When trying to register
+  // Then it should throw a 400 AppError without ever touching the database
+  it('throws a 400 AppError when a required field is missing', async () => {
+    const findUserByEmailSpy = vi.spyOn(authService, 'findUserByEmail')
+
+    const req = createMockRequest({ body: { ...validBody, businessName: '' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await register(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FIELDS')
+    expect(findUserByEmailSpy).not.toHaveBeenCalled()
+  })
+
+  // Given an email without a valid format
+  // When trying to register
+  // Then it should throw a 400 AppError with the INVALID_EMAIL code
+  it('throws a 400 AppError when the email format is invalid', async () => {
+    const req = createMockRequest({ body: { ...validBody, email: 'no-es-un-email' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await register(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('INVALID_EMAIL')
+  })
+
+  // Given a password shorter than 8 characters
+  // When trying to register
+  // Then it should throw a 400 AppError with the INVALID_PASSWORD code
+  it('throws a 400 AppError when the password is too short', async () => {
+    const req = createMockRequest({ body: { ...validBody, password: '1234' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await register(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('INVALID_PASSWORD')
+  })
+
+  // Given an email that already belongs to an existing account
+  // When trying to register
+  // Then it should throw a 409 AppError without creating anything
+  it('throws a 409 AppError when the email is already taken', async () => {
+    vi.spyOn(authService, 'findUserByEmail').mockResolvedValue({ id: 'user-existente' } as never)
+    const registerBusinessOwnerSpy = vi.spyOn(authService, 'registerBusinessOwner')
+
+    const req = createMockRequest({ body: validBody })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await register(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(409)
+    expect(calledError.code).toBe('EMAIL_TAKEN')
+    expect(registerBusinessOwnerSpy).not.toHaveBeenCalled()
   })
 })
 
@@ -145,7 +254,7 @@ describe('getMyBusinesses', () => {
       { businessId: 'biz-1', name: 'Tienda', sector: null, role: 'ADMIN' },
     ] as never)
 
-    const req = { userId: 'user-1' } as Request
+    const req = createMockRequest({ userId: 'user-1' })
     const res = createMockResponse()
 
     await getMyBusinesses(req, res, vi.fn() as NextFunction)
@@ -170,10 +279,10 @@ describe('selectBusiness', () => {
       role: 'ADMIN',
     } as never)
 
-    const req = {
+    const req = createMockRequest({
       body: { businessId: 'biz-1' },
       cookies: { token: pendingToken },
-    } as unknown as Request
+    })
     const res = createMockResponse()
 
     await selectBusiness(req, res, vi.fn() as NextFunction)
@@ -191,10 +300,10 @@ describe('selectBusiness', () => {
 
     vi.spyOn(authService, 'findMembership').mockResolvedValue(null)
 
-    const req = {
+    const req = createMockRequest({
       body: { businessId: 'biz-ajeno' },
       cookies: { token: pendingToken },
-    } as unknown as Request
+    })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -207,7 +316,7 @@ describe('selectBusiness', () => {
   // When trying to select a business
   // Then it should throw a 401 AppError
   it('throws a 401 AppError when there is no pending token cookie', async () => {
-    const req = { body: { businessId: 'biz-1' }, cookies: {} } as unknown as Request
+    const req = createMockRequest({ body: { businessId: 'biz-1' }, cookies: {} })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -220,15 +329,62 @@ describe('selectBusiness', () => {
   // When trying to select a business
   // Then it should throw a 401 AppError
   it('throws a 401 AppError when the pending token is invalid', async () => {
-    const req = {
+    const req = createMockRequest({
       body: { businessId: 'biz-1' },
       cookies: { token: 'token-falso-no-valido' },
-    } as unknown as Request
+    })
     const res = createMockResponse()
     const next = vi.fn()
 
     await selectBusiness(req, res, next as NextFunction)
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('me', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a request that already carries a valid session (userId/businessId
+  // injected by verifyAuth after decoding the cookie) and an active membership
+  // When fetching the authenticated user
+  // Then it should return the user, business and role
+  it('returns the authenticated user when the session is valid', async () => {
+    vi.spyOn(authService, 'findActiveMembershipWithDetails').mockResolvedValue({
+      role: 'ADMIN',
+      user: { id: 'user-1', name: 'Laura', email: 'laura@test.com' },
+      business: { id: 'biz-1', name: 'Tienda de Laura' },
+    } as never)
+
+    const req = createMockRequest({ userId: 'user-1', businessId: 'biz-1' })
+    const res = createMockResponse()
+
+    await me(req, res, vi.fn() as NextFunction)
+
+    expect(res.json).toHaveBeenCalledWith({
+      user: { id: 'user-1', name: 'Laura', email: 'laura@test.com' },
+      business: { id: 'biz-1', name: 'Tienda de Laura' },
+      role: 'ADMIN',
+    })
+  })
+
+  // Given a request with no valid session (no cookie was ever decoded into
+  // req.userId/businessId, or the membership behind it no longer exists)
+  // When fetching the authenticated user
+  // Then it should throw a 401 AppError instead of returning any data
+  it('throws a 401 AppError when there is no valid session', async () => {
+    vi.spyOn(authService, 'findActiveMembershipWithDetails').mockResolvedValue(null)
+
+    const req = createMockRequest()
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await me(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(401)
   })
 })
