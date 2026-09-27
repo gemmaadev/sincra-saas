@@ -7,9 +7,12 @@ import {
   findUserWithBusinesses,
   findUserByEmail,
   findMembership,
+  findActiveMembershipWithDetails,
   comparePassword,
   registerBusinessOwner,
 } from './auth.service'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 interface LoginBody {
   email: string
@@ -79,6 +82,14 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
   }
 
+  if (!EMAIL_REGEX.test(email)) {
+    throw new AppError('El email no tiene un formato válido', 400, 'INVALID_EMAIL')
+  }
+
+  if (password.length < 8) {
+    throw new AppError('La contraseña debe tener al menos 8 caracteres', 400, 'INVALID_PASSWORD')
+  }
+
   const existingUser = await findUserByEmail(email)
   if (existingUser) {
     throw new AppError('Ya existe una cuenta con este email', 409, 'EMAIL_TAKEN')
@@ -143,4 +154,30 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
 
   res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
   res.json({ success: true })
+})
+
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  res.clearCookie('token')
+  res.json({ success: true })
+})
+
+export const me = asyncHandler(async (req: Request, res: Response) => {
+  const membership = await findActiveMembershipWithDetails(req.userId!, req.businessId!)
+
+  if (!membership) {
+    throw new AppError('Tu sesión ya no es válida', 401, 'UNAUTHORIZED')
+  }
+
+  res.json({
+    user: {
+      id: membership.user.id,
+      name: membership.user.name,
+      email: membership.user.email,
+    },
+    business: {
+      id: membership.business.id,
+      name: membership.business.name,
+    },
+    role: membership.role,
+  })
 })

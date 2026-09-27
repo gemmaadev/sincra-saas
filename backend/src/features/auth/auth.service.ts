@@ -91,3 +91,10 @@ export async function registerBusinessOwner(input: RegisterInput) {
     return { user, business, membership }
   })
 }
+
+export async function findActiveMembershipWithDetails(userId: string, businessId: string) {
+  return prisma.businessMember.findUnique({
+    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
+    include: { user: true, business: true },
+  })
+}
