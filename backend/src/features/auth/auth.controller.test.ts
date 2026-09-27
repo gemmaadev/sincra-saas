@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { login, register, getMyBusinesses, selectBusiness, me } from './auth.controller'
+import {
+  login,
+  register,
+  getMyBusinesses,
+  selectBusiness,
+  me,
+  loginWithGoogle,
+  loginWithMicrosoft,
+  completeOnboarding,
+} from './auth.controller'
 import * as authService from './auth.service'
 import { AppError } from '../../shared/AppError'
 
@@ -386,5 +395,244 @@ describe('me', () => {
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.statusCode).toBe(401)
+  })
+})
+
+describe('loginWithGoogle', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid Google idToken for a brand new user
+  // When they log in with Google for the first time
+  // Then a pending token should be set and needsOnboarding should be true
+  it('flags needsOnboarding when the Google user has no business yet', async () => {
+    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+      email: 'nuevo@test.com',
+      name: 'Nuevo Usuario',
+      googleId: 'google-123',
+    } as never)
+    vi.spyOn(authService, 'findOrCreateSocialUser').mockResolvedValue({
+      id: 'user-1',
+      memberships: [],
+    } as never)
+
+    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const res = createMockResponse()
+
+    await loginWithGoogle(req, res, vi.fn() as NextFunction)
+
+    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ needsOnboarding: true, needsBusinessSelection: false }),
+    )
+  })
+
+  // Given a Google user who already belongs to exactly one business
+  // When they log in with Google
+  // Then a full session cookie should be set, with no onboarding or business selection needed
+  it('logs in directly when the Google user belongs to one business', async () => {
+    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+      email: 'laura@test.com',
+      name: 'Laura',
+      googleId: 'google-456',
+    } as never)
+    vi.spyOn(authService, 'findOrCreateSocialUser').mockResolvedValue({
+      id: 'user-2',
+      memberships: [{ businessId: 'biz-1', role: 'ADMIN', business: { name: 'Tienda' } }],
+    } as never)
+
+    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const res = createMockResponse()
+
+    await loginWithGoogle(req, res, vi.fn() as NextFunction)
+
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ needsOnboarding: false, needsBusinessSelection: false }),
+    )
+  })
+
+  // Given a Google user who belongs to more than one business
+  // When they log in with Google
+  // Then the response should list their businesses for selection
+  it('returns the business list when the Google user belongs to several businesses', async () => {
+    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+      email: 'laura@test.com',
+      name: 'Laura',
+      googleId: 'google-456',
+    } as never)
+    vi.spyOn(authService, 'findOrCreateSocialUser').mockResolvedValue({
+      id: 'user-2',
+      memberships: [
+        { businessId: 'biz-1', role: 'ADMIN', business: { name: 'Tienda A' } },
+        { businessId: 'biz-2', role: 'EMPLOYEE', business: { name: 'Tienda B' } },
+      ],
+    } as never)
+
+    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const res = createMockResponse()
+
+    await loginWithGoogle(req, res, vi.fn() as NextFunction)
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ needsBusinessSelection: true }))
+  })
+
+  // Given a request with no idToken at all
+  // When trying to log in with Google
+  // Then it should throw a 400 AppError
+  it('throws a 400 AppError when idToken is missing', async () => {
+    const req = createMockRequest({ body: {} })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await loginWithGoogle(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+
+  // Given an idToken that Google's verification rejects
+  // When trying to log in with Google
+  // Then it should throw a 401 AppError, without leaking the underlying verification error
+  it('throws a 401 AppError when the Google token cannot be verified', async () => {
+    vi.spyOn(authService, 'verifyGoogleToken').mockRejectedValue(new Error('invalid token'))
+
+    const req = createMockRequest({ body: { idToken: 'bad-token' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await loginWithGoogle(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('loginWithMicrosoft', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid Microsoft idToken for a brand new user
+  // When they log in with Microsoft for the first time
+  // Then a pending token should be set and needsOnboarding should be true
+  it('flags needsOnboarding when the Microsoft user has no business yet', async () => {
+    vi.spyOn(authService, 'verifyMicrosoftToken').mockResolvedValue({
+      email: 'nuevo@outlook.com',
+      name: 'Nuevo Usuario',
+      microsoftId: 'ms-123',
+    } as never)
+    vi.spyOn(authService, 'findOrCreateSocialUser').mockResolvedValue({
+      id: 'user-3',
+      memberships: [],
+    } as never)
+
+    const req = createMockRequest({ body: { idToken: 'valid-ms-token' } })
+    const res = createMockResponse()
+
+    await loginWithMicrosoft(req, res, vi.fn() as NextFunction)
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ needsOnboarding: true }))
+  })
+
+  // Given a request with no idToken at all
+  // When trying to log in with Microsoft
+  // Then it should throw a 400 AppError
+  it('throws a 400 AppError when idToken is missing', async () => {
+    const req = createMockRequest({ body: {} })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await loginWithMicrosoft(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+
+  // Given an idToken that Microsoft's JWKS verification rejects
+  // When trying to log in with Microsoft
+  // Then it should throw a 401 AppError
+  it('throws a 401 AppError when the Microsoft token cannot be verified', async () => {
+    vi.spyOn(authService, 'verifyMicrosoftToken').mockRejectedValue(new Error('bad signature'))
+
+    const req = createMockRequest({ body: { idToken: 'bad-token' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await loginWithMicrosoft(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('completeOnboarding', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid pending token from a social login with no business yet
+  // When the user completes onboarding with a business name
+  // Then a full session cookie should be set
+  it('creates the business and sets a full session cookie', async () => {
+    const { signPendingToken } = await import('../../shared/jwt')
+    const pendingToken = signPendingToken({ userId: 'user-1', pending: true })
+
+    vi.spyOn(authService, 'completeOnboardingForUser').mockResolvedValue({
+      business: { id: 'biz-new' },
+      membership: { role: 'ADMIN' },
+    } as never)
+
+    const req = createMockRequest({
+      body: { businessName: 'Mi Negocio Nuevo' },
+      cookies: { token: pendingToken },
+    })
+    const res = createMockResponse()
+
+    await completeOnboarding(req, res, vi.fn() as NextFunction)
+
+    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given no pending token cookie at all
+  // When trying to complete onboarding
+  // Then it should throw a 401 AppError
+  it('throws a 401 AppError when there is no pending token cookie', async () => {
+    const req = createMockRequest({ body: { businessName: 'Mi Negocio' }, cookies: {} })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await completeOnboarding(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+
+  // Given an invalid or expired pending token
+  // When trying to complete onboarding
+  // Then it should throw a 401 AppError
+  it('throws a 401 AppError when the pending token is invalid', async () => {
+    const req = createMockRequest({
+      body: { businessName: 'Mi Negocio' },
+      cookies: { token: 'token-falso-no-valido' },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await completeOnboarding(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+
+  // Given a valid pending token but no businessName in the body
+  // When trying to complete onboarding
+  // Then it should throw a 400 AppError
+  it('throws a 400 AppError when businessName is missing', async () => {
+    const { signPendingToken } = await import('../../shared/jwt')
+    const pendingToken = signPendingToken({ userId: 'user-1', pending: true })
+
+    const req = createMockRequest({ body: {}, cookies: { token: pendingToken } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await completeOnboarding(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
   })
 })

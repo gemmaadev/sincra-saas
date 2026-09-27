@@ -10,6 +10,10 @@ import {
   findActiveMembershipWithDetails,
   comparePassword,
   registerBusinessOwner,
+  verifyGoogleToken,
+  verifyMicrosoftToken,
+  findOrCreateSocialUser,
+  completeOnboardingForUser,
 } from './auth.service'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -180,4 +184,128 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
     },
     role: membership.role,
   })
+})
+
+// --- Login social ---
+
+async function handleSocialLogin(
+  res: Response,
+  profile: { email: string; name: string; googleId?: string; microsoftId?: string },
+) {
+  const user = await findOrCreateSocialUser(profile)
+
+  if (user.memberships.length === 0) {
+    const pendingToken = signPendingToken({ userId: user.id, pending: true })
+    res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
+    res.json({ needsOnboarding: true, needsBusinessSelection: false })
+    return
+  }
+
+  if (user.memberships.length === 1) {
+    const membership = user.memberships[0]
+    const token = signToken({
+      userId: user.id,
+      businessId: membership.businessId,
+      role: membership.role,
+    })
+    res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+    res.json({ needsOnboarding: false, needsBusinessSelection: false })
+    return
+  }
+
+  const pendingToken = signPendingToken({ userId: user.id, pending: true })
+  res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
+  res.json({
+    needsOnboarding: false,
+    needsBusinessSelection: true,
+    businesses: user.memberships.map((m) => ({
+      businessId: m.businessId,
+      name: m.business.name,
+      role: m.role,
+    })),
+  })
+}
+
+interface SocialLoginBody {
+  idToken: string
+}
+
+export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken } = req.body as SocialLoginBody
+
+  if (!idToken) {
+    throw new AppError('Falta el token de Google', 400, 'MISSING_TOKEN')
+  }
+
+  let profile
+  try {
+    profile = await verifyGoogleToken(idToken)
+  } catch {
+    throw new AppError('No se pudo verificar el token de Google', 401, 'INVALID_TOKEN')
+  }
+
+  await handleSocialLogin(res, profile)
+})
+
+export const loginWithMicrosoft = asyncHandler(async (req: Request, res: Response) => {
+  const { idToken } = req.body as SocialLoginBody
+
+  if (!idToken) {
+    throw new AppError('Falta el token de Microsoft', 400, 'MISSING_TOKEN')
+  }
+
+  let profile
+  try {
+    profile = await verifyMicrosoftToken(idToken)
+  } catch {
+    throw new AppError('No se pudo verificar el token de Microsoft', 401, 'INVALID_TOKEN')
+  }
+
+  await handleSocialLogin(res, profile)
+})
+
+// --- Onboarding tras login social sin negocio ---
+
+interface OnboardingBody {
+  businessName: string
+  sector?: string
+  description?: string
+  country?: string
+}
+
+export const completeOnboarding = asyncHandler(async (req: Request, res: Response) => {
+  const { businessName, sector, description, country } = req.body as OnboardingBody
+  const pendingToken = req.cookies?.token
+
+  if (!pendingToken) {
+    throw new AppError('No has iniciado sesión', 401, 'UNAUTHORIZED')
+  }
+
+  let userId: string
+  try {
+    const payload = verifyPendingToken(pendingToken)
+    userId = payload.userId
+  } catch {
+    throw new AppError('Sesión no válida o expirada', 401, 'UNAUTHORIZED')
+  }
+
+  if (!businessName) {
+    throw new AppError('Falta el nombre del negocio', 400, 'MISSING_FIELDS')
+  }
+
+  const { business, membership } = await completeOnboardingForUser(userId, {
+    businessName,
+    sector,
+    description,
+    country,
+  })
+
+  const token = signToken({
+    userId,
+    businessId: business.id,
+    role: membership.role,
+  })
+
+  res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+  res.json({ success: true })
 })
