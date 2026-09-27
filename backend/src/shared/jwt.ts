@@ -27,10 +27,37 @@ export function signPendingToken(payload: PendingTokenPayload): string {
   return jwt.sign(payload, secret, { expiresIn: '10m' })
 }
 
+function isTokenPayload(payload: unknown): payload is TokenPayload {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    typeof (payload as TokenPayload).userId === 'string' &&
+    typeof (payload as TokenPayload).businessId === 'string' &&
+    ((payload as TokenPayload).role === 'ADMIN' || (payload as TokenPayload).role === 'EMPLOYEE')
+  )
+}
+
+function isPendingTokenPayload(payload: unknown): payload is PendingTokenPayload {
+  return (
+    typeof payload === 'object' &&
+    payload !== null &&
+    typeof (payload as PendingTokenPayload).userId === 'string' &&
+    (payload as PendingTokenPayload).pending === true
+  )
+}
+
 export function verifyToken(token: string): TokenPayload {
-  return jwt.verify(token, secret) as TokenPayload
+  const decoded = jwt.verify(token, secret)
+  if (!isTokenPayload(decoded)) {
+    throw new Error('Token inválido: no es una sesión completa')
+  }
+  return decoded
 }
 
 export function verifyPendingToken(token: string): PendingTokenPayload {
-  return jwt.verify(token, secret) as PendingTokenPayload
+  const decoded = jwt.verify(token, secret)
+  if (!isPendingTokenPayload(decoded)) {
+    throw new Error('Token inválido: no es un token pendiente')
+  }
+  return decoded
 }
