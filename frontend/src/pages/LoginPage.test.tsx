@@ -21,6 +21,16 @@ vi.mock('@/shared/services', () => {
   }
 })
 
+const mockNavigate = vi.fn()
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 function renderLoginPage() {
   return render(
     <MemoryRouter>
@@ -35,6 +45,7 @@ describe('LoginPage', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset()
     vi.mocked(api.post).mockReset()
+    mockNavigate.mockReset()
     vi.mocked(api.get).mockRejectedValue(new ApiError('No autenticado', 401, 'UNAUTHORIZED'))
   })
 
@@ -114,6 +125,46 @@ describe('LoginPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Email o contraseña incorrectos')).toBeInTheDocument()
+    })
+  })
+
+  // Given a user who belongs to more than one business
+  // When they log in with correct credentials
+  // Then they should be navigated to /select-business instead of /inbox
+  it('navigates to /select-business when the user has several businesses', async () => {
+    vi.mocked(api.post).mockResolvedValue({ needsBusinessSelection: true })
+    renderLoginPage()
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'laura@tienda.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Contraseña'), {
+      target: { value: 'contraseña123' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/select-business')
+    })
+  })
+
+  // Given the backend is unreachable (a network failure, not a response from the server)
+  // When trying to log in
+  // Then a generic Spanish error message should be shown, not a raw network error
+  it('shows a generic error message on a network failure', async () => {
+    vi.mocked(api.post).mockRejectedValue(new TypeError('Failed to fetch'))
+    renderLoginPage()
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'laura@tienda.com' },
+    })
+    fireEvent.change(screen.getByLabelText('Contraseña'), {
+      target: { value: 'contraseña123' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('No se pudo iniciar sesión. Inténtalo de nuevo.')).toBeInTheDocument()
     })
   })
 })
