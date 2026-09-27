@@ -6,7 +6,7 @@ import { Input, PasswordInput } from '@/shared/components/input'
 import { MicrosoftIcon } from '@/shared/components/icon/OAuthIcons'
 import { FcGoogle } from 'react-icons/fc'
 import { SincraLogo } from '@/shared/components/logo'
-import { useState } from 'react'
+import { useLogin } from '@/features/auth/hooks/useLogin'
 
 interface LoginFormData {
   email: string
@@ -15,7 +15,7 @@ interface LoginFormData {
 }
 
 export default function LoginPage() {
-  const [loginError] = useState(false)
+  const { submitLogin, isSubmitting, error } = useLogin()
 
   const {
     register,
@@ -24,8 +24,7 @@ export default function LoginPage() {
   } = useForm<LoginFormData>()
 
   const onSubmit = (data: LoginFormData) => {
-    console.log('Datos del formulario:', data)
-    // real backend call
+    submitLogin({ email: data.email, password: data.password })
   }
 
   return (
@@ -46,11 +45,7 @@ export default function LoginPage() {
           <p className="text-ink-muted">Accede a tu cuenta de Sincra</p>
         </div>
 
-        {loginError && (
-          <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">
-            Email o contraseña incorrectos. Inténtalo de nuevo.
-          </p>
-        )}
+        {error && <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{error}</p>}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <Input
@@ -84,8 +79,8 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <SincraButton type="submit" variant="primary">
-            Entrar
+          <SincraButton type="submit" variant="primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
           </SincraButton>
         </form>
 
