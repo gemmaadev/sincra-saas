@@ -7,12 +7,18 @@ export interface User {
   role: 'admin' | 'employee'
 }
 
+export interface Business {
+  id: string
+  name: string
+}
+
 export interface AuthContextValue {
   user: User | null
+  business: Business | null
   isAuthenticated: boolean
   loading: boolean
-  login: () => void
-  logout: () => void
+  login: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)
