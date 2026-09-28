@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt'
 import prisma from '../../config/db'
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
-import jwksClient from 'jwks-rsa'
 
 const SALT_ROUNDS = 10
 
@@ -124,40 +123,39 @@ export async function verifyGoogleToken(idToken: string) {
   }
 }
 
-const msJwks = jwksClient({
-  jwksUri: 'https://login.microsoftonline.com/common/discovery/v2.0/keys',
-})
-
-function getMicrosoftSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
-  msJwks.getSigningKey(header.kid, (err, key) => {
-    if (err || !key) return callback(err)
-    callback(null, key.getPublicKey())
-  })
+interface MicrosoftTokenResponse {
+  id_token: string
 }
 
-export async function verifyMicrosoftToken(idToken: string) {
-  const decoded = await new Promise<jwt.JwtPayload>((resolve, reject) => {
-    jwt.verify(
-      idToken,
-      getMicrosoftSigningKey,
-      { audience: process.env.MICROSOFT_CLIENT_ID },
-      (err, payload) => {
-        if (err || !payload || typeof payload === 'string')
-          return reject(err ?? new Error('Token inválido'))
-        resolve(payload)
-      },
-    )
+export async function exchangeMicrosoftCode(code: string) {
+  const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: process.env.MICROSOFT_CLIENT_ID!,
+      client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
+      code,
+      redirect_uri: process.env.MICROSOFT_REDIRECT_URI!,
+      grant_type: 'authorization_code',
+    }),
   })
 
-  const email = (decoded.email ?? decoded.preferred_username) as string | undefined
+  if (!response.ok) {
+    throw new Error('No se pudo intercambiar el código de Microsoft')
+  }
+
+  const { id_token: idToken } = (await response.json()) as MicrosoftTokenResponse
+  const decoded = jwt.decode(idToken) as jwt.JwtPayload | null
+
+  const email = (decoded?.email ?? decoded?.preferred_username) as string | undefined
   if (!email) {
     throw new Error('Token de Microsoft inválido: sin email')
   }
 
   return {
     email,
-    name: (decoded.name as string) ?? email,
-    microsoftId: decoded.sub as string,
+    name: (decoded?.name as string) ?? email,
+    microsoftId: decoded?.sub as string,
   }
 }
 

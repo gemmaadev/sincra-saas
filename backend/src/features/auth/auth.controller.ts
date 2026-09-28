@@ -11,7 +11,7 @@ import {
   comparePassword,
   registerBusinessOwner,
   verifyGoogleToken,
-  verifyMicrosoftToken,
+  exchangeMicrosoftCode,
   findOrCreateSocialUser,
   completeOnboardingForUser,
 } from './auth.service'
@@ -186,19 +186,24 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
   })
 })
 
-// --- Login social ---
+//Social login
 
-async function handleSocialLogin(
+interface SocialLoginResult {
+  needsOnboarding: boolean
+  needsBusinessSelection: boolean
+  businesses?: { businessId: string; name: string; role: string }[]
+}
+
+async function resolveSocialLogin(
   res: Response,
   profile: { email: string; name: string; googleId?: string; microsoftId?: string },
-) {
+): Promise<SocialLoginResult> {
   const user = await findOrCreateSocialUser(profile)
 
   if (user.memberships.length === 0) {
     const pendingToken = signPendingToken({ userId: user.id, pending: true })
     res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
-    res.json({ needsOnboarding: true, needsBusinessSelection: false })
-    return
+    return { needsOnboarding: true, needsBusinessSelection: false }
   }
 
   if (user.memberships.length === 1) {
@@ -209,13 +214,12 @@ async function handleSocialLogin(
       role: membership.role,
     })
     res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
-    res.json({ needsOnboarding: false, needsBusinessSelection: false })
-    return
+    return { needsOnboarding: false, needsBusinessSelection: false }
   }
 
   const pendingToken = signPendingToken({ userId: user.id, pending: true })
   res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
-  res.json({
+  return {
     needsOnboarding: false,
     needsBusinessSelection: true,
     businesses: user.memberships.map((m) => ({
@@ -223,7 +227,21 @@ async function handleSocialLogin(
       name: m.business.name,
       role: m.role,
     })),
-  })
+  }
+}
+
+async function handleSocialLogin(
+  res: Response,
+  profile: { email: string; name: string; googleId?: string; microsoftId?: string },
+) {
+  const result = await resolveSocialLogin(res, profile)
+  res.json(result)
+}
+
+function socialLoginRedirectPath(result: SocialLoginResult): string {
+  if (result.needsOnboarding) return '/onboarding'
+  if (result.needsBusinessSelection) return '/select-business'
+  return '/inbox'
 }
 
 interface SocialLoginBody {
@@ -247,24 +265,7 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) 
   await handleSocialLogin(res, profile)
 })
 
-export const loginWithMicrosoft = asyncHandler(async (req: Request, res: Response) => {
-  const { idToken } = req.body as SocialLoginBody
-
-  if (!idToken) {
-    throw new AppError('Falta el token de Microsoft', 400, 'MISSING_TOKEN')
-  }
-
-  let profile
-  try {
-    profile = await verifyMicrosoftToken(idToken)
-  } catch {
-    throw new AppError('No se pudo verificar el token de Microsoft', 401, 'INVALID_TOKEN')
-  }
-
-  await handleSocialLogin(res, profile)
-})
-
-// --- Onboarding tras login social sin negocio ---
+//Onboarding after social login without business
 
 interface OnboardingBody {
   businessName: string
@@ -308,4 +309,51 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
 
   res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
   res.json({ success: true })
+})
+
+// Login with Microsoft via redirect (BFF: backend communicates with Microsoft, not the browser)
+
+export const startMicrosoftAuth = asyncHandler(async (req: Request, res: Response) => {
+  const params = new URLSearchParams({
+    client_id: process.env.MICROSOFT_CLIENT_ID!,
+    response_type: 'code',
+    redirect_uri: process.env.MICROSOFT_REDIRECT_URI!,
+    response_mode: 'query',
+    scope: 'openid profile email',
+  })
+
+  res.redirect(
+    `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`,
+  )
+})
+
+export const microsoftCallback = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    code,
+    error,
+    error_description: errorDescription,
+  } = req.query as {
+    code?: string
+    error?: string
+    error_description?: string
+  }
+
+  if (!code) {
+    console.error('Microsoft no devolvió código de autorización:', { error, errorDescription })
+    throw new AppError('Falta el código de autorización de Microsoft', 400, 'MISSING_CODE')
+  }
+
+  let profile
+  try {
+    profile = await exchangeMicrosoftCode(code)
+  } catch {
+    throw new AppError(
+      'No se pudo verificar el inicio de sesión con Microsoft',
+      401,
+      'INVALID_TOKEN',
+    )
+  }
+
+  const result = await resolveSocialLogin(res, profile)
+  res.redirect(`${process.env.FRONTEND_URL}${socialLoginRedirectPath(result)}`)
 })

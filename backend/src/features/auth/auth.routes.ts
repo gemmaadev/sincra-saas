@@ -7,8 +7,9 @@ import {
   logout,
   me,
   loginWithGoogle,
-  loginWithMicrosoft,
   completeOnboarding,
+  startMicrosoftAuth,
+  microsoftCallback,
 } from './auth.controller'
 import { verifyAuth } from '../../middleware/verifyAuth'
 
@@ -22,7 +23,8 @@ router.get('/users/me/businesses', verifyAuth, getMyBusinesses)
 router.post('/auth/select-business', selectBusiness)
 
 router.post('/auth/google', loginWithGoogle)
-router.post('/auth/microsoft', loginWithMicrosoft)
+router.get('/auth/microsoft/start', startMicrosoftAuth)
+router.get('/auth/microsoft/callback', microsoftCallback)
 router.post('/onboarding/complete', completeOnboarding)
 
 export default router
