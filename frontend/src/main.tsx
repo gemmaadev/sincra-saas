@@ -9,15 +9,18 @@ import { theme } from '@/shared/config/mantine-theme'
 import { router } from '@/app/router'
 import { ErrorBoundary } from '@/app/providers/ErrorBoundary'
 import { AuthProvider } from './features/auth/context/AuthProvider'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <AuthProvider>
-        <MantineProvider theme={theme}>
-          <RouterProvider router={router} />
-        </MantineProvider>
-      </AuthProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <AuthProvider>
+          <MantineProvider theme={theme}>
+            <RouterProvider router={router} />
+          </MantineProvider>
+        </AuthProvider>
+      </GoogleOAuthProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

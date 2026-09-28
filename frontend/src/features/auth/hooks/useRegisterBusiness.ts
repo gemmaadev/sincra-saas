@@ -17,20 +17,26 @@ export function useRegisterBusiness() {
 
       try {
         const credentials = getRegisterCredentials()
-        if (!credentials) {
-          setError('No encontramos tus datos de registro. Vuelve a crear la cuenta.')
-          return false
-        }
 
-        await api.post<SuccessResponse>('/auth/register', {
-          ...credentials,
+        const businessData = {
           businessName: data.businessName,
           sector: data.sector,
           description: data.description,
           country: data.country,
-        })
+        }
 
-        clearRegisterCredentials()
+        if (credentials) {
+          // Credentials flow: creates User + Business together
+          await api.post<SuccessResponse>('/auth/register', {
+            ...credentials,
+            ...businessData,
+          })
+          clearRegisterCredentials()
+        } else {
+          // Social login flow: User already exists, only Business is missing
+          await api.post<SuccessResponse>('/onboarding/complete', businessData)
+        }
+
         await login()
         return true
       } catch (error) {

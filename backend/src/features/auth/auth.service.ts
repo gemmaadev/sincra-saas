@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt'
 import prisma from '../../config/db'
+import { OAuth2Client } from 'google-auth-library'
+import jwt from 'jsonwebtoken'
 
 const SALT_ROUNDS = 10
 
@@ -96,5 +98,134 @@ export async function findActiveMembershipWithDetails(userId: string, businessId
   return prisma.businessMember.findUnique({
     where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
     include: { user: true, business: true },
+  })
+}
+
+// --- Login social (Google / Microsoft) ---
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
+export async function verifyGoogleToken(idToken: string) {
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  })
+
+  const payload = ticket.getPayload()
+  if (!payload?.email) {
+    throw new Error('Token de Google inválido')
+  }
+
+  return {
+    email: payload.email,
+    name: payload.name ?? payload.email,
+    googleId: payload.sub,
+  }
+}
+
+interface MicrosoftTokenResponse {
+  id_token: string
+}
+
+export async function exchangeMicrosoftCode(code: string) {
+  const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: process.env.MICROSOFT_CLIENT_ID!,
+      client_secret: process.env.MICROSOFT_CLIENT_SECRET!,
+      code,
+      redirect_uri: process.env.MICROSOFT_REDIRECT_URI!,
+      grant_type: 'authorization_code',
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error('No se pudo intercambiar el código de Microsoft')
+  }
+
+  const { id_token: idToken } = (await response.json()) as MicrosoftTokenResponse
+  const decoded = jwt.decode(idToken) as jwt.JwtPayload | null
+
+  const email = (decoded?.email ?? decoded?.preferred_username) as string | undefined
+  if (!email) {
+    throw new Error('Token de Microsoft inválido: sin email')
+  }
+
+  return {
+    email,
+    name: (decoded?.name as string) ?? email,
+    microsoftId: decoded?.sub as string,
+  }
+}
+
+interface SocialProfile {
+  email: string
+  name: string
+  googleId?: string
+  microsoftId?: string
+}
+
+export async function findOrCreateSocialUser(profile: SocialProfile) {
+  const existing = await prisma.user.findUnique({
+    where: { email: profile.email },
+    include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
+  })
+
+  if (existing) {
+    const updateData: Record<string, string> = {}
+    if (profile.googleId && !existing.googleId) updateData.googleId = profile.googleId
+    if (profile.microsoftId && !existing.microsoftId) updateData.microsoftId = profile.microsoftId
+
+    if (Object.keys(updateData).length > 0) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: updateData,
+        include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
+      })
+    }
+    return existing
+  }
+
+  return prisma.user.create({
+    data: {
+      email: profile.email,
+      name: profile.name,
+      googleId: profile.googleId,
+      microsoftId: profile.microsoftId,
+    },
+    include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
+  })
+}
+
+interface OnboardingInput {
+  businessName: string
+  sector?: string
+  description?: string
+  country?: string
+}
+
+export async function completeOnboardingForUser(userId: string, input: OnboardingInput) {
+  return prisma.$transaction(async (tx) => {
+    const business = await tx.business.create({
+      data: {
+        name: input.businessName,
+        sector: input.sector,
+        description: input.description,
+        country: input.country ?? 'ES',
+        createdBy: userId,
+      },
+    })
+
+    const membership = await tx.businessMember.create({
+      data: {
+        businessId: business.id,
+        userId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    })
+
+    return { business, membership }
   })
 }

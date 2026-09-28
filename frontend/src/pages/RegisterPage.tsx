@@ -5,6 +5,7 @@ import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { Input, PasswordInput } from '@/shared/components/input'
 import { saveRegisterCredentials } from '@/features/auth/utils/registerCredentials'
+import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
 
 interface RegisterFormData {
   name: string
@@ -136,6 +137,13 @@ export default function RegisterPage() {
             Continuar
           </SincraButton>
         </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-neutral-200" />
+          <span className="text-sm text-ink-muted">o continúa con</span>
+          <div className="h-px flex-1 bg-neutral-200" />
+        </div>
+        <SocialLoginButtons />
 
         <p className="text-center text-sm text-ink-muted">
           ¿Ya tienes una cuenta?{' '}

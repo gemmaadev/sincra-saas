@@ -7,10 +7,17 @@ interface PasswordInputProps {
   label?: string
   placeholder?: string
   error?: string
+  autoComplete?: string
   registration: UseFormRegisterReturn
 }
 
-export function PasswordInput({ label, placeholder, error, registration }: PasswordInputProps) {
+export function PasswordInput({
+  label,
+  placeholder,
+  error,
+  autoComplete,
+  registration,
+}: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -20,6 +27,7 @@ export function PasswordInput({ label, placeholder, error, registration }: Passw
         type={showPassword ? 'text' : 'password'}
         placeholder={placeholder}
         error={error}
+        autoComplete={autoComplete}
         className="pr-9"
         {...registration}
       />
