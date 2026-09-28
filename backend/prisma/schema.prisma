@@ -51,7 +51,8 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  memberships BusinessMember[]
+  memberships         BusinessMember[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model BusinessMember {
@@ -70,5 +71,17 @@ model BusinessMember {
 
   @@unique([businessId, userId])
   @@index([businessId])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
   @@index([userId])
 }
