@@ -22,7 +22,7 @@ export function SincraButton({
         transition-colors
         ${disabled ? buttonDisabledVariants[variant] : buttonVariants[variant]}
         ${buttonSizes[size]}
-        ${disabled ? 'cursor-not-allowed' : loading ? 'cursor-wait' : ''}
+        ${disabled ? 'cursor-not-allowed' : loading ? 'cursor-wait' : 'cursor-pointer'}
         ${className}
       `}
       {...props}

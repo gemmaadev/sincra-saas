@@ -16,12 +16,11 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
             aria-selected={tab.key === activeKey}
             aria-controls={`tabpanel-${tab.key}`}
             onClick={() => setActiveKey(tab.key)}
-            className={`
-              border-b-2 px-1 py-2 text-sm font-medium transition-colors
+            className={`border-b-2 px-1 py-2 text-sm font-medium transition-colors cursor-pointer
               ${
                 tab.key === activeKey
                   ? 'border-primary text-primary'
-                  : 'border-transparent text-ink-muted hover:text-ink'
+                  : 'border-transparent text-ink-muted hover:text-primary hover:border-primary'
               }
             `}
           >
