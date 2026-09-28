@@ -1,18 +1,50 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, it, expect } from 'vitest'
+import { GoogleOAuthProvider } from '@react-oauth/google'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RegisterPage from './RegisterPage'
+import { AuthProvider } from '@/features/auth/context/AuthProvider'
+import { api, ApiError } from '@/shared/services'
+
+vi.mock('@/shared/services', () => {
+  class ApiError extends Error {
+    status: number
+    code: string
+    constructor(message: string, status: number, code: string) {
+      super(message)
+      this.status = status
+      this.code = code
+    }
+  }
+  return {
+    api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+    ApiError,
+  }
+})
+
+function renderRegisterPage() {
+  return render(
+    <GoogleOAuthProvider clientId="test-google-client-id">
+      <MemoryRouter>
+        <AuthProvider>
+          <RegisterPage />
+        </AuthProvider>
+      </MemoryRouter>
+    </GoogleOAuthProvider>,
+  )
+}
 
 describe('RegisterPage', () => {
+  beforeEach(() => {
+    vi.mocked(api.get).mockReset()
+    vi.mocked(api.get).mockRejectedValue(new ApiError('No autenticado', 401, 'UNAUTHORIZED'))
+  })
+
   // Given the registration form
   // When submitted empty
   // Then required field errors should be shown
   it('shows validation errors when submitted empty', async () => {
-    render(
-      <MemoryRouter>
-        <RegisterPage />
-      </MemoryRouter>,
-    )
+    renderRegisterPage()
 
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
@@ -29,11 +61,7 @@ describe('RegisterPage', () => {
   // When submitted
   // Then a minimum length error should be shown
   it('shows an error when the password is too short', async () => {
-    render(
-      <MemoryRouter>
-        <RegisterPage />
-      </MemoryRouter>,
-    )
+    renderRegisterPage()
 
     fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: '1234' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -47,11 +75,7 @@ describe('RegisterPage', () => {
   // When submitted
   // Then a mismatch error should be shown
   it('shows an error when the passwords do not match', async () => {
-    render(
-      <MemoryRouter>
-        <RegisterPage />
-      </MemoryRouter>,
-    )
+    renderRegisterPage()
 
     fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'contraseña123' } })
     fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
@@ -68,11 +92,7 @@ describe('RegisterPage', () => {
   // When submitted
   // Then no validation errors should be shown
   it('shows no errors when submitted with valid data', async () => {
-    render(
-      <MemoryRouter>
-        <RegisterPage />
-      </MemoryRouter>,
-    )
+    renderRegisterPage()
 
     fireEvent.change(screen.getByLabelText('Nombre de usuario'), {
       target: { value: 'Laura' },

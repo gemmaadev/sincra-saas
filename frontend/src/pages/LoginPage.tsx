@@ -3,10 +3,9 @@ import { Link } from 'react-router'
 import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { Input, PasswordInput } from '@/shared/components/input'
-import { MicrosoftIcon } from '@/shared/components/icon/OAuthIcons'
-import { FcGoogle } from 'react-icons/fc'
 import { SincraLogo } from '@/shared/components/logo'
 import { useLogin } from '@/features/auth/hooks/useLogin'
+import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
 
 interface LoginFormData {
   email: string
@@ -90,16 +89,7 @@ export default function LoginPage() {
           <div className="h-px flex-1 bg-neutral-200" />
         </div>
 
-        <div className="flex gap-3">
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-200 py-2 text-sm font-medium">
-            <FcGoogle size={18} aria-hidden="true" />
-            Google
-          </button>
-          <button className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-200 py-2 text-sm font-medium">
-            <MicrosoftIcon size={18} />
-            Microsoft
-          </button>
-        </div>
+        <SocialLoginButtons />
 
         <p className="text-center text-sm text-ink-muted">
           ¿No tienes una cuenta?{' '}
