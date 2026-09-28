@@ -1,9 +1,10 @@
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { PasswordInput } from '@/shared/components/input'
+import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 
 interface ResetPasswordFormData {
   password: string
@@ -12,6 +13,9 @@ interface ResetPasswordFormData {
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token')
+  const { resetPassword, isSubmitting, error } = useResetPassword()
 
   const {
     register,
@@ -20,9 +24,40 @@ export function ResetPasswordPage() {
     formState: { errors },
   } = useForm<ResetPasswordFormData>()
 
-  const onSubmit = () => {
-    // TODO: llamar a POST /auth/reset-password con el token de la URL cuando exista el backend
-    navigate('/login')
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    if (!token) return
+    const success = await resetPassword(token, data.password)
+    if (success) {
+      navigate('/login')
+    }
+  }
+
+  if (!token) {
+    return (
+      <AuthLayout
+        leftPanel={
+          <div className="flex h-full flex-col justify-center gap-6 bg-primary p-12 text-white">
+            <SincraLogo size={28} variant="white" />
+            <h2 className="text-3xl font-bold">Enlace no válido</h2>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <h1 className="text-3xl font-bold text-ink">Enlace no válido</h1>
+          <p className="text-ink-muted">
+            Este enlace de recuperación no es válido. Solicita uno nuevo desde la pantalla de inicio
+            de sesión.
+          </p>
+          <SincraButton
+            type="button"
+            variant="primary"
+            onClick={() => navigate('/forgot-password')}
+          >
+            Solicitar nuevo enlace
+          </SincraButton>
+        </div>
+      </AuthLayout>
+    )
   }
 
   return (
@@ -42,6 +77,8 @@ export function ResetPasswordPage() {
           <h1 className="text-3xl font-bold text-ink">Nueva contraseña</h1>
           <p className="text-ink-muted">Introduce y confirma tu nueva contraseña.</p>
         </div>
+
+        {error && <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{error}</p>}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
           <PasswordInput
@@ -65,8 +102,8 @@ export function ResetPasswordPage() {
             })}
           />
 
-          <SincraButton type="submit" variant="primary">
-            Restablecer contraseña
+          <SincraButton type="submit" variant="primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Restableciendo...' : 'Restablecer contraseña'}
           </SincraButton>
         </form>
       </div>

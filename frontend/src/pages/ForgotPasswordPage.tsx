@@ -4,6 +4,7 @@ import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { Input } from '@/shared/components/input'
+import { useForgotPassword } from '@/features/auth/hooks/useForgotPassword'
 
 interface ForgotPasswordFormData {
   email: string
@@ -11,6 +12,7 @@ interface ForgotPasswordFormData {
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate()
+  const { requestPasswordReset, isSubmitting } = useForgotPassword()
 
   const {
     register,
@@ -18,8 +20,8 @@ export function ForgotPasswordPage() {
     formState: { errors },
   } = useForm<ForgotPasswordFormData>()
 
-  const onSubmit = (data: ForgotPasswordFormData) => {
-    // TODO: llamar a POST /auth/forgot-password cuando exista el backend
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    await requestPasswordReset(data.email)
     navigate('/verify-email', { state: { email: data.email } })
   }
 
@@ -59,8 +61,8 @@ export function ForgotPasswordPage() {
             })}
           />
 
-          <SincraButton type="submit" variant="primary">
-            Enviar enlace
+          <SincraButton type="submit" variant="primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Enviando...' : 'Enviar enlace'}
           </SincraButton>
         </form>
 
