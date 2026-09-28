@@ -2,8 +2,11 @@ import bcrypt from 'bcrypt'
 import prisma from '../../config/db'
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
+import { Resend } from 'resend'
 
 const SALT_ROUNDS = 10
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function hashPassword(plainPassword: string): Promise<string> {
   return bcrypt.hash(plainPassword, SALT_ROUNDS)
@@ -228,4 +231,67 @@ export async function completeOnboardingForUser(userId: string, input: Onboardin
 
     return { business, membership }
   })
+}
+
+// --- Password recovery ---
+
+const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
+
+export async function requestPasswordReset(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } })
+
+  // Don't reveal whether the email exists (prevents user enumeration)
+  if (!user || !user.passwordHash) {
+    return
+  }
+
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS)
+
+  await prisma.passwordResetToken.create({
+    data: { token, userId: user.id, expiresAt },
+  })
+
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
+
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to: email,
+    subject: 'Recupera tu contraseña de Sincra',
+    html: `
+      <p>Hola${user.name ? ` ${user.name}` : ''},</p>
+      <p>Has solicitado restablecer tu contraseña en Sincra. Este enlace caduca en 1 hora:</p>
+      <p><a href="${resetLink}">${resetLink}</a></p>
+      <p>Si no has sido tú, puedes ignorar este correo.</p>
+    `,
+  })
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } })
+
+  if (!resetToken) {
+    throw new Error('Token inválido')
+  }
+
+  if (resetToken.usedAt) {
+    throw new Error('Este enlace ya se ha utilizado')
+  }
+
+  if (resetToken.expiresAt < new Date()) {
+    throw new Error('Este enlace ha caducado')
+  }
+
+  const passwordHash = await hashPassword(newPassword)
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: resetToken.userId },
+      data: { passwordHash },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: resetToken.id },
+      data: { usedAt: new Date() },
+    }),
+  ])
 }

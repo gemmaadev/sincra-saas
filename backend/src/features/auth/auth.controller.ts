@@ -14,6 +14,8 @@ import {
   exchangeMicrosoftCode,
   findOrCreateSocialUser,
   completeOnboardingForUser,
+  requestPasswordReset,
+  resetPassword as resetPasswordService,
 } from './auth.service'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -356,4 +358,57 @@ export const microsoftCallback = asyncHandler(async (req: Request, res: Response
 
   const result = await resolveSocialLogin(res, profile)
   res.redirect(`${process.env.FRONTEND_URL}${socialLoginRedirectPath(result)}`)
+})
+
+// --- Password recovery ---
+
+interface ForgotPasswordBody {
+  email: string
+}
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body as ForgotPasswordBody
+
+  if (!email) {
+    throw new AppError('El email es obligatorio', 400, 'MISSING_FIELDS')
+  }
+
+  try {
+    await requestPasswordReset(email)
+  } catch (error) {
+    // Don't leak provider errors (e.g. Resend sandbox restrictions) to the client
+    console.error('Error sending password reset email:', error)
+  }
+
+  // Always respond the same way, whether or not the email exists
+  res.json({ success: true })
+})
+
+interface ResetPasswordBody {
+  token: string
+  newPassword: string
+}
+
+export const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body as ResetPasswordBody
+
+  if (!token || !newPassword) {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
+  if (newPassword.length < 8) {
+    throw new AppError('La contraseña debe tener al menos 8 caracteres', 400, 'INVALID_PASSWORD')
+  }
+
+  try {
+    await resetPasswordService(token, newPassword)
+  } catch (error) {
+    throw new AppError(
+      error instanceof Error ? error.message : 'No se pudo restablecer la contraseña',
+      400,
+      'INVALID_TOKEN',
+    )
+  }
+
+  res.json({ success: true })
 })

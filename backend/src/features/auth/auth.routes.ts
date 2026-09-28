@@ -10,6 +10,8 @@ import {
   completeOnboarding,
   startMicrosoftAuth,
   microsoftCallback,
+  forgotPassword,
+  resetPasswordHandler,
 } from './auth.controller'
 import { verifyAuth } from '../../middleware/verifyAuth'
 
@@ -26,5 +28,8 @@ router.post('/auth/google', loginWithGoogle)
 router.get('/auth/microsoft/start', startMicrosoftAuth)
 router.get('/auth/microsoft/callback', microsoftCallback)
 router.post('/onboarding/complete', completeOnboarding)
+
+router.post('/auth/forgot-password', forgotPassword)
+router.post('/auth/reset-password', resetPasswordHandler)
 
 export default router

@@ -10,6 +10,8 @@ import {
   completeOnboarding,
   startMicrosoftAuth,
   microsoftCallback,
+  forgotPassword,
+  resetPasswordHandler,
 } from './auth.controller'
 import * as authService from './auth.service'
 import { AppError } from '../../shared/AppError'
@@ -732,5 +734,138 @@ describe('microsoftCallback', () => {
     await microsoftCallback(req, res, vi.fn() as NextFunction)
 
     expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173/select-business')
+  })
+})
+
+describe('forgotPassword', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid email
+  // When requesting a password reset
+  // Then it should call the service and respond with success: true
+  it('calls requestPasswordReset and responds with success: true', async () => {
+    const requestSpy = vi.spyOn(authService, 'requestPasswordReset').mockResolvedValue(undefined)
+
+    const req = createMockRequest({ body: { email: 'laura@test.com' } })
+    const res = createMockResponse()
+
+    await forgotPassword(req, res, vi.fn() as NextFunction)
+
+    expect(requestSpy).toHaveBeenCalledWith('laura@test.com')
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given a request with no email at all
+  // When trying to request a password reset
+  // Then it should throw a 400 AppError without touching the service
+  it('throws a 400 AppError when email is missing', async () => {
+    const requestSpy = vi.spyOn(authService, 'requestPasswordReset')
+
+    const req = createMockRequest({ body: {} })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await forgotPassword(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FIELDS')
+    expect(requestSpy).not.toHaveBeenCalled()
+  })
+
+  // Given an email that doesn't match any user (or the email provider fails)
+  // When requesting a password reset
+  // Then it should still respond with success: true, without revealing anything went wrong
+  it('responds with success: true even when the service throws', async () => {
+    vi.spyOn(authService, 'requestPasswordReset').mockRejectedValue(new Error('boom'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const req = createMockRequest({ body: { email: 'no-existe@test.com' } })
+    const res = createMockResponse()
+
+    await forgotPassword(req, res, vi.fn() as NextFunction)
+
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+})
+
+describe('resetPasswordHandler', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid, unexpired, unused token and a strong enough new password
+  // When resetting the password
+  // Then it should call the service and respond with success: true
+  it('calls resetPassword and responds with success: true', async () => {
+    const resetSpy = vi.spyOn(authService, 'resetPassword').mockResolvedValue(undefined)
+
+    const req = createMockRequest({
+      body: { token: 'valid-token', newPassword: 'newpassword123' },
+    })
+    const res = createMockResponse()
+
+    await resetPasswordHandler(req, res, vi.fn() as NextFunction)
+
+    expect(resetSpy).toHaveBeenCalledWith('valid-token', 'newpassword123')
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given a request missing the token or the new password
+  // When trying to reset the password
+  // Then it should throw a 400 AppError without touching the service
+  it('throws a 400 AppError when token or newPassword is missing', async () => {
+    const resetSpy = vi.spyOn(authService, 'resetPassword')
+
+    const req = createMockRequest({ body: { token: 'valid-token' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await resetPasswordHandler(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FIELDS')
+    expect(resetSpy).not.toHaveBeenCalled()
+  })
+
+  // Given a new password shorter than 8 characters
+  // When trying to reset the password
+  // Then it should throw a 400 AppError with the INVALID_PASSWORD code
+  it('throws a 400 AppError when the new password is too short', async () => {
+    const req = createMockRequest({ body: { token: 'valid-token', newPassword: '1234' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await resetPasswordHandler(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('INVALID_PASSWORD')
+  })
+
+  // Given a token that doesn't exist, has already been used, or has expired
+  // When trying to reset the password
+  // Then it should throw a 400 AppError with the INVALID_TOKEN code
+  it('throws a 400 AppError when the service rejects the token', async () => {
+    vi.spyOn(authService, 'resetPassword').mockRejectedValue(new Error('Este enlace ha caducado'))
+
+    const req = createMockRequest({
+      body: { token: 'expired-token', newPassword: 'newpassword123' },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await resetPasswordHandler(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('INVALID_TOKEN')
   })
 })
