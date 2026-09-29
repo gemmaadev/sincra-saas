@@ -8,7 +8,6 @@ import {
   findUserByEmail,
   findMembership,
   findActiveMembershipWithDetails,
-  comparePassword,
   registerBusinessOwner,
   verifyGoogleToken,
   exchangeMicrosoftCode,
@@ -17,6 +16,7 @@ import {
   requestPasswordReset,
   resetPassword as resetPasswordService,
 } from './auth.service'
+import { comparePassword } from '../../shared/hash'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
