@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 import { errorHandler } from './shared/handlers/errorHandler'
 import { asyncHandler } from './shared/handlers/asyncHandler'
 import authRoutes from './features/auth/auth.routes'
+import userRoutes from './features/user/user.routes'
 
 const app = express()
 
@@ -17,6 +18,7 @@ app.use(express.json())
 app.use(cookieParser())
 
 app.use(authRoutes)
+app.use(userRoutes)
 
 app.get(
   '/health',
