@@ -1,9 +1,27 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SecurityTab } from './SecurityTab'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
+import { api, ApiError } from '@/shared/services'
+
+vi.mock('@/shared/services', () => {
+  class ApiError extends Error {
+    status: number
+    code: string
+    constructor(message: string, status: number, code: string) {
+      super(message)
+      this.status = status
+      this.code = code
+    }
+  }
+  return {
+    api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
+    ApiError,
+  }
+})
 
 const mockNavigate = vi.fn()
 
@@ -13,6 +31,7 @@ vi.mock('react-router', async () => {
 })
 
 function renderSecurityTab(logout: AuthContextValue['logout'] = vi.fn().mockResolvedValue(undefined)) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const authValue: AuthContextValue = {
     user: { id: '1', name: 'Laura García', email: 'laura@tienda.com', role: 'admin' },
     business: { id: 'biz-1', name: 'Tienda de Laura' },
@@ -23,17 +42,20 @@ function renderSecurityTab(logout: AuthContextValue['logout'] = vi.fn().mockReso
   }
 
   return render(
-    <AuthContext.Provider value={authValue}>
-      <MemoryRouter>
-        <SecurityTab />
-      </MemoryRouter>
-    </AuthContext.Provider>,
+    <QueryClientProvider client={queryClient}>
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter>
+          <SecurityTab />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    </QueryClientProvider>,
   )
 }
 
 describe('SecurityTab', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    vi.mocked(api.patch).mockReset()
   })
 
   // Given the password change form
@@ -48,6 +70,7 @@ describe('SecurityTab', () => {
       expect(screen.getByText('Introduce tu contraseña actual')).toBeInTheDocument()
       expect(screen.getByText('La nueva contraseña es obligatoria')).toBeInTheDocument()
     })
+    expect(api.patch).not.toHaveBeenCalled()
   })
 
   // Given a new password and a confirmation that doesn't match
@@ -69,6 +92,58 @@ describe('SecurityTab', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Las contraseñas no coinciden')).toBeInTheDocument()
+    })
+  })
+
+  // Given a valid current and new password
+  // When the form is submitted
+  // Then it should PATCH /user/password and show a confirmation
+  it('changes the password and shows a confirmation', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ success: true })
+    renderSecurityTab()
+
+    fireEvent.change(screen.getByLabelText('Contraseña actual'), {
+      target: { value: 'actual123' },
+    })
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+      target: { value: 'nueva12345' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), {
+      target: { value: 'nueva12345' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Contraseña actualizada')).toBeInTheDocument()
+    })
+    expect(api.patch).toHaveBeenCalledWith('/user/password', {
+      currentPassword: 'actual123',
+      newPassword: 'nueva12345',
+    })
+  })
+
+  // Given the backend rejects the current password
+  // When the form is submitted
+  // Then the backend's own error message should be shown
+  it('shows the backend error message when the current password is wrong', async () => {
+    vi.mocked(api.patch).mockRejectedValue(
+      new ApiError('La contraseña actual no es correcta', 401, 'INVALID_PASSWORD'),
+    )
+    renderSecurityTab()
+
+    fireEvent.change(screen.getByLabelText('Contraseña actual'), {
+      target: { value: 'incorrecta' },
+    })
+    fireEvent.change(screen.getByLabelText('Nueva contraseña'), {
+      target: { value: 'nueva12345' },
+    })
+    fireEvent.change(screen.getByLabelText('Confirmar nueva contraseña'), {
+      target: { value: 'nueva12345' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('La contraseña actual no es correcta')).toBeInTheDocument()
     })
   })
 

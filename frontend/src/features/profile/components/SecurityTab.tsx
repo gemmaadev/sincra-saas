@@ -6,7 +6,9 @@ import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 import { Badge } from '@/shared/components/badge'
 import { PasswordInput } from '@/shared/components/input/PasswordInput'
+import { ApiError } from '@/shared/services'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useChangePassword } from '../hooks/useChangePassword'
 import { SectionHeader } from './SectionHeader'
 
 interface ChangePasswordForm {
@@ -23,8 +25,7 @@ interface Session {
   current: boolean
 }
 
-// TODO: (backend/user-feature): Active sessions do not yet exist in the
-// backend. They are mocked here until GET /user/sessions exists.
+//Active sessions do not yet exist in the backend. They are mocked here until GET /user/sessions exists.
 const MOCK_SESSIONS: Session[] = [
   {
     id: 'session-1',
@@ -52,7 +53,9 @@ const MOCK_SESSIONS: Session[] = [
 export function SecurityTab() {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const changePassword = useChangePassword()
   const [saved, setSaved] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
   const [sessions, setSessions] = useState(MOCK_SESSIONS)
   const [revokingId, setRevokingId] = useState<string | null>(null)
@@ -65,11 +68,22 @@ export function SecurityTab() {
     formState: { errors, isSubmitting },
   } = useForm<ChangePasswordForm>()
 
-  async function onSubmit() {
-    // No real endpoint yet (see backend/user-feature PATCH /user/password)
-    await new Promise((resolve) => setTimeout(resolve, 400))
-    setSaved(true)
-    reset()
+  async function onSubmit(data: ChangePasswordForm) {
+    setPasswordError(null)
+    try {
+      await changePassword.mutateAsync({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      })
+      setSaved(true)
+      reset()
+    } catch (error) {
+      setPasswordError(
+        error instanceof ApiError
+          ? error.message
+          : 'No se pudo cambiar la contraseña. Inténtalo de nuevo.',
+      )
+    }
   }
 
   async function handleLogout() {
@@ -132,6 +146,7 @@ export function SecurityTab() {
               Guardar contraseña
             </SincraButton>
             {saved && <span className="text-sm text-success">Contraseña actualizada</span>}
+            {passwordError && <span className="text-sm text-error">{passwordError}</span>}
           </div>
         </form>
       </Card>
