@@ -14,20 +14,7 @@ export class ApiError extends Error {
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
 }
-
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, headers, ...rest } = options
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    credentials: 'include',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
-
+async function handleResponse<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => null)
 
   if (!response.ok) {
@@ -41,6 +28,29 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return data as T
 }
 
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { body, headers, ...rest } = options
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...rest,
+    headers: { 'Content-Type': 'application/json', ...headers },
+    credentials: 'include',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  })
+
+  return handleResponse<T>(response)
+}
+
+async function upload<T>(path: string, formData: FormData): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  })
+
+  return handleResponse<T>(response)
+}
+
 export const api = {
   get: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'GET' }),
@@ -50,4 +60,5 @@ export const api = {
     request<T>(path, { ...options, method: 'PATCH', body }),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'DELETE' }),
+  upload: <T>(path: string, formData: FormData) => upload<T>(path, formData),
 }
