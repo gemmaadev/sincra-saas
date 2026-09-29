@@ -5,6 +5,7 @@ import { errorHandler } from './shared/handlers/errorHandler'
 import { asyncHandler } from './shared/handlers/asyncHandler'
 import authRoutes from './features/auth/auth.routes'
 import userRoutes from './features/user/user.routes'
+import teamRoutes from './features/team/team.routes'
 
 const app = express()
 
@@ -19,6 +20,7 @@ app.use(cookieParser())
 
 app.use(authRoutes)
 app.use(userRoutes)
+app.use(teamRoutes)
 
 app.get(
   '/health',
