@@ -12,4 +12,5 @@ export * from './section'
 export * from './icon'
 export * from './logo'
 export * from './select'
+export * from './toggle'
 

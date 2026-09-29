@@ -2,119 +2,69 @@ import { useState } from 'react'
 import { Bell, MessageSquare, ShoppingCart, CalendarClock, FileText } from 'lucide-react'
 import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
-import { Select } from '@/shared/components/select'
+import { Toggle } from '@/shared/components/toggle'
 import { SectionHeader } from './SectionHeader'
+import { useProfile } from '../hooks/useProfile'
+import { useUpdateProfile } from '../hooks/useUpdateProfile'
+import type { NotificationPrefs } from '../hooks/useProfile'
 
-const CHANNEL_OPTIONS = [
-  { value: 'email', label: 'Solo por email' },
-  { value: 'app', label: 'Solo dentro de la app' },
-  { value: 'both', label: 'Email y dentro de la app' },
-]
-
-// TODO: (backend/user-feature): the preferred channel doesn't exist yet in the
-// backend. Mocked here until GET /api/user/notification-settings exists.
-const MOCK_PREFERRED_CHANNEL = 'both'
-
-interface NotificationPref {
-  key: string
+interface PrefDefinition {
+  key: keyof NotificationPrefs
   label: string
   icon: React.ReactNode
-  enabled: boolean
 }
 
-const initialPrefs: NotificationPref[] = [
-  { key: 'messages', label: 'Nuevos mensajes', icon: <MessageSquare size={18} />, enabled: true },
+const PREF_DEFINITIONS: PrefDefinition[] = [
   {
-    key: 'orders',
+    key: 'unansweredCommunications',
+    label: 'Mensajes sin responder',
+    icon: <MessageSquare size={18} />,
+  },
+  {
+    key: 'newOrders',
     label: 'Pedidos (nuevos, cambios, entregas)',
     icon: <ShoppingCart size={18} />,
-    enabled: true,
   },
-  {
-    key: 'tasks',
-    label: 'Tareas y recordatorios',
-    icon: <CalendarClock size={18} />,
-    enabled: true,
-  },
-  { key: 'digest', label: 'Resumen diario', icon: <FileText size={18} />, enabled: false },
+  { key: 'followUpTasks', label: 'Tareas y recordatorios', icon: <CalendarClock size={18} /> },
+  { key: 'weeklyDigest', label: 'Resumen semanal', icon: <FileText size={18} /> },
 ]
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean
-  onChange: () => void
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        checked ? 'bg-primary' : 'bg-neutral-200'
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-          checked ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  )
+interface NotificationPreferencesFormProps {
+  notificationPrefs: NotificationPrefs | null
 }
 
-export function NotificationsTab() {
-  const [prefs, setPrefs] = useState(initialPrefs)
-  const [channel, setChannel] = useState(MOCK_PREFERRED_CHANNEL)
+function NotificationPreferencesForm({ notificationPrefs }: NotificationPreferencesFormProps) {
+  const updateProfile = useUpdateProfile()
+  const [prefs, setPrefs] = useState<NotificationPrefs>(notificationPrefs ?? {})
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function togglePref(key: string) {
-    setPrefs((current) =>
-      current.map((pref) => (pref.key === key ? { ...pref, enabled: !pref.enabled } : pref)),
-    )
+  function togglePref(key: keyof NotificationPrefs) {
+    setPrefs((current) => ({ ...current, [key]: !current[key] }))
     setSaved(false)
   }
 
-  // TODO: There is no real endpoint yet (see backend/user-feature): saving is simulated.
-  function handleSave() {
-    setSaved(true)
+  async function handleSave() {
+    setError(null)
+    try {
+      await updateProfile.mutateAsync({ notificationPrefs: prefs })
+      setSaved(true)
+    } catch {
+      setError('No se pudieron guardar los cambios. Inténtalo de nuevo.')
+    }
   }
 
   return (
-    <Card className="flex flex-col gap-4">
-      <SectionHeader
-        icon={<Bell size={24} aria-hidden="true" />}
-        title="Preferencias de notificación"
-        description="Elige cómo y cuándo quieres saber de Sincra."
-      />
-
-      <div className="max-w-xs">
-        <Select
-          id="preferred-channel"
-          label="Canal preferido"
-          options={CHANNEL_OPTIONS}
-          value={channel}
-          onChange={(event) => {
-            setChannel(event.target.value)
-            setSaved(false)
-          }}
-        />
-      </div>
-
+    <>
       <ul className="flex flex-col divide-y divide-neutral-100">
-        {prefs.map((pref) => (
+        {PREF_DEFINITIONS.map((pref) => (
           <li key={pref.key} className="flex items-center justify-between gap-3 py-3">
             <span className="flex items-center gap-3 text-sm text-ink">
               <span className="text-ink-muted">{pref.icon}</span>
               {pref.label}
             </span>
             <Toggle
-              checked={pref.enabled}
+              checked={prefs[pref.key] ?? false}
               onChange={() => togglePref(pref.key)}
               label={pref.label}
             />
@@ -123,9 +73,53 @@ export function NotificationsTab() {
       </ul>
 
       <div className="flex items-center gap-3">
-        <SincraButton onClick={handleSave}>Guardar cambios</SincraButton>
+        <SincraButton onClick={handleSave} loading={updateProfile.isPending}>
+          Guardar cambios
+        </SincraButton>
         {saved && <span className="text-sm text-success">Cambios guardados</span>}
+        {error && <span className="text-sm text-error">{error}</span>}
       </div>
+    </>
+  )
+}
+
+export function NotificationsTab() {
+  const { data: profile, isLoading, isError } = useProfile()
+
+  if (isLoading) {
+    return (
+      <Card className="flex flex-col gap-4">
+        <SectionHeader
+          icon={<Bell size={24} aria-hidden="true" />}
+          title="Preferencias de notificación"
+        />
+        <p className="text-sm text-ink-muted">Cargando preferencias…</p>
+      </Card>
+    )
+  }
+
+  if (isError || !profile) {
+    return (
+      <Card className="flex flex-col gap-4">
+        <SectionHeader
+          icon={<Bell size={24} aria-hidden="true" />}
+          title="Preferencias de notificación"
+        />
+        <p className="text-sm text-error">
+          No se pudieron cargar tus preferencias. Inténtalo de nuevo más tarde.
+        </p>
+      </Card>
+    )
+  }
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <SectionHeader
+        icon={<Bell size={24} aria-hidden="true" />}
+        title="Preferencias de notificación"
+        description="Elige qué notificaciones quieres recibir de Sincra."
+      />
+      <NotificationPreferencesForm notificationPrefs={profile.notificationPrefs} />
     </Card>
   )
 }
