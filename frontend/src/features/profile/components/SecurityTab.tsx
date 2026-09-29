@@ -97,7 +97,7 @@ export function SecurityTab() {
   }
 
   async function handleRevokeSession(sessionId: string) {
-    // No real endpoint yet (see backend/user-feature DELETE /user/sessions/:id)
+    // No real endpoint yet 
     setRevokingId(sessionId)
     await new Promise((resolve) => setTimeout(resolve, 400))
     setSessions((current) => current.filter((session) => session.id !== sessionId))

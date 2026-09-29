@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useProfile } from '@/features/profile/hooks/useProfile'
 
 interface MenuItemProps {
   icon: ReactNode
@@ -38,6 +39,7 @@ function MenuItem({ icon, children, to, onClick, danger = false }: MenuItemProps
 
 export function AppHeader() {
   const { user, logout } = useAuth()
+  const { data: profile } = useProfile()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -85,7 +87,7 @@ export function AppHeader() {
           aria-label="Menú de usuario"
           className="flex items-center gap-2 rounded-full focus:outline-2 focus:outline-primary focus:outline-offset-3 cursor-pointer"
         >
-          <Avatar name={user.name} size="md" />
+          <Avatar src={profile?.avatarUrl ?? undefined} name={user.name} size="md" />
           <ChevronDown size={16} className="text-ink-muted" />
         </button>
 

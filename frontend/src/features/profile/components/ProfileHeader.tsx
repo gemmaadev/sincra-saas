@@ -3,10 +3,10 @@ import { Camera } from 'lucide-react'
 import { Avatar } from '@/shared/components/avatar'
 import { Badge } from '@/shared/components/badge'
 import type { User } from '@/features/auth/context/AuthContext'
+import { useProfile } from '../hooks/useProfile'
+import { useUploadAvatar } from '../hooks/useUploadAvatar'
 
-// TODO: (backend/user-feature): avatarUrl does not yet exist in the User of the
-// AuthContext. It is mocked until the backend exposes this field via GET /user/profile and it can live in the AuthContext
-const MOCK_AVATAR_URL = 'https://i.pravatar.cc/150?img=41'
+const MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024
 
 const roleLabels: Record<User['role'], string> = {
   admin: 'Propietario/a',
@@ -18,27 +18,45 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
-  const [avatarUrl, setAvatarUrl] = useState(MOCK_AVATAR_URL)
+  const { data: profile } = useProfile()
+  const uploadAvatar = useUploadAvatar()
+  const [error, setError] = useState<string | null>(null)
 
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
+    event.target.value = ''
     if (!file) return
-    setAvatarUrl(URL.createObjectURL(file))
+
+    setError(null)
+
+    if (!file.type.startsWith('image/')) {
+      setError('El archivo debe ser una imagen.')
+      return
+    }
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      setError('La imagen no puede superar los 2MB.')
+      return
+    }
+
+    uploadAvatar.mutate(file, {
+      onError: () => setError('No se pudo subir la foto. Inténtalo de nuevo.'),
+    })
   }
 
   return (
     <div className="flex flex-wrap items-center gap-4">
       <label className="relative inline-block cursor-pointer">
-        <Avatar src={avatarUrl} name={user.name} size="lg" />
+        <Avatar src={profile?.avatarUrl ?? undefined} name={user.name} size="lg" />
         <span className="absolute -right-0.5 -bottom-0.5 flex size-6 items-center justify-center rounded-full border-2 border-surface-card bg-primary text-white">
           <Camera size={12} aria-hidden="true" />
         </span>
-        <span className="sr-only">Cambiar foto de perfil</span>
         <input
           type="file"
+          aria-label="Cambiar foto de perfil"
           accept="image/png,image/jpeg,image/webp"
           className="hidden"
           onChange={handleAvatarChange}
+          disabled={uploadAvatar.isPending}
         />
       </label>
 
@@ -48,6 +66,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           <Badge color="primary">{roleLabels[user.role]}</Badge>
         </div>
         <p className="text-sm text-ink-muted">{user.email}</p>
+        {uploadAvatar.isPending && <p className="text-sm text-ink-muted">Subiendo foto…</p>}
+        {error && <p className="text-sm text-error">{error}</p>}
       </div>
     </div>
   )
