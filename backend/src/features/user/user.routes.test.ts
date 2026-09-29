@@ -123,4 +123,97 @@ describe('user routes', () => {
       )
     })
   })
+
+  describe('POST /user/avatar', () => {
+    // Given a request with no session cookie
+    // When trying to upload an avatar
+    // Then verifyAuth should reject it before it ever reaches the service
+    it('returns 401 without a session cookie', async () => {
+      const uploadSpy = vi.spyOn(userService, 'uploadUserAvatar')
+
+      const res = await request(app)
+        .post('/user/avatar')
+        .attach('avatar', Buffer.from('fake-image'), { filename: 'avatar.png', contentType: 'image/png' })
+
+      expect(res.status).toBe(401)
+      expect(uploadSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a valid session and an image file
+    // When uploading it as the avatar
+    // Then it should reach the service with the file's buffer and return 200
+    it('reaches the service with the uploaded file when the session is valid', async () => {
+      vi.spyOn(userService, 'uploadUserAvatar').mockResolvedValue({
+        id: 'user-1',
+        name: 'Laura',
+        email: 'laura@test.com',
+        role: 'ADMIN',
+        avatarUrl: 'https://cdn.cloudinary.com/avatar.png',
+        phone: null,
+        notificationPrefs: null,
+        createdAt: new Date('2026-01-01'),
+      } as never)
+
+      const res = await request(app)
+        .post('/user/avatar')
+        .set('Cookie', validCookie)
+        .attach('avatar', Buffer.from('fake-image'), { filename: 'avatar.png', contentType: 'image/png' })
+
+      expect(res.status).toBe(200)
+      expect(userService.uploadUserAvatar).toHaveBeenCalledWith(
+        'user-1',
+        'biz-1',
+        expect.any(Buffer),
+      )
+    })
+
+    // Given a valid session but no file attached at all
+    // When posting to the avatar endpoint
+    // Then it should throw a 400 AppError without touching the service
+    it('returns 400 when no file is attached', async () => {
+      const uploadSpy = vi.spyOn(userService, 'uploadUserAvatar')
+
+      const res = await request(app).post('/user/avatar').set('Cookie', validCookie)
+
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('MISSING_FILE')
+      expect(uploadSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a file that isn't an image
+    // When uploading it as the avatar
+    // Then multer's fileFilter should reject it with a 400 AppError
+    it('returns 400 when the file is not an image', async () => {
+      const uploadSpy = vi.spyOn(userService, 'uploadUserAvatar')
+
+      const res = await request(app)
+        .post('/user/avatar')
+        .set('Cookie', validCookie)
+        .attach('avatar', Buffer.from('not an image'), {
+          filename: 'file.txt',
+          contentType: 'text/plain',
+        })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('INVALID_FILE_TYPE')
+      expect(uploadSpy).not.toHaveBeenCalled()
+    })
+
+    // Given an image larger than the 2MB limit
+    // When uploading it as the avatar
+    // Then multer should reject it with a 400 AppError instead of a raw 500
+    it('returns 400 when the file is larger than 2MB', async () => {
+      const uploadSpy = vi.spyOn(userService, 'uploadUserAvatar')
+      const oversizedBuffer = Buffer.alloc(2 * 1024 * 1024 + 1)
+
+      const res = await request(app)
+        .post('/user/avatar')
+        .set('Cookie', validCookie)
+        .attach('avatar', oversizedBuffer, { filename: 'avatar.png', contentType: 'image/png' })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('FILE_TOO_LARGE')
+      expect(uploadSpy).not.toHaveBeenCalled()
+    })
+  })
 })

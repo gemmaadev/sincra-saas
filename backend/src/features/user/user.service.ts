@@ -1,4 +1,5 @@
 import prisma from '../../config/db'
+import cloudinary from '../../config/cloudinary'
 import { AppError } from '../../shared/AppError'
 import { comparePassword, hashPassword } from '../../shared/hash'
 import type { Prisma } from '../../generated/prisma/client'
@@ -73,6 +74,29 @@ export async function updateUserProfile(
       include: { user: true },
     }),
   ])
+
+  return toProfileResponse(membership)
+}
+
+export async function uploadUserAvatar(userId: string, businessId: string, fileBuffer: Buffer) {
+  const avatarUrl = await new Promise<string>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'sincra/avatars', resource_type: 'image' },
+      (error, result) => {
+        if (error || !result) {
+          return reject(error ?? new Error('No se pudo subir la imagen'))
+        }
+        resolve(result.secure_url)
+      },
+    )
+    uploadStream.end(fileBuffer)
+  })
+
+  const membership = await prisma.businessMember.update({
+    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
+    data: { avatarUrl },
+    include: { user: true },
+  })
 
   return toProfileResponse(membership)
 }

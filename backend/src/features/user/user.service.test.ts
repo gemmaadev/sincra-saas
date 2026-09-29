@@ -1,13 +1,27 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
 import prisma from '../../config/db'
+import cloudinary from '../../config/cloudinary'
 import * as hash from '../../shared/hash'
-import { getUserProfile, updateUserProfile, changeUserPassword } from './user.service'
+import {
+  getUserProfile,
+  updateUserProfile,
+  changeUserPassword,
+  uploadUserAvatar,
+} from './user.service'
 
 vi.mock('../../config/db', () => ({
   default: {
     user: { update: vi.fn(), findUnique: vi.fn() },
     businessMember: { update: vi.fn(), findUnique: vi.fn() },
     $transaction: vi.fn(),
+  },
+}))
+
+vi.mock('../../config/cloudinary', () => ({
+  default: {
+    uploader: {
+      upload_stream: vi.fn(),
+    },
   },
 }))
 
@@ -185,5 +199,58 @@ describe('changeUserPassword', () => {
       statusCode: 400,
       code: 'NO_PASSWORD_SET',
     })
+  })
+})
+
+describe('uploadUserAvatar', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given Cloudinary successfully uploads the image
+  // When uploading a user's avatar
+  // Then it should store the returned secure_url on the active membership
+  it('uploads the file to Cloudinary and stores the resulting URL', async () => {
+    vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(((
+      _options: unknown,
+      callback: (error: unknown, result: unknown) => void,
+    ) => {
+      callback(undefined, { secure_url: 'https://cdn.cloudinary.com/avatar.png' })
+      return { end: vi.fn() }
+    }) as never)
+    vi.mocked(prisma.businessMember.update).mockResolvedValue({
+      role: 'ADMIN',
+      avatarUrl: 'https://cdn.cloudinary.com/avatar.png',
+      phone: null,
+      createdAt: new Date('2026-01-01'),
+      user: { id: 'user-1', name: 'Laura', email: 'laura@test.com', notificationPrefs: null },
+    } as never)
+
+    const profile = await uploadUserAvatar('user-1', 'biz-1', Buffer.from('fake-image'))
+
+    expect(prisma.businessMember.update).toHaveBeenCalledWith({
+      where: { businessId_userId: { businessId: 'biz-1', userId: 'user-1' }, status: 'ACTIVE' },
+      data: { avatarUrl: 'https://cdn.cloudinary.com/avatar.png' },
+      include: { user: true },
+    })
+    expect(profile.avatarUrl).toBe('https://cdn.cloudinary.com/avatar.png')
+  })
+
+  // Given Cloudinary rejects or fails the upload
+  // When uploading a user's avatar
+  // Then it should reject without touching the database
+  it('rejects when Cloudinary fails to upload the image', async () => {
+    vi.mocked(cloudinary.uploader.upload_stream).mockImplementation(((
+      _options: unknown,
+      callback: (error: unknown, result: unknown) => void,
+    ) => {
+      callback(new Error('cloudinary is down'), undefined)
+      return { end: vi.fn() }
+    }) as never)
+
+    await expect(
+      uploadUserAvatar('user-1', 'biz-1', Buffer.from('fake-image')),
+    ).rejects.toThrow('cloudinary is down')
+    expect(prisma.businessMember.update).not.toHaveBeenCalled()
   })
 })
