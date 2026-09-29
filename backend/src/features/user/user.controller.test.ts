@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { getProfile, updateProfile, changePassword } from './user.controller'
+import { getProfile, updateProfile, changePassword, uploadAvatar } from './user.controller'
 import * as userService from './user.service'
 import { AppError } from '../../shared/AppError'
 
@@ -233,5 +233,60 @@ describe('changePassword', () => {
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.statusCode).toBe(401)
+  })
+})
+
+describe('uploadAvatar', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a request with a file attached (as multer would leave it on req.file)
+  // When uploading the avatar
+  // Then it should call the service with the file's buffer and return the updated profile
+  it('uploads the avatar and returns the updated profile', async () => {
+    const profile = {
+      id: 'user-1',
+      name: 'Laura',
+      email: 'laura@test.com',
+      role: 'ADMIN',
+      avatarUrl: 'https://cdn.cloudinary.com/avatar.png',
+      phone: null,
+      notificationPrefs: null,
+      createdAt: new Date('2026-01-01'),
+    }
+    vi.spyOn(userService, 'uploadUserAvatar').mockResolvedValue(profile as never)
+    const fileBuffer = Buffer.from('fake-image')
+
+    const req = createMockRequest({
+      userId: 'user-1',
+      businessId: 'biz-1',
+      file: { buffer: fileBuffer },
+    })
+    const res = createMockResponse()
+
+    await uploadAvatar(req, res, vi.fn() as NextFunction)
+
+    expect(userService.uploadUserAvatar).toHaveBeenCalledWith('user-1', 'biz-1', fileBuffer)
+    expect(res.json).toHaveBeenCalledWith({ user: profile })
+  })
+
+  // Given a request with no file attached at all
+  // When trying to upload the avatar
+  // Then it should throw a 400 AppError without touching the service
+  it('throws a 400 AppError when no file is attached', async () => {
+    const uploadSpy = vi.spyOn(userService, 'uploadUserAvatar')
+
+    const req = createMockRequest({ userId: 'user-1', businessId: 'biz-1' })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await uploadAvatar(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FILE')
+    expect(uploadSpy).not.toHaveBeenCalled()
   })
 })
