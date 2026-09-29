@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
+import * as hashService from '../../shared/hash'
+
 import {
   login,
   register,
@@ -43,7 +45,7 @@ describe('login', () => {
       passwordHash: 'hashed',
       memberships: [{ businessId: 'biz-1', role: 'ADMIN', business: { name: 'Tienda' } }],
     } as never)
-    vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
+    vi.spyOn(hashService, 'comparePassword').mockResolvedValue(true)
 
     const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
@@ -66,7 +68,7 @@ describe('login', () => {
         { businessId: 'biz-2', role: 'EMPLOYEE', business: { name: 'Tienda B' } },
       ],
     } as never)
-    vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
+    vi.spyOn(hashService, 'comparePassword').mockResolvedValue(true)
 
     const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()
@@ -100,7 +102,7 @@ describe('login', () => {
       passwordHash: 'hashed',
       memberships: [],
     } as never)
-    vi.spyOn(authService, 'comparePassword').mockResolvedValue(false)
+    vi.spyOn(hashService, 'comparePassword').mockResolvedValue(false)
 
     const req = createMockRequest({ body: { email: 'laura@test.com', password: 'incorrecta' } })
     const res = createMockResponse()
@@ -120,7 +122,7 @@ describe('login', () => {
       passwordHash: 'hashed',
       memberships: [],
     } as never)
-    vi.spyOn(authService, 'comparePassword').mockResolvedValue(true)
+    vi.spyOn(hashService, 'comparePassword').mockResolvedValue(true)
 
     const req = createMockRequest({ body: { email: 'laura@test.com', password: '1234' } })
     const res = createMockResponse()

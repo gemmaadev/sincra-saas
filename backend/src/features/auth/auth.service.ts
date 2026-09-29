@@ -1,20 +1,11 @@
-import bcrypt from 'bcrypt'
 import prisma from '../../config/db'
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Resend } from 'resend'
+import { hashPassword } from '../../shared/hash'
 
-const SALT_ROUNDS = 10
 const resend = new Resend(process.env.RESEND_API_KEY)
-
-export async function hashPassword(plainPassword: string): Promise<string> {
-  return bcrypt.hash(plainPassword, SALT_ROUNDS)
-}
-
-export async function comparePassword(plainPassword: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(plainPassword, hash)
-}
 
 export async function getUserBusinesses(userId: string) {
   const memberships = await prisma.businessMember.findMany({
@@ -295,3 +286,4 @@ export async function resetPassword(token: string, newPassword: string) {
     }),
   ])
 }
+export { hashPassword }
