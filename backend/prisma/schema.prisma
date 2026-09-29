@@ -41,15 +41,16 @@ model Business {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  name           String
-  email          String   @unique
-  passwordHash   String?
-  googleId       String?  @unique
-  microsoftId    String?  @unique
-  invitationCode String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  passwordHash       String?
+  googleId           String?  @unique
+  microsoftId        String?  @unique
+  invitationCode     String?
+  notificationPrefs  Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   memberships         BusinessMember[]
   passwordResetTokens PasswordResetToken[]
