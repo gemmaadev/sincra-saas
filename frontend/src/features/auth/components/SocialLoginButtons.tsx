@@ -29,7 +29,7 @@ export function SocialLoginButtons() {
           type="button"
           onClick={() => googleLogin()}
           disabled={isSubmitting}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-neutral-200 py-2 text-sm font-medium disabled:opacity-60"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-neutral-200 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FcGoogle size={18} aria-hidden="true" />
           Google
