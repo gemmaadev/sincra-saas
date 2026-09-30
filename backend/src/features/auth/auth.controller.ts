@@ -52,13 +52,13 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       role: membership.role,
     })
 
-    res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
     res.json({ needsBusinessSelection: false })
     return
   }
 
   const pendingToken = signPendingToken({ userId: user.id, pending: true })
-  res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
+  res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
 
   res.json({
     needsBusinessSelection: true,
@@ -117,7 +117,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
   res.status(201).json({ success: true })
 })
 
@@ -158,12 +158,12 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
   res.json({ success: true })
 })
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  res.clearCookie('token')
+  res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' })
   res.json({ success: true })
 })
 
@@ -204,7 +204,7 @@ async function resolveSocialLogin(
 
   if (user.memberships.length === 0) {
     const pendingToken = signPendingToken({ userId: user.id, pending: true })
-    res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
+    res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
     return { needsOnboarding: true, needsBusinessSelection: false }
   }
 
@@ -215,12 +215,12 @@ async function resolveSocialLogin(
       businessId: membership.businessId,
       role: membership.role,
     })
-    res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
     return { needsOnboarding: false, needsBusinessSelection: false }
   }
 
   const pendingToken = signPendingToken({ userId: user.id, pending: true })
-  res.cookie('token', pendingToken, { httpOnly: true, maxAge: 10 * 60 * 1000 })
+  res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
   return {
     needsOnboarding: false,
     needsBusinessSelection: true,
@@ -309,7 +309,7 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 })
+  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
   res.json({ success: true })
 })
 

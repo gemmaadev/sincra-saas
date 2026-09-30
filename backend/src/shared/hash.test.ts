@@ -22,4 +22,9 @@ describe('hash', () => {
     const hash = await hashPassword('no-deberias-verme')
     expect(hash).not.toContain('no-deberias-verme')
   })
+
+  it('hashes with a cost factor of 12', async () => {
+    const hash = await hashPassword('mi-contraseña-123')
+    expect(hash).toMatch(/^\$2[aby]\$12\$/)
+  })
 })

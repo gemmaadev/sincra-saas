@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import { errorHandler } from './shared/handlers/errorHandler'
 import { asyncHandler } from './shared/handlers/asyncHandler'
@@ -9,6 +10,7 @@ import teamRoutes from './features/team/team.routes'
 
 const app = express()
 
+app.use(helmet())
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',

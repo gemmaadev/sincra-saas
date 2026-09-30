@@ -226,7 +226,7 @@ export async function completeOnboardingForUser(userId: string, input: Onboardin
 
 // --- Password recovery ---
 
-const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000 // 1 hour
+const RESET_TOKEN_EXPIRY_MS = 15 * 60 * 1000 // 15 minutes
 
 export async function requestPasswordReset(email: string) {
   const user = await prisma.user.findUnique({ where: { email } })
@@ -235,6 +235,12 @@ export async function requestPasswordReset(email: string) {
   if (!user || !user.passwordHash) {
     return
   }
+
+  // Invalidate any previous unused tokens so only the latest one is redeemable
+  await prisma.passwordResetToken.updateMany({
+    where: { userId: user.id, usedAt: null },
+    data: { usedAt: new Date() },
+  })
 
   const token = crypto.randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS)
@@ -251,7 +257,7 @@ export async function requestPasswordReset(email: string) {
     subject: 'Recupera tu contraseña de Sincra',
     html: `
       <p>Hola${user.name ? ` ${user.name}` : ''},</p>
-      <p>Has solicitado restablecer tu contraseña en Sincra. Este enlace caduca en 1 hora:</p>
+      <p>Has solicitado restablecer tu contraseña en Sincra. Este enlace caduca en 15 minutos:</p>
       <p><a href="${resetLink}">${resetLink}</a></p>
       <p>Si no has sido tú, puedes ignorar este correo.</p>
     `,
