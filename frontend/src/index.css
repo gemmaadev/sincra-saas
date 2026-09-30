@@ -1,1 +1,65 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@theme {
+  /* Brand */
+  --color-primary: #1e5eff;
+  --color-primary-hover: #1849cc;
+  --color-primary-dark: #0f2d5b;
+  --color-primary-light: #e8f1ff;
+  --color-bg: #f7faff;
+
+  /* Neutrals */
+  --color-neutral-50: #f1f4f7;
+  --color-neutral-100: #e2e8f0;
+  --color-neutral-200: #c8d5e1;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #647488;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+
+  /* Surfaces */
+  --color-surface-card: #fefefe;
+  --color-surface-sidebar: #f8f9fb;
+  --color-surface-hover: #e8effe;
+
+  /* Ink (text) */
+  --color-ink: #242d3b;
+  --color-ink-muted: #4d6581;
+  --color-ink-active: #3b91ff;
+
+  /* Landing blobs */
+  --color-blob-1: #e7f2fe;
+  --color-blob-2: #f1f7ff;
+  --color-blob-3: #e7eefd;
+  --color-blob-4: #d3defe;
+  --color-blob-5: #efeefd;
+
+  /* Channels */
+  --color-whatsapp: #25d366;
+  --color-instagram: #e1306c;
+  --color-email: #3b5bdb;
+  --color-messenger: #0566ff;
+  --color-gmail: #ea4335;
+  --color-outlook: #0078d4;
+
+  /* Communication states*/
+  --color-status-new: #3b91ff;
+  --color-status-pending: #d99a34;
+  --color-status-urgent: #e5484d;
+  --color-status-order: #3fa65c;
+
+  /* Semantics */
+  --color-success: #3fa65c;
+  --color-warning: #d99a34;
+  --color-error: #e5484d;
+  --color-error-hover: #c53030;
+
+  /* Typography */
+  --font-sans: 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* Radius */
+  --radius-card: 0.75rem;
+}
