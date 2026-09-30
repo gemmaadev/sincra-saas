@@ -1,5 +1,4 @@
 import prisma from '../../config/db'
-import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Resend } from 'resend'
@@ -97,17 +96,26 @@ export async function findActiveMembershipWithDetails(userId: string, businessId
 
 // --- Login social (Google / Microsoft) ---
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+interface GoogleUserInfoResponse {
+  sub: string
+  email?: string
+  email_verified?: boolean
+  name?: string
+}
 
-export async function verifyGoogleToken(idToken: string) {
-  const ticket = await googleClient.verifyIdToken({
-    idToken,
-    audience: process.env.GOOGLE_CLIENT_ID,
+export async function verifyGoogleAccessToken(accessToken: string) {
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${accessToken}` },
   })
 
-  const payload = ticket.getPayload()
-  if (!payload?.email) {
-    throw new Error('Token de Google inválido')
+  if (!response.ok) {
+    throw new Error('No se pudo verificar el token de Google')
+  }
+
+  const payload = (await response.json()) as GoogleUserInfoResponse
+
+  if (!payload.email || !payload.email_verified) {
+    throw new Error('Google no ha verificado el email de esta cuenta')
   }
 
   return {

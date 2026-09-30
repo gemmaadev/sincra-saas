@@ -9,7 +9,7 @@ import {
   findMembership,
   findActiveMembershipWithDetails,
   registerBusinessOwner,
-  verifyGoogleToken,
+  verifyGoogleAccessToken,
   exchangeMicrosoftCode,
   findOrCreateSocialUser,
   completeOnboardingForUser,
@@ -246,20 +246,20 @@ function socialLoginRedirectPath(result: SocialLoginResult): string {
   return '/inbox'
 }
 
-interface SocialLoginBody {
-  idToken: string
+interface GoogleLoginBody {
+  accessToken: string
 }
 
 export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) => {
-  const { idToken } = req.body as SocialLoginBody
+  const { accessToken } = req.body as GoogleLoginBody
 
-  if (!idToken) {
+  if (!accessToken) {
     throw new AppError('Falta el token de Google', 400, 'MISSING_TOKEN')
   }
 
   let profile
   try {
-    profile = await verifyGoogleToken(idToken)
+    profile = await verifyGoogleAccessToken(accessToken)
   } catch {
     throw new AppError('No se pudo verificar el token de Google', 401, 'INVALID_TOKEN')
   }

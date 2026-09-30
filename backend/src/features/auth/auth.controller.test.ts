@@ -421,11 +421,11 @@ describe('loginWithGoogle', () => {
     vi.restoreAllMocks()
   })
 
-  // Given a valid Google idToken for a brand new user
+  // Given a valid Google access token for a brand new user
   // When they log in with Google for the first time
   // Then a pending token should be set and needsOnboarding should be true
   it('flags needsOnboarding when the Google user has no business yet', async () => {
-    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+    vi.spyOn(authService, 'verifyGoogleAccessToken').mockResolvedValue({
       email: 'nuevo@test.com',
       name: 'Nuevo Usuario',
       googleId: 'google-123',
@@ -435,7 +435,7 @@ describe('loginWithGoogle', () => {
       memberships: [],
     } as never)
 
-    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const req = createMockRequest({ body: { accessToken: 'valid-google-token' } })
     const res = createMockResponse()
 
     await loginWithGoogle(req, res, vi.fn() as NextFunction)
@@ -454,7 +454,7 @@ describe('loginWithGoogle', () => {
   // When they log in with Google
   // Then a full session cookie should be set, with no onboarding or business selection needed
   it('logs in directly when the Google user belongs to one business', async () => {
-    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+    vi.spyOn(authService, 'verifyGoogleAccessToken').mockResolvedValue({
       email: 'laura@test.com',
       name: 'Laura',
       googleId: 'google-456',
@@ -464,7 +464,7 @@ describe('loginWithGoogle', () => {
       memberships: [{ businessId: 'biz-1', role: 'ADMIN', business: { name: 'Tienda' } }],
     } as never)
 
-    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const req = createMockRequest({ body: { accessToken: 'valid-google-token' } })
     const res = createMockResponse()
 
     await loginWithGoogle(req, res, vi.fn() as NextFunction)
@@ -478,7 +478,7 @@ describe('loginWithGoogle', () => {
   // When they log in with Google
   // Then the response should list their businesses for selection
   it('returns the business list when the Google user belongs to several businesses', async () => {
-    vi.spyOn(authService, 'verifyGoogleToken').mockResolvedValue({
+    vi.spyOn(authService, 'verifyGoogleAccessToken').mockResolvedValue({
       email: 'laura@test.com',
       name: 'Laura',
       googleId: 'google-456',
@@ -491,7 +491,7 @@ describe('loginWithGoogle', () => {
       ],
     } as never)
 
-    const req = createMockRequest({ body: { idToken: 'valid-google-token' } })
+    const req = createMockRequest({ body: { accessToken: 'valid-google-token' } })
     const res = createMockResponse()
 
     await loginWithGoogle(req, res, vi.fn() as NextFunction)
@@ -499,10 +499,10 @@ describe('loginWithGoogle', () => {
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ needsBusinessSelection: true }))
   })
 
-  // Given a request with no idToken at all
+  // Given a request with no accessToken at all
   // When trying to log in with Google
   // Then it should throw a 400 AppError
-  it('throws a 400 AppError when idToken is missing', async () => {
+  it('throws a 400 AppError when accessToken is missing', async () => {
     const req = createMockRequest({ body: {} })
     const res = createMockResponse()
     const next = vi.fn()
@@ -512,13 +512,13 @@ describe('loginWithGoogle', () => {
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
   })
 
-  // Given an idToken that Google's verification rejects
+  // Given an access token that Google's verification rejects
   // When trying to log in with Google
   // Then it should throw a 401 AppError, without leaking the underlying verification error
   it('throws a 401 AppError when the Google token cannot be verified', async () => {
-    vi.spyOn(authService, 'verifyGoogleToken').mockRejectedValue(new Error('invalid token'))
+    vi.spyOn(authService, 'verifyGoogleAccessToken').mockRejectedValue(new Error('invalid token'))
 
-    const req = createMockRequest({ body: { idToken: 'bad-token' } })
+    const req = createMockRequest({ body: { accessToken: 'bad-token' } })
     const res = createMockResponse()
     const next = vi.fn()
 
