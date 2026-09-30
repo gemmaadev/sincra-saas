@@ -1,6 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import jwt from 'jsonwebtoken'
-import { exchangeMicrosoftCode } from './auth.service'
+import prisma from '../../config/db'
+import { exchangeMicrosoftCode, requestPasswordReset } from './auth.service'
+
+const { sendMock } = vi.hoisted(() => ({
+  sendMock: vi.fn().mockResolvedValue({ data: {}, error: null }),
+}))
+
+vi.mock('resend', () => ({
+  Resend: class {
+    emails = { send: sendMock }
+  },
+}))
+
+vi.mock('../../config/db', () => ({
+  default: {
+    user: { findUnique: vi.fn() },
+    passwordResetToken: { updateMany: vi.fn(), create: vi.fn() },
+  },
+}))
 
 function mockTokenResponse(idTokenPayload: Record<string, unknown>) {
   const idToken = jwt.sign(idTokenPayload, 'irrelevant-for-decode-only')
@@ -98,5 +116,45 @@ describe('exchangeMicrosoftCode', () => {
     vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
 
     await expect(exchangeMicrosoftCode('expired-or-invalid-code')).rejects.toThrow()
+  })
+})
+
+describe('requestPasswordReset', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.passwordResetToken.updateMany).mockResolvedValue({ count: 0 } as never)
+    vi.mocked(prisma.passwordResetToken.create).mockResolvedValue({} as never)
+  })
+
+  // Given a user who already requested a password reset before
+  // When they request a new one
+  // Then the previous unused tokens should be invalidated before creating the new one
+  it('invalidates previous unused reset tokens before creating a new one', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'user-1',
+      passwordHash: 'hashed',
+      name: 'Laura',
+    } as never)
+
+    await requestPasswordReset('laura@test.com')
+
+    expect(prisma.passwordResetToken.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', usedAt: null },
+      data: { usedAt: expect.any(Date) },
+    })
+    expect(prisma.passwordResetToken.create).toHaveBeenCalled()
+  })
+
+  // Given an email that doesn't belong to any user
+  // When requesting a password reset
+  // Then it should silently return without touching tokens or sending an email (prevents user enumeration)
+  it('does nothing when the email does not belong to a user', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+
+    await requestPasswordReset('no-existe@test.com')
+
+    expect(prisma.passwordResetToken.updateMany).not.toHaveBeenCalled()
+    expect(prisma.passwordResetToken.create).not.toHaveBeenCalled()
+    expect(sendMock).not.toHaveBeenCalled()
   })
 })

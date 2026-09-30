@@ -52,7 +52,11 @@ describe('login', () => {
 
     await login(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.json).toHaveBeenCalledWith({ needsBusinessSelection: false })
   })
 
@@ -183,7 +187,11 @@ describe('register', () => {
 
     await register(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.status).toHaveBeenCalledWith(201)
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
@@ -302,7 +310,11 @@ describe('selectBusiness', () => {
 
     await selectBusiness(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 
@@ -428,7 +440,11 @@ describe('loginWithGoogle', () => {
 
     await loginWithGoogle(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ needsOnboarding: true, needsBusinessSelection: false }),
     )
@@ -537,7 +553,11 @@ describe('completeOnboarding', () => {
 
     await completeOnboarding(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 
@@ -686,7 +706,11 @@ describe('microsoftCallback', () => {
 
     await microsoftCallback(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173/onboarding')
   })
 
@@ -709,7 +733,11 @@ describe('microsoftCallback', () => {
 
     await microsoftCallback(req, res, vi.fn() as NextFunction)
 
-    expect(res.cookie).toHaveBeenCalledWith('token', expect.any(String), expect.any(Object))
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
+    )
     expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173/inbox')
   })
 
