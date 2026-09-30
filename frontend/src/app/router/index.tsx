@@ -7,6 +7,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
+import { AcceptInvitePage } from '@/pages/AcceptInvitePage'
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage'
 import { SelectBusinessPage } from '@/pages/SelectBusinessPage'
 import { InboxPage } from '@/pages/InboxPage'
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: '/onboarding', element: <OnboardingPage /> },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
       { path: '/reset-password', element: <ResetPasswordPage /> },
+      { path: '/accept-invite', element: <AcceptInvitePage /> },
 
       // Auth — simple, no side panel
       { path: '/verify-email', element: <VerifyEmailPage /> },
