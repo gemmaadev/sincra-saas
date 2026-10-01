@@ -60,7 +60,15 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   }
 
   const [data, total] = await Promise.all([
-    prisma.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+    prisma.client.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        clientTags: { where: { removedAt: null }, include: { tag: true } },
+      },
+    }),
     prisma.client.count({ where }),
   ])
 

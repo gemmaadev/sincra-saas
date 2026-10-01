@@ -30,7 +30,6 @@ enum ClientStage {
   LEAD // initial contact, no purchase
   NEW // first recent purchase
   RECURRING // multiple purchases
-  VIP // high value
   INACTIVE // stopped buying
 }
 
