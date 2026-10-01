@@ -103,10 +103,10 @@ describe('Client and Tag models', () => {
     await prisma.business.delete({ where: { id: business.id } })
   })
 
-  // Given a client
-  // When creating tags for them with different free-text "type" values
-  // Then each tag should be saved independently, with its own type and default priority
-  it('creates tags for a client with different free-text types', async () => {
+  // Given a business-level Tag catalog and a client
+  // When attaching two different tags to that client via ClientTag
+  // Then both assignments should be saved independently, reusing the same Tag definitions
+  it('attaches reusable tags to a client via ClientTag', async () => {
     const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
     const client = await prisma.client.create({
       data: {
@@ -116,38 +116,34 @@ describe('Client and Tag models', () => {
       },
     })
 
-    const clienteTag = await prisma.tag.create({
-      data: {
-        businessId: business.id,
-        clientId: client.id,
-        name: 'VIP',
-        color: '#FFB800',
-        type: 'cliente',
-      },
+    const vipTag = await prisma.tag.create({
+      data: { businessId: business.id, name: 'VIP', color: '#FFB800', priority: 'HIGH' },
     })
-    const inboxTag = await prisma.tag.create({
-      data: {
-        businessId: business.id,
-        clientId: client.id,
-        name: 'Urgente',
-        color: '#E5484D',
-        type: 'inbox',
-      },
+    const urgentTag = await prisma.tag.create({
+      data: { businessId: business.id, name: 'Urgente', color: '#E5484D' },
     })
 
-    const tags = await prisma.tag.findMany({ where: { clientId: client.id } })
-    expect(tags).toHaveLength(2)
-    expect(tags.map((tag) => tag.type).sort()).toEqual(['cliente', 'inbox'])
-    expect(clienteTag.aiGenerated).toBe(false)
-    expect(inboxTag.priority).toBe('LOW')
+    await prisma.clientTag.create({ data: { clientId: client.id, tagId: vipTag.id } })
+    await prisma.clientTag.create({
+      data: { clientId: client.id, tagId: urgentTag.id, removedAt: null },
+    })
+
+    const clientTags = await prisma.clientTag.findMany({
+      where: { clientId: client.id },
+      include: { tag: true },
+    })
+    expect(clientTags).toHaveLength(2)
+    expect(clientTags.map((clientTag) => clientTag.tag.name).sort()).toEqual(['Urgente', 'VIP'])
+    expect(vipTag.priority).toBe('HIGH')
+    expect(urgentTag.priority).toBe('LOW')
 
     await prisma.business.delete({ where: { id: business.id } })
   })
 
-  // Given a business with a client and a tag on that client
+  // Given a business, a client, a tag and a ClientTag linking them
   // When deleting the business
-  // Then the client and its tags should cascade-delete too
-  it('cascade-deletes clients and their tags when the business is deleted', async () => {
+  // Then the client, the tag and the ClientTag assignment should all cascade-delete
+  it('cascade-deletes clients, tags and their assignments when the business is deleted', async () => {
     const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
     const client = await prisma.client.create({
       data: {
@@ -157,12 +153,16 @@ describe('Client and Tag models', () => {
       },
     })
     const tag = await prisma.tag.create({
-      data: { businessId: business.id, clientId: client.id, name: 'VIP', color: '#FFB800' },
+      data: { businessId: business.id, name: 'VIP', color: '#FFB800' },
+    })
+    const clientTag = await prisma.clientTag.create({
+      data: { clientId: client.id, tagId: tag.id },
     })
 
     await prisma.business.delete({ where: { id: business.id } })
 
     expect(await prisma.client.findUnique({ where: { id: client.id } })).toBeNull()
     expect(await prisma.tag.findUnique({ where: { id: tag.id } })).toBeNull()
+    expect(await prisma.clientTag.findUnique({ where: { id: clientTag.id } })).toBeNull()
   })
 })
