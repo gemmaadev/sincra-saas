@@ -67,6 +67,7 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   return buildPaginatedResponse(data, total, page, limit)
 }
 
+// TODO: once the Order (and later Communication) models exist, include them here too.
 export async function getClientById(businessId: string, clientId: string) {
   return prisma.client.findUnique({
     where: { id: clientId, businessId },
