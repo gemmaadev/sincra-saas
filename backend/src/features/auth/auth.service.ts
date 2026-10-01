@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Resend } from 'resend'
 import { hashPassword } from '../../shared/hash'
+import { DEFAULT_TAGS } from '../../shared/defaultTags'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -81,6 +82,15 @@ export async function registerBusinessOwner(input: RegisterInput) {
         role: 'ADMIN',
         status: 'ACTIVE',
       },
+    })
+
+    await tx.tag.createMany({
+      data: DEFAULT_TAGS.map((tag) => ({
+        businessId: business.id,
+        name: tag.name,
+        color: tag.color,
+        isDefault: true,
+      })),
     })
 
     return { user, business, membership }
@@ -226,6 +236,15 @@ export async function completeOnboardingForUser(userId: string, input: Onboardin
         role: 'ADMIN',
         status: 'ACTIVE',
       },
+    })
+
+    await tx.tag.createMany({
+      data: DEFAULT_TAGS.map((tag) => ({
+        businessId: business.id,
+        name: tag.name,
+        color: tag.color,
+        isDefault: true,
+      })),
     })
 
     return { business, membership }

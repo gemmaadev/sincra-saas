@@ -5,6 +5,7 @@
 import 'dotenv/config'
 import prisma from '../src/config/db'
 import type { Channel } from '../src/generated/prisma/client'
+import { DEFAULT_TAGS } from '../src/shared/defaultTags'
 
 const SEED_BUSINESS_OWNER_EMAIL = process.env.SEED_BUSINESS_EMAIL
 
@@ -48,14 +49,6 @@ const CITIES: City[] = [
 
 const CHANNEL_POOL: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER', 'WEB']
 const CLIENT_TYPES = ['particular', 'mayorista', 'autónomo', 'empresa', 'distribuidor'] as const
-
-const DEFAULT_TAGS = [
-  { name: 'Nuevo cliente', color: '#3b91ff' },
-  { name: 'Consulta', color: '#d99a34' },
-  { name: 'Pedido', color: '#3fa65c' },
-  { name: 'Urgente', color: '#e5484d' },
-  { name: 'VIP', color: '#ffb800' },
-] as const
 
 // 25 unique people + 3 repeated on purpose
 // to demo "possible duplicate" detection later.
