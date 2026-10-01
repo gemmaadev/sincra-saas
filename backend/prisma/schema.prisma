@@ -114,46 +114,62 @@ model PasswordResetToken {
 }
 
 model Client {
-  id         String       @id @default(uuid())
-  businessId String
-  name       String
-  email      String?
-  phone      String?
-  channels   Channel[]
-  type       String?
-  stage      ClientStage?
-  address    String?
-  zone       String?
-  latitude   Float?
-  longitude  Float?
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id          String       @id @default(uuid())
+  businessId  String
+  name        String
+  email       String?
+  phone       String?
+  channels    Channel[]
+  type        String?
+  stage       ClientStage?
+  address     String?
+  zone        String?
+  latitude    Float?
+  longitude   Float?
+  notes       String?
+  lastContact DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  tags     Tag[]
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientTags ClientTag[]
 
   @@unique([businessId, email])
   @@unique([businessId, phone])
   @@index([businessId])
+  @@index([businessId, stage])
+  @@index([name])
 }
 
 model Tag {
   id          String      @id @default(uuid())
   businessId  String
-  clientId    String
   name        String
   color       String
-  type        String?
   priority    TagPriority @default(LOW)
   isDefault   Boolean     @default(false)
   aiGenerated Boolean     @default(false)
   createdBy   String?
   createdAt   DateTime    @default(now())
-  removedAt   DateTime?
+  updatedAt   DateTime    @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clientTags ClientTag[]
 
+  @@unique([businessId, name])
   @@index([businessId])
+}
+
+model ClientTag {
+  id        String    @id @default(uuid())
+  clientId  String
+  tagId     String
+  createdAt DateTime  @default(now())
+  removedAt DateTime?
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
   @@index([clientId])
+  @@index([tagId])
 }
