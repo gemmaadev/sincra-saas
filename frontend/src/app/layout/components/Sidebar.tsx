@@ -16,6 +16,7 @@ import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { TagPill } from '@/shared/components/tag-pill'
+import { useTags } from '@/shared/hooks'
 import { Link } from 'react-router'
 
 const navItems = [
@@ -46,15 +47,9 @@ const channels = [
   { icon: <SiMessenger size={16} aria-hidden="true" />, label: 'Messenger', count: 1 },
 ]
 
-const labels = [
-  { name: 'Nuevo cliente', color: '#3b91ff' },
-  { name: 'Consulta', color: '#d99a34' },
-  { name: 'Pedido', color: '#3fa65c' },
-  { name: 'Urgente', color: '#e5484d' },
-  { name: 'VIP', color: '#ffb800' },
-]
-
 export function Sidebar() {
+  const { data: labels = [] } = useTags()
+
   return (
     <aside className="flex w-64 flex-col gap-6 overflow-y-auto border-r border-neutral-100 bg-surface-sidebar p-4 max-md:hidden">
       <Link to="/">
@@ -86,7 +81,7 @@ export function Sidebar() {
         <span className="text-xs font-semibold uppercase text-ink-muted">Etiquetas</span>
         <div className="flex flex-wrap gap-2">
           {labels.map((label) => (
-            <TagPill key={label.name} name={label.name} color={label.color} />
+            <TagPill key={label.id} name={label.name} color={label.color} />
           ))}
         </div>
         <SincraButton variant="text" className="justify-start">
