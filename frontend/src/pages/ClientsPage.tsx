@@ -1,7 +1,7 @@
 import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client } from '@/features/clients/hooks/useClients'
-import { Table, EmptyState, Avatar, Card } from '@/shared/components'
+import { Table, EmptyState, Avatar, Card, TagPill } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 
 interface KpiCardProps {
@@ -74,6 +74,18 @@ const columns = [
     ),
   },
   {
+    key: 'tags',
+    header: 'Etiquetas',
+    render: (client: Client) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {client.clientTags.length === 0 && <span className="text-sm text-ink-muted">—</span>}
+        {client.clientTags.map(({ id, tag }) => (
+          <TagPill key={id} name={tag.name} color={tag.color} />
+        ))}
+      </div>
+    ),
+  },
+  {
     key: 'orders',
     header: 'Pedidos',
     render: () => (
@@ -92,18 +104,6 @@ const columns = [
       <span
         className="text-sm text-ink-muted"
         title="Entrada automática desde pedidos/comunicaciones"
-      >
-        —
-      </span>
-    ),
-  },
-  {
-    key: 'status',
-    header: 'Estado',
-    render: () => (
-      <span
-        className="text-sm text-ink-muted"
-        title="Disponible cuando exista el módulo de pedidos"
       >
         —
       </span>

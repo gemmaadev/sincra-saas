@@ -3,6 +3,20 @@ import { api } from '@/shared/services'
 
 export type ChannelFilter = 'GMAIL' | 'OUTLOOK' | 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
 
+export interface Tag {
+  id: string
+  name: string
+  color: string
+  priority: 'LOW' | 'MEDIUM' | 'HIGH'
+  isDefault: boolean
+}
+
+export interface ClientTag {
+  id: string
+  tagId: string
+  tag: Tag
+}
+
 export interface Client {
   id: string
   name: string
@@ -11,6 +25,7 @@ export interface Client {
   channels: ChannelFilter[]
   type: string | null
   zone: string | null
+  clientTags: ClientTag[]
   createdAt: string
   updatedAt: string
 }
