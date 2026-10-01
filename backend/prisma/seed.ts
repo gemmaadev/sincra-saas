@@ -47,7 +47,7 @@ const CITIES: City[] = [
   { zone: 'Bilbao', address: 'Gran Vía 30', latitude: 43.263, longitude: -2.935 },
 ]
 
-const CHANNEL_POOL: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER', 'WEB']
+const CHANNEL_POOL: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 const CLIENT_TYPES = ['particular', 'mayorista', 'autónomo', 'empresa', 'distribuidor'] as const
 
 // 25 unique people + 3 repeated on purpose
