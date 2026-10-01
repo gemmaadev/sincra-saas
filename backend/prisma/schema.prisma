@@ -20,6 +20,30 @@ enum UserStatus {
   INACTIVE
 }
 
+enum TagPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ClientStage {
+  LEAD // contacto inicial, sin compra
+  NEW // primera compra reciente
+  RECURRING // varias compras
+  VIP // alto valor
+  INACTIVE // dejó de comprar
+}
+
+enum Channel {
+  GMAIL
+  OUTLOOK
+  WHATSAPP
+  INSTAGRAM
+  MESSENGER
+  WEB
+  OTHER
+}
+
 model Business {
   id          String   @id @default(uuid())
   name        String
@@ -38,19 +62,21 @@ model Business {
   updatedBy   String?
 
   memberships BusinessMember[]
+  clients     Client[]
+  tags        Tag[]
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  name               String
-  email              String   @unique
-  passwordHash       String?
-  googleId           String?  @unique
-  microsoftId        String?  @unique
-  invitationCode     String?
-  notificationPrefs  Json?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  email             String   @unique
+  passwordHash      String?
+  googleId          String?  @unique
+  microsoftId       String?  @unique
+  invitationCode    String?
+  notificationPrefs Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   memberships         BusinessMember[]
   passwordResetTokens PasswordResetToken[]
@@ -85,4 +111,49 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+model Client {
+  id         String       @id @default(uuid())
+  businessId String
+  name       String
+  email      String?
+  phone      String?
+  channels   Channel[]
+  type       String?
+  stage      ClientStage?
+  address    String?
+  zone       String?
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tags     Tag[]
+
+  @@unique([businessId, email])
+  @@unique([businessId, phone])
+  @@index([businessId])
+}
+
+model Tag {
+  id          String      @id @default(uuid())
+  businessId  String
+  clientId    String
+  name        String
+  color       String
+  type        String?
+  priority    TagPriority @default(LOW)
+  isDefault   Boolean     @default(false)
+  aiGenerated Boolean     @default(false)
+  createdBy   String?
+  createdAt   DateTime    @default(now())
+  removedAt   DateTime?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client   Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([clientId])
 }
