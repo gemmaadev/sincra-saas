@@ -131,6 +131,14 @@ Create a `.env` file in `backend/` (see `.env.example` for the full list of vari
 npm run dev
 ```
 
+**Demo data (optional)**: set `SEED_BUSINESS_EMAIL` in `.env` to an account you've already registered, then run:
+
+```bash
+npx prisma db seed
+```
+
+This fills that account's business with ~25 example clients (fake, spread across Catalonia and a few other Spanish cities, including a few intentional near-duplicates to demo the upcoming "possible duplicate client" detection). Safe to re-run — it replaces that business's clients each time instead of piling up duplicates.
+
 ### 3. Frontend
 
 ```bash
