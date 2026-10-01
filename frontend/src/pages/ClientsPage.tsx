@@ -1,7 +1,34 @@
+import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client } from '@/features/clients/hooks/useClients'
-import { Table, EmptyState, Avatar } from '@/shared/components'
+import { Table, EmptyState, Avatar, Card } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+
+interface KpiCardProps {
+  icon: LucideIcon
+  label: string
+  value: string
+  pending?: boolean
+}
+
+function KpiCard({ icon: Icon, label, value, pending = false }: KpiCardProps) {
+  return (
+    <Card className="flex items-start gap-3">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
+        <Icon size={26} aria-hidden="true" />
+      </div>
+      <div className="flex flex-col">
+        <p className="text-sm text-ink-muted">{label}</p>
+        <p
+          className={`text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
+          title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : undefined}
+        >
+          {value}
+        </p>
+      </div>
+    </Card>
+  )
+}
 
 const columns = [
   {
@@ -26,7 +53,6 @@ const columns = [
           const brand = CHANNEL_BRANDS.find((brand) => brand.id === channel.toLowerCase())
 
           if (!brand) {
-            // WEB/OTHER have no dedicated icon yet
             return (
               <span key={channel} className="text-xs text-ink-muted" title={channel}>
                 {channel}
@@ -105,12 +131,24 @@ export function ClientsPage() {
           completo.
         </p>
       </div>
-      <Table
-        columns={columns}
-        data={data?.data ?? []}
-        getRowKey={(client) => client.id}
-        emptyState={<EmptyState title="Todavía no tienes clientes" />}
-      />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <KpiCard
+          icon={Users}
+          label="Total de clientes"
+          value={String(data?.pagination.total ?? 0)}
+        />
+        <KpiCard icon={UserPlus} label="Clientes nuevos" value="—" pending />
+        <KpiCard icon={Repeat} label="Clientes recurrentes" value="—" pending />
+        <KpiCard icon={ShoppingCart} label="Total de pedidos" value="—" pending />
+      </div>
+      <div className="overflow-x-auto">
+        <Table
+          columns={columns}
+          data={data?.data ?? []}
+          getRowKey={(client) => client.id}
+          emptyState={<EmptyState title="Todavía no tienes clientes" />}
+        />
+      </div>
     </div>
   )
 }
