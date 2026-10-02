@@ -222,7 +222,6 @@ export function ClientsPage() {
         onClose={() => navigate('/clients')}
         position="right"
         size="lg"
-        title="Ficha de cliente"
         closeButtonProps={{ 'aria-label': 'Cerrar' }}
         transitionProps={{ duration: 300, timingFunction: 'ease-out' }}
       >
