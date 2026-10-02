@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-react'
+import { Tooltip } from '@mantine/core'
+import { Users, UserPlus, Repeat, ShoppingCart, Info, type LucideIcon } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client, ChannelFilter } from '@/features/clients/hooks/useClients'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
@@ -13,16 +14,24 @@ interface KpiCardProps {
   label: string
   value: string
   pending?: boolean
+  infoTooltip?: string
 }
 
-function KpiCard({ icon: Icon, label, value, pending = false }: KpiCardProps) {
+function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip }: KpiCardProps) {
   return (
     <Card padding="sm" className="flex items-start gap-3">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
         <Icon size={26} aria-hidden="true" />
       </div>
       <div className="flex flex-col">
-        <p className="text-sm text-ink-muted">{label}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm text-ink-muted">{label}</p>
+          {infoTooltip && (
+            <Tooltip label={infoTooltip} withArrow position="top">
+              <Info size={13} className="text-ink-muted" aria-hidden="true" />
+            </Tooltip>
+          )}
+        </div>
         <p
           className={`text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
           title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : undefined}
@@ -160,7 +169,12 @@ export function ClientsPage() {
           label="Total de clientes"
           value={String(data?.pagination.total ?? 0)}
         />
-        <KpiCard icon={UserPlus} label="Clientes nuevos" value="—" pending />
+        <KpiCard
+          icon={UserPlus}
+          label="Clientes nuevos"
+          value={String(data?.newClientsCount ?? 0)}
+          infoTooltip="Añadidos en los últimos 30 días"
+        />
         <KpiCard icon={Repeat} label="Clientes recurrentes" value="—" pending />
         <KpiCard icon={ShoppingCart} label="Total de pedidos" value="—" pending />
       </div>

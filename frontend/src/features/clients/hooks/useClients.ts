@@ -38,6 +38,7 @@ interface ClientsResponse {
     total: number
     totalPages: number
   }
+  newClientsCount: number
 }
 
 export interface UseClientsParams {

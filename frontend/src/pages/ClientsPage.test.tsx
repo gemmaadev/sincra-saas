@@ -22,7 +22,11 @@ const mockClient = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
-function mockApiGet(overrides?: { data?: typeof mockClient[]; total?: number }) {
+function mockApiGet(overrides?: {
+  data?: typeof mockClient[]
+  total?: number
+  newClientsCount?: number
+}) {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path.startsWith('/tags')) {
       return Promise.resolve({ tags: [] })
@@ -31,6 +35,7 @@ function mockApiGet(overrides?: { data?: typeof mockClient[]; total?: number }) 
     return Promise.resolve({
       data,
       pagination: { page: 1, limit: 10, total: overrides?.total ?? data.length, totalPages: 1 },
+      newClientsCount: overrides?.newClientsCount ?? 0,
     })
   })
 }
@@ -66,6 +71,15 @@ describe('ClientsPage', () => {
     mockApiGet({ data: [mockClient], total: 25 })
     renderClientsPage()
     await waitFor(() => expect(screen.getByText('25')).toBeInTheDocument())
+  })
+
+  // Given a successful response with a known newClientsCount
+  // When ClientsPage is rendered
+  // Then the "Clientes nuevos" KPI should show that count
+  it('shows the real count in the "Clientes nuevos" KPI', async () => {
+    mockApiGet({ data: [mockClient], newClientsCount: 7 })
+    renderClientsPage()
+    await waitFor(() => expect(screen.getByText('7')).toBeInTheDocument())
   })
 
   // Given no clients returned by the API

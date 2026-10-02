@@ -11,6 +11,7 @@ vi.mock('@/shared/services', () => ({
 const mockResponse = {
   data: [{ id: 'client-1', name: 'Laura García' }],
   pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+  newClientsCount: 1,
 }
 
 function renderUseClients(params?: Parameters<typeof useClients>[0]) {
