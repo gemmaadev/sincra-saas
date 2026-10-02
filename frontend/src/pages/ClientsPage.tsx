@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
-import type { Client } from '@/features/clients/hooks/useClients'
+import type { Client, ChannelFilter } from '@/features/clients/hooks/useClients'
+import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
 import { Table, EmptyState, Avatar, Card, TagPill } from '@/shared/components'
+import { useDebouncedValue } from '@/shared/hooks'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 
 interface KpiCardProps {
@@ -112,15 +115,16 @@ const columns = [
 ]
 
 export function ClientsPage() {
-  const { data, isLoading, isError } = useClients()
+  const [search, setSearch] = useState('')
+  const [channel, setChannel] = useState<ChannelFilter | ''>('')
+  const [tagId, setTagId] = useState('')
+  const debouncedSearch = useDebouncedValue(search)
 
-  if (isLoading) {
-    return <p className="text-ink-muted">Cargando clientes...</p>
-  }
-
-  if (isError) {
-    return <p className="text-error">No se han podido cargar los clientes.</p>
-  }
+  const { data, isLoading, isError } = useClients({
+    search: debouncedSearch || undefined,
+    channel: channel || undefined,
+    tagId: tagId || undefined,
+  })
 
   return (
     <div className="flex flex-col gap-4">
@@ -141,14 +145,28 @@ export function ClientsPage() {
         <KpiCard icon={Repeat} label="Clientes recurrentes" value="—" pending />
         <KpiCard icon={ShoppingCart} label="Total de pedidos" value="—" pending />
       </div>
-      <div className="overflow-x-auto">
-        <Table
-          columns={columns}
-          data={data?.data ?? []}
-          getRowKey={(client) => client.id}
-          emptyState={<EmptyState title="Todavía no tienes clientes" />}
-        />
-      </div>
+
+      <ClientsFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        channel={channel}
+        onChannelChange={setChannel}
+        tagId={tagId}
+        onTagIdChange={setTagId}
+      />
+
+      {isLoading && <p className="text-ink-muted">Cargando clientes...</p>}
+      {isError && <p className="text-error">No se han podido cargar los clientes.</p>}
+      {!isLoading && !isError && (
+        <div className="overflow-x-auto">
+          <Table
+            columns={columns}
+            data={data?.data ?? []}
+            getRowKey={(client) => client.id}
+            emptyState={<EmptyState title="Todavía no tienes clientes" />}
+          />
+        </div>
+      )}
     </div>
   )
 }
