@@ -1,7 +1,21 @@
 import { useId } from 'react'
 import type { InputProps } from './input.types'
 
-export function Input({ label, error, icon, className = '', id, ref, ...props }: InputProps) {
+const inputSizes = {
+  sm: 'py-1',
+  md: 'py-2',
+} as const
+
+export function Input({
+  label,
+  error,
+  icon,
+  size = 'md',
+  className = '',
+  id,
+  ref,
+  ...props
+}: InputProps) {
   const generatedId = useId()
   const inputId = id ?? generatedId
 
@@ -22,8 +36,9 @@ export function Input({ label, error, icon, className = '', id, ref, ...props }:
           aria-invalid={!!error}
           aria-describedby={error ? `${inputId}-error` : undefined}
           className={`
-            w-full rounded-lg border px-3 py-2 text-ink
+            w-full rounded-lg border px-3 text-ink
             transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30
+            ${inputSizes[size]}
             ${icon ? 'pl-9' : ''}
             ${error ? 'border-error focus:border-error' : 'border-neutral-200 focus:border-primary'}
             ${className}

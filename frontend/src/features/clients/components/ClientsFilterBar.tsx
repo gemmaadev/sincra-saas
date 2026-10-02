@@ -36,6 +36,7 @@ export function ClientsFilterBar({
           label="Buscar"
           placeholder="Nombre, email o teléfono"
           icon={<Search size={16} aria-hidden="true" />}
+          size="sm"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
         />
@@ -46,6 +47,7 @@ export function ClientsFilterBar({
           label="Canal"
           placeholder="Todos"
           options={channelOptions}
+          size="sm"
           value={channel}
           onChange={(event) => onChannelChange(event.target.value as ChannelFilter | '')}
         />
@@ -56,6 +58,7 @@ export function ClientsFilterBar({
           label="Etiqueta"
           placeholder="Todas"
           options={tagOptions}
+          size="sm"
           value={tagId}
           onChange={(event) => onTagIdChange(event.target.value)}
         />

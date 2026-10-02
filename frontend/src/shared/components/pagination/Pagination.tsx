@@ -7,7 +7,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   }
 
   return (
-    <div className="flex items-center justify-between border-t border-neutral-100 pt-3">
+    <div className="flex items-center justify-between border-neutral-100 pt-3">
       <span className="text-sm text-ink-muted">
         Página {page} de {totalPages}
       </span>

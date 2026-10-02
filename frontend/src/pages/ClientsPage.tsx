@@ -16,7 +16,7 @@ interface KpiCardProps {
 
 function KpiCard({ icon: Icon, label, value, pending = false }: KpiCardProps) {
   return (
-    <Card className="flex items-start gap-3">
+    <Card padding="sm" className="flex items-start gap-3">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
         <Icon size={26} aria-hidden="true" />
       </div>
