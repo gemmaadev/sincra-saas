@@ -4,6 +4,7 @@ export interface Tab {
   key: string
   label: string
   content: ReactNode
+  disabled?: boolean
 }
 
 export interface TabsProps {
