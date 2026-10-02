@@ -59,12 +59,24 @@ export async function listClients(businessId: string, filters: ListClientsFilter
     }),
   }
 
-  const [data, total] = await Promise.all([
-    prisma.client.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const [data, total, newClientsCount] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        clientTags: { where: { removedAt: null }, include: { tag: true } },
+      },
+    }),
     prisma.client.count({ where }),
+    prisma.client.count({ where: { ...where, createdAt: { gte: thirtyDaysAgo } } }),
   ])
 
-  return buildPaginatedResponse(data, total, page, limit)
+  return { ...buildPaginatedResponse(data, total, page, limit), newClientsCount }
 }
 
 // TODO: once the Order (and later Communication) models exist, include them here too.

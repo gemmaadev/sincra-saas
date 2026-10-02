@@ -27,11 +27,10 @@ enum TagPriority {
 }
 
 enum ClientStage {
-  LEAD // contacto inicial, sin compra
-  NEW // primera compra reciente
-  RECURRING // varias compras
-  VIP // alto valor
-  INACTIVE // dejó de comprar
+  LEAD // initial contact, no purchase
+  NEW // first recent purchase
+  RECURRING // multiple purchases
+  INACTIVE // stopped buying
 }
 
 enum Channel {
@@ -40,8 +39,6 @@ enum Channel {
   WHATSAPP
   INSTAGRAM
   MESSENGER
-  WEB
-  OTHER
 }
 
 model Business {

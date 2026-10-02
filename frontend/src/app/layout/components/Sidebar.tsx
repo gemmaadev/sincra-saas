@@ -15,6 +15,8 @@ import { SidebarItem } from './SidebarItem'
 import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
+import { TagPill } from '@/shared/components/tag-pill'
+import { useTags } from '@/shared/hooks'
 import { Link } from 'react-router'
 
 const navItems = [
@@ -45,14 +47,9 @@ const channels = [
   { icon: <SiMessenger size={16} aria-hidden="true" />, label: 'Messenger', count: 1 },
 ]
 
-const labels = [
-  { color: 'bg-primary', name: 'Nuevo cliente' },
-  { color: 'bg-warning', name: 'Consulta' },
-  { color: 'bg-success', name: 'Pedido' },
-  { color: 'bg-error', name: 'Urgente' },
-]
-
 export function Sidebar() {
+  const { data: labels = [] } = useTags()
+
   return (
     <aside className="flex w-64 flex-col gap-6 overflow-y-auto border-r border-neutral-100 bg-surface-sidebar p-4 max-md:hidden">
       <Link to="/">
@@ -80,17 +77,13 @@ export function Sidebar() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="px-3 text-xs font-semibold uppercase text-ink-muted">Etiquetas</span>
-        {labels.map((label) => (
-          <div
-            key={label.name}
-            className="flex items-center gap-2 px-3 py-1 text-sm text-ink-muted"
-          >
-            <span className={`h-2 w-2 rounded-full ${label.color}`} />
-            {label.name}
-          </div>
-        ))}
+      <div className="flex flex-col gap-2 px-3">
+        <span className="text-xs font-semibold uppercase text-ink-muted">Etiquetas</span>
+        <div className="flex flex-wrap gap-2">
+          {labels.map((label) => (
+            <TagPill key={label.id} name={label.name} color={label.color} />
+          ))}
+        </div>
         <SincraButton variant="text" className="justify-start">
           Ver todas
         </SincraButton>

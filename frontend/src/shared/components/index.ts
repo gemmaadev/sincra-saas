@@ -13,4 +13,7 @@ export * from './icon'
 export * from './logo'
 export * from './select'
 export * from './toggle'
+export * from './tag-pill'
+export * from './pagination'
+export * from './skeleton'
 
