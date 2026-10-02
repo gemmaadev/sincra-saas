@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
@@ -31,6 +31,9 @@ function mockApiGet(overrides?: {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path.startsWith('/tags')) {
       return Promise.resolve({ tags: [] })
+    }
+    if (path.startsWith('/clients/')) {
+      return Promise.resolve({ client: mockClient })
     }
     const data = overrides?.data ?? [mockClient]
     return Promise.resolve({
@@ -69,13 +72,13 @@ describe('ClientsPage', () => {
 
   // Given the clients table is rendered
   // When the user clicks a row
-  // Then the client detail drawer should open showing that client's id
-  it('opens the detail drawer with the client id when a row is clicked', async () => {
+  // Then the client detail drawer should open showing that client's data
+  it('opens the detail drawer with the client data when a row is clicked', async () => {
     renderClientsPage()
     const row = await screen.findByText('Laura García')
-    row.closest('tr')!.click()
+    fireEvent.click(row.closest('tr')!)
     expect(await screen.findByText('Ficha de cliente')).toBeInTheDocument()
-    expect(screen.getByText(/client-1/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByText('Laura García')).toHaveLength(2))
   })
 
   // Given a successful response with a known total
