@@ -3,6 +3,7 @@ import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-r
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client, ChannelFilter } from '@/features/clients/hooks/useClients'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
+import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTableSkeleton'
 import { Table, EmptyState, Avatar, Card, TagPill, Pagination } from '@/shared/components'
 import { useDebouncedValue } from '@/shared/hooks'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
@@ -173,7 +174,11 @@ export function ClientsPage() {
         onTagIdChange={handleTagIdChange}
       />
 
-      {isLoading && <p className="text-ink-muted">Cargando clientes...</p>}
+      {isLoading && (
+        <div className="overflow-x-auto">
+          <ClientsTableSkeleton />
+        </div>
+      )}
       {isError && <p className="text-error">No se han podido cargar los clientes.</p>}
       {!isLoading && !isError && (
         <div className="flex flex-col gap-3">
