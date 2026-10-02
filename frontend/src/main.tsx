@@ -24,7 +24,7 @@ createRoot(document.getElementById('root')!).render(
             </MantineProvider>
           </AuthProvider>
         </GoogleOAuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
       </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>,

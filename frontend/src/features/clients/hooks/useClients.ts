@@ -42,6 +42,7 @@ interface ClientsResponse {
 
 export interface UseClientsParams {
   page?: number
+  limit?: number
   search?: string
   channel?: ChannelFilter
   type?: string
@@ -54,6 +55,7 @@ export function useClients(params: UseClientsParams = {}) {
     queryFn: async () => {
       const query = new URLSearchParams()
       if (params.page) query.set('page', String(params.page))
+      if (params.limit) query.set('limit', String(params.limit))
       if (params.search) query.set('search', params.search)
       if (params.channel) query.set('channel', params.channel)
       if (params.type) query.set('type', params.type)

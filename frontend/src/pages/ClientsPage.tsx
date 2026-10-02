@@ -3,7 +3,7 @@ import { Users, UserPlus, Repeat, ShoppingCart, type LucideIcon } from 'lucide-r
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client, ChannelFilter } from '@/features/clients/hooks/useClients'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
-import { Table, EmptyState, Avatar, Card, TagPill } from '@/shared/components'
+import { Table, EmptyState, Avatar, Card, TagPill, Pagination } from '@/shared/components'
 import { useDebouncedValue } from '@/shared/hooks'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 
@@ -118,9 +118,27 @@ export function ClientsPage() {
   const [search, setSearch] = useState('')
   const [channel, setChannel] = useState<ChannelFilter | ''>('')
   const [tagId, setTagId] = useState('')
+  const [page, setPage] = useState(1)
   const debouncedSearch = useDebouncedValue(search)
 
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    setPage(1)
+  }
+
+  function handleChannelChange(value: ChannelFilter | '') {
+    setChannel(value)
+    setPage(1)
+  }
+
+  function handleTagIdChange(value: string) {
+    setTagId(value)
+    setPage(1)
+  }
+
   const { data, isLoading, isError } = useClients({
+    page,
+    limit: 10,
     search: debouncedSearch || undefined,
     channel: channel || undefined,
     tagId: tagId || undefined,
@@ -148,22 +166,29 @@ export function ClientsPage() {
 
       <ClientsFilterBar
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
         channel={channel}
-        onChannelChange={setChannel}
+        onChannelChange={handleChannelChange}
         tagId={tagId}
-        onTagIdChange={setTagId}
+        onTagIdChange={handleTagIdChange}
       />
 
       {isLoading && <p className="text-ink-muted">Cargando clientes...</p>}
       {isError && <p className="text-error">No se han podido cargar los clientes.</p>}
       {!isLoading && !isError && (
-        <div className="overflow-x-auto">
-          <Table
-            columns={columns}
-            data={data?.data ?? []}
-            getRowKey={(client) => client.id}
-            emptyState={<EmptyState title="Todavía no tienes clientes" />}
+        <div className="flex flex-col gap-3">
+          <div className="overflow-x-auto">
+            <Table
+              columns={columns}
+              data={data?.data ?? []}
+              getRowKey={(client) => client.id}
+              emptyState={<EmptyState title="Todavía no tienes clientes" />}
+            />
+          </div>
+          <Pagination
+            page={page}
+            totalPages={data?.pagination.totalPages ?? 1}
+            onPageChange={setPage}
           />
         </div>
       )}
