@@ -57,7 +57,13 @@ export const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { path: '/inbox', element: <InboxPage /> },
-              { path: '/clients', element: <ClientsPage /> },
+              {
+                // ClientsPage renders the detail Drawer itself (via useMatch), so this
+                // only exists to make /clients/:id a valid, non-404 URL.
+                path: '/clients',
+                element: <ClientsPage />,
+                children: [{ path: ':id' }],
+              },
               { path: '/orders', element: <OrdersPage /> },
               { path: '/calendar', element: <CalendarPage /> },
               { path: '/map', element: <MapPage /> },

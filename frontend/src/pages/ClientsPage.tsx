@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { Tooltip } from '@mantine/core'
+import { useMatch, useNavigate } from 'react-router'
+import { Drawer, Tooltip } from '@mantine/core'
 import { Users, UserPlus, Repeat, ShoppingCart, Info, type LucideIcon } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import type { Client, ChannelFilter } from '@/features/clients/hooks/useClients'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
 import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTableSkeleton'
+import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
 import { Table, EmptyState, Avatar, Card, TagPill, Pagination } from '@/shared/components'
 import { useDebouncedValue } from '@/shared/hooks'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
@@ -125,6 +127,8 @@ const columns = [
 ]
 
 export function ClientsPage() {
+  const navigate = useNavigate()
+  const detailMatch = useMatch('/clients/:id')
   const [search, setSearch] = useState('')
   const [channel, setChannel] = useState<ChannelFilter | ''>('')
   const [tagId, setTagId] = useState('')
@@ -201,6 +205,7 @@ export function ClientsPage() {
               columns={columns}
               data={data?.data ?? []}
               getRowKey={(client) => client.id}
+              onRowClick={(client) => navigate(`/clients/${client.id}`)}
               emptyState={<EmptyState title="Todavía no tienes clientes" />}
             />
           </div>
@@ -211,6 +216,18 @@ export function ClientsPage() {
           />
         </div>
       )}
+
+      <Drawer
+        opened={!!detailMatch}
+        onClose={() => navigate('/clients')}
+        position="right"
+        size="lg"
+        title="Ficha de cliente"
+        closeButtonProps={{ 'aria-label': 'Cerrar' }}
+        transitionProps={{ duration: 300, timingFunction: 'ease-out' }}
+      >
+        {detailMatch && <ClientDetailPanel id={detailMatch.params.id!} />}
+      </Drawer>
     </div>
   )
 }

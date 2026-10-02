@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -45,7 +46,9 @@ function renderClientsPage() {
   return render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <ClientsPage />
+        <MemoryRouter initialEntries={['/clients']}>
+          <ClientsPage />
+        </MemoryRouter>
       </QueryClientProvider>
     </MantineProvider>,
   )
@@ -62,6 +65,17 @@ describe('ClientsPage', () => {
   it('renders the clients returned by the API', async () => {
     renderClientsPage()
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
+  })
+
+  // Given the clients table is rendered
+  // When the user clicks a row
+  // Then the client detail drawer should open showing that client's id
+  it('opens the detail drawer with the client id when a row is clicked', async () => {
+    renderClientsPage()
+    const row = await screen.findByText('Laura García')
+    row.closest('tr')!.click()
+    expect(await screen.findByText('Ficha de cliente')).toBeInTheDocument()
+    expect(screen.getByText(/client-1/)).toBeInTheDocument()
   })
 
   // Given a successful response with a known total
