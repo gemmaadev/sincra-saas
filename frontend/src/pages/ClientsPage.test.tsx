@@ -77,8 +77,8 @@ describe('ClientsPage', () => {
     renderClientsPage()
     const row = await screen.findByText('Laura García')
     fireEvent.click(row.closest('tr')!)
-    expect(await screen.findByText('Ficha de cliente')).toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByText('Laura García')).toHaveLength(2))
+    expect(screen.getByLabelText('Cerrar')).toBeInTheDocument()
   })
 
   // Given a successful response with a known total

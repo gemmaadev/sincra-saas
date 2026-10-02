@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
@@ -45,15 +45,6 @@ describe('ClientDetailPanel', () => {
     expect(screen.getByText('Cargando cliente...')).toBeInTheDocument()
   })
 
-  // Given a successful response
-  // When ClientDetailPanel is rendered
-  // Then the client's name should be shown
-  it('shows the client name once loaded', async () => {
-    vi.mocked(api.get).mockResolvedValue({ client: mockClient })
-    renderPanel()
-    expect(await screen.findByText('Laura García')).toBeInTheDocument()
-  })
-
   // Given the client request fails
   // When ClientDetailPanel is rendered
   // Then an error message should be shown
@@ -61,5 +52,36 @@ describe('ClientDetailPanel', () => {
     vi.mocked(api.get).mockRejectedValue(new Error('Network error'))
     renderPanel()
     expect(await screen.findByText('No se ha podido cargar el cliente.')).toBeInTheDocument()
+  })
+
+  // Given a successful response
+  // When ClientDetailPanel is rendered
+  // Then the header and the Resumen tab content should both be visible
+  it('renders the header and the Resumen tab by default', async () => {
+    vi.mocked(api.get).mockResolvedValue({ client: mockClient })
+    renderPanel()
+    expect(await screen.findByText('Laura García')).toBeInTheDocument()
+    expect(screen.getByText('Cliente desde')).toBeInTheDocument()
+  })
+
+  // Given the Historial tab is out of scope for this project
+  // When ClientDetailPanel is rendered
+  // Then that tab should be disabled, not just show a message when clicked
+  it('disables the Historial tab instead of making it clickable', async () => {
+    vi.mocked(api.get).mockResolvedValue({ client: mockClient })
+    renderPanel()
+    await screen.findByText('Laura García')
+    expect(screen.getByRole('tab', { name: 'Historial' })).toBeDisabled()
+  })
+
+  // Given the clients tabs
+  // When the user selects a different tab
+  // Then that tab's real content should be shown
+  it('switches to the Notas tab content when selected', async () => {
+    vi.mocked(api.get).mockResolvedValue({ client: { ...mockClient, notes: 'Prefiere WhatsApp' } })
+    renderPanel()
+    await screen.findByText('Laura García')
+    fireEvent.click(screen.getByRole('tab', { name: 'Notas' }))
+    expect(screen.getByText('Prefiere WhatsApp')).toBeInTheDocument()
   })
 })
