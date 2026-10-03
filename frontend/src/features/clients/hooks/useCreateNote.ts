@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-import type { Note } from './useClientNotes'
+import type { Note } from '../types/note.types'
 
 export function useCreateNote(clientId: string) {
   const queryClient = useQueryClient()

@@ -1,5 +1,5 @@
 import { TagPill } from '@/shared/components'
-import type { ClientDetail } from '../hooks/useClientDetail'
+import type { ClientDetail } from '../types/client.types'
 
 interface TagsTabProps {
   client: ClientDetail

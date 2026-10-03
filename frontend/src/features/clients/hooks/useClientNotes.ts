@@ -1,13 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-
-export interface Note {
-  id: string
-  clientId: string
-  content: string
-  createdBy: string | null
-  createdAt: string
-}
+import type { Note } from '../types/note.types'
 
 export function useClientNotes(clientId: string) {
   return useQuery({

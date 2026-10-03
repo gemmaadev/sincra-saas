@@ -1,7 +1,7 @@
 import { Mail, Phone, Pencil, Trash2 } from 'lucide-react'
 import { Avatar, SincraButton } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
-import type { ClientDetail } from '../hooks/useClientDetail'
+import type { ClientDetail } from '../types/client.types'
 
 interface ClientDetailHeaderProps {
   client: ClientDetail

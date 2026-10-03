@@ -1,6 +1,6 @@
 import { Card } from '@/shared/components'
 import { formatDate } from '@/shared/utils/date'
-import type { ClientDetail } from '../hooks/useClientDetail'
+import type { ClientDetail } from '../types/client.types'
 
 interface SummaryTabProps {
   client: ClientDetail
