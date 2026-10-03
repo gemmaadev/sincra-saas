@@ -30,7 +30,7 @@ export function NotesTab({ clientId }: NotesTabProps) {
           placeholder="Escribe una nota sobre este cliente..."
           className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex justify-end items-center gap-2">
           <SincraButton
             size="sm"
             disabled={!content.trim()}
