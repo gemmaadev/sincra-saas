@@ -19,11 +19,19 @@ const mockClient = {
   zone: null,
   latitude: null,
   longitude: null,
-  notes: null,
   lastContact: null,
   clientTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
+}
+
+function mockApiGet() {
+  vi.mocked(api.get).mockImplementation((path: string) => {
+    if (path.endsWith('/notes')) {
+      return Promise.resolve({ notes: [] })
+    }
+    return Promise.resolve({ client: mockClient })
+  })
 }
 
 function renderPanel(id = 'client-1') {
@@ -58,7 +66,7 @@ describe('ClientDetailPanel', () => {
   // When ClientDetailPanel is rendered
   // Then the header and the Resumen tab content should both be visible
   it('renders the header and the Resumen tab by default', async () => {
-    vi.mocked(api.get).mockResolvedValue({ client: mockClient })
+    mockApiGet()
     renderPanel()
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
     expect(screen.getByText('Cliente desde')).toBeInTheDocument()
@@ -68,20 +76,22 @@ describe('ClientDetailPanel', () => {
   // When ClientDetailPanel is rendered
   // Then that tab should be disabled, not just show a message when clicked
   it('disables the Historial tab instead of making it clickable', async () => {
-    vi.mocked(api.get).mockResolvedValue({ client: mockClient })
+    mockApiGet()
     renderPanel()
     await screen.findByText('Laura García')
     expect(screen.getByRole('tab', { name: 'Historial' })).toBeDisabled()
   })
 
   // Given the clients tabs
-  // When the user selects a different tab
-  // Then that tab's real content should be shown
+  // When the user selects Notas
+  // Then the real NotesTab content (its "add note" form) should be shown
   it('switches to the Notas tab content when selected', async () => {
-    vi.mocked(api.get).mockResolvedValue({ client: { ...mockClient, notes: 'Prefiere WhatsApp' } })
+    mockApiGet()
     renderPanel()
     await screen.findByText('Laura García')
     fireEvent.click(screen.getByRole('tab', { name: 'Notas' }))
-    expect(screen.getByText('Prefiere WhatsApp')).toBeInTheDocument()
+    expect(
+      await screen.findByPlaceholderText('Escribe una nota sobre este cliente...'),
+    ).toBeInTheDocument()
   })
 })
