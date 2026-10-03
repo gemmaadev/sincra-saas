@@ -2,10 +2,7 @@ import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
 import { listNotesForClient, createNote, deleteNote } from './note.service'
-
-interface CreateNoteBody {
-  content: string
-}
+import type { CreateNoteBody } from './note.types'
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const notes = await listNotesForClient(req.businessId!, req.params.clientId as string)

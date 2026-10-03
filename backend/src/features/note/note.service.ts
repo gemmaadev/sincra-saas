@@ -1,8 +1,9 @@
-import prisma from '../../config/db'
 import { AppError } from '../../shared/AppError'
+import { findClientById } from '../client/client.model'
+import { findNotesByClient, insertNote, findNoteWithClient, deleteNoteById } from './note.model'
 
 async function assertClientExists(businessId: string, clientId: string) {
-  const client = await prisma.client.findUnique({ where: { id: clientId, businessId } })
+  const client = await findClientById(businessId, clientId)
 
   if (!client) {
     throw new AppError('Cliente no encontrado', 404, 'CLIENT_NOT_FOUND')
@@ -12,10 +13,7 @@ async function assertClientExists(businessId: string, clientId: string) {
 export async function listNotesForClient(businessId: string, clientId: string) {
   await assertClientExists(businessId, clientId)
 
-  return prisma.note.findMany({
-    where: { clientId },
-    orderBy: { createdAt: 'desc' },
-  })
+  return findNotesByClient(clientId)
 }
 
 export async function createNote(
@@ -26,20 +24,15 @@ export async function createNote(
 ) {
   await assertClientExists(businessId, clientId)
 
-  return prisma.note.create({
-    data: { clientId, content, createdBy },
-  })
+  return insertNote(clientId, content, createdBy)
 }
 
 export async function deleteNote(businessId: string, noteId: string) {
-  const note = await prisma.note.findUnique({
-    where: { id: noteId },
-    include: { client: true },
-  })
+  const note = await findNoteWithClient(noteId)
 
   if (!note || note.client.businessId !== businessId) {
     throw new AppError('Nota no encontrada', 404, 'NOTE_NOT_FOUND')
   }
 
-  await prisma.note.delete({ where: { id: noteId } })
+  await deleteNoteById(noteId)
 }

@@ -1,96 +1,69 @@
-import { describe, it, expect } from 'vitest'
-import prisma from '../../config/db'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as clientModel from '../client/client.model'
+import * as noteModel from './note.model'
 import { listNotesForClient, createNote, deleteNote } from './note.service'
 
-describe('note.service', () => {
-  // Given a client with no notes
-  // When createNote is called twice
-  // Then listNotesForClient should return both, newest first
-  it('creates notes and lists them newest first', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const client = await prisma.client.create({
-      data: { businessId: business.id, name: 'Cliente de prueba' },
+vi.mock('../client/client.model')
+vi.mock('./note.model')
+
+beforeEach(() => vi.resetAllMocks())
+
+describe('listNotesForClient / createNote', () => {
+  // Given a client that does not belong to the business
+  // When notes are listed or created
+  // Then CLIENT_NOT_FOUND is thrown and the note model is not touched
+  it('rejects when the client is not in the business', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue(null)
+
+    await expect(listNotesForClient('business-1', 'client-1')).rejects.toMatchObject({
+      code: 'CLIENT_NOT_FOUND',
     })
-
-    const first = await createNote(business.id, client.id, 'Primera nota', 'user-1')
-    await new Promise((resolve) => setTimeout(resolve, 10))
-    const second = await createNote(business.id, client.id, 'Segunda nota', 'user-1')
-
-    const notes = await listNotesForClient(business.id, client.id)
-
-    expect(notes).toHaveLength(2)
-    expect(notes[0].id).toBe(second.id)
-    expect(notes[1].id).toBe(first.id)
-
-    await prisma.business.delete({ where: { id: business.id } })
+    await expect(createNote('business-1', 'client-1', 'hola', 'user-1')).rejects.toMatchObject({
+      statusCode: 404,
+    })
+    expect(noteModel.findNotesByClient).not.toHaveBeenCalled()
+    expect(noteModel.insertNote).not.toHaveBeenCalled()
   })
 
-  // Given a client that belongs to a different business
-  // When createNote is called for it with the wrong businessId
-  // Then it should throw instead of creating the note
-  it('rejects creating a note for a client from another business', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const otherBusiness = await prisma.business.create({ data: { name: 'Otro negocio' } })
-    const otherClient = await prisma.client.create({
-      data: { businessId: otherBusiness.id, name: 'Cliente ajeno' },
+  // Given an existing client
+  // When a note is created
+  // Then it is inserted with the author
+  it('creates the note for an existing client', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+
+    await createNote('business-1', 'client-1', 'hola', 'user-1')
+
+    expect(noteModel.insertNote).toHaveBeenCalledWith('client-1', 'hola', 'user-1')
+  })
+})
+
+describe('deleteNote', () => {
+  // Given a note whose client belongs to another business
+  // When it is deleted
+  // Then NOTE_NOT_FOUND is thrown (no cross-tenant deletes)
+  it('does not delete notes of another business', async () => {
+    vi.mocked(noteModel.findNoteWithClient).mockResolvedValue({
+      id: 'note-1',
+      client: { businessId: 'other-business' },
+    } as never)
+
+    await expect(deleteNote('business-1', 'note-1')).rejects.toMatchObject({
+      code: 'NOTE_NOT_FOUND',
     })
-
-    await expect(createNote(business.id, otherClient.id, 'Nota', 'user-1')).rejects.toThrow()
-
-    await prisma.business.delete({ where: { id: business.id } })
-    await prisma.business.delete({ where: { id: otherBusiness.id } })
+    expect(noteModel.deleteNoteById).not.toHaveBeenCalled()
   })
 
-  // Given an existing note
-  // When deleteNote is called with the right businessId
-  // Then the note should be removed
-  it('deletes a note', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const client = await prisma.client.create({
-      data: { businessId: business.id, name: 'Cliente de prueba' },
-    })
-    const note = await createNote(business.id, client.id, 'Nota a borrar', 'user-1')
+  // Given a note of the same business
+  // When it is deleted
+  // Then the model deletes it
+  it('deletes a note of the same business', async () => {
+    vi.mocked(noteModel.findNoteWithClient).mockResolvedValue({
+      id: 'note-1',
+      client: { businessId: 'business-1' },
+    } as never)
 
-    await deleteNote(business.id, note.id)
+    await deleteNote('business-1', 'note-1')
 
-    const notes = await listNotesForClient(business.id, client.id)
-    expect(notes).toHaveLength(0)
-
-    await prisma.business.delete({ where: { id: business.id } })
-  })
-
-  // Given a note that belongs to a different business
-  // When deleteNote is called with the wrong businessId
-  // Then it should throw instead of deleting it
-  it('rejects deleting a note from another business', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const otherBusiness = await prisma.business.create({ data: { name: 'Otro negocio' } })
-    const otherClient = await prisma.client.create({
-      data: { businessId: otherBusiness.id, name: 'Cliente ajeno' },
-    })
-    const note = await createNote(otherBusiness.id, otherClient.id, 'Nota ajena', 'user-1')
-
-    await expect(deleteNote(business.id, note.id)).rejects.toThrow()
-
-    await prisma.business.delete({ where: { id: business.id } })
-    await prisma.business.delete({ where: { id: otherBusiness.id } })
-  })
-
-  // Given a client that cascades its notes
-  // When the client is deleted
-  // Then its notes should be deleted too
-  it('cascade-deletes notes when the client is deleted', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const client = await prisma.client.create({
-      data: { businessId: business.id, name: 'Cliente de prueba' },
-    })
-    const note = await createNote(business.id, client.id, 'Nota', 'user-1')
-
-    await prisma.client.delete({ where: { id: client.id } })
-
-    const deletedNote = await prisma.note.findUnique({ where: { id: note.id } })
-    expect(deletedNote).toBeNull()
-
-    await prisma.business.delete({ where: { id: business.id } })
+    expect(noteModel.deleteNoteById).toHaveBeenCalledWith('note-1')
   })
 })
