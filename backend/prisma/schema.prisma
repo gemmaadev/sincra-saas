@@ -123,19 +123,31 @@ model Client {
   zone        String?
   latitude    Float?
   longitude   Float?
-  notes       String?
   lastContact DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
   business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   clientTags ClientTag[]
+  notes      Note[]
 
   @@unique([businessId, email])
   @@unique([businessId, phone])
   @@index([businessId])
   @@index([businessId, stage])
   @@index([name])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  clientId  String
+  content   String
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
 }
 
 model Tag {
