@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest'
-import prisma from '../../config/db'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as userModel from './user.model'
 import cloudinary from '../../config/cloudinary'
 import * as hash from '../../shared/hash'
 import {
@@ -9,13 +9,7 @@ import {
   uploadUserAvatar,
 } from './user.service'
 
-vi.mock('../../config/db', () => ({
-  default: {
-    user: { update: vi.fn(), findUnique: vi.fn() },
-    businessMember: { update: vi.fn(), findUnique: vi.fn() },
-    $transaction: vi.fn(),
-  },
-}))
+vi.mock('./user.model')
 
 vi.mock('../../config/cloudinary', () => ({
   default: {
@@ -39,7 +33,7 @@ describe('getUserProfile', () => {
   // When fetching the profile
   // Then it should return the mapped profile
   it('returns the mapped profile when the membership exists and is active', async () => {
-    vi.mocked(prisma.businessMember.findUnique).mockResolvedValue({
+    vi.mocked(userModel.findActiveMembershipWithUser).mockResolvedValue({
       role: 'ADMIN',
       avatarUrl: 'https://cdn.test/avatar.png',
       phone: '+34600123456',
@@ -54,10 +48,7 @@ describe('getUserProfile', () => {
 
     const profile = await getUserProfile('user-1', 'biz-1')
 
-    expect(prisma.businessMember.findUnique).toHaveBeenCalledWith({
-      where: { businessId_userId: { businessId: 'biz-1', userId: 'user-1' }, status: 'ACTIVE' },
-      include: { user: true },
-    })
+    expect(userModel.findActiveMembershipWithUser).toHaveBeenCalledWith('user-1', 'biz-1')
     expect(profile).toEqual({
       id: 'user-1',
       name: 'Laura',
@@ -74,7 +65,7 @@ describe('getUserProfile', () => {
   // When fetching the profile
   // Then it should throw a 401 AppError
   it('throws a 401 AppError when there is no active membership', async () => {
-    vi.mocked(prisma.businessMember.findUnique).mockResolvedValue(null)
+    vi.mocked(userModel.findActiveMembershipWithUser).mockResolvedValue(null)
 
     await expect(getUserProfile('user-1', 'biz-1')).rejects.toMatchObject({ statusCode: 401 })
   })
@@ -83,17 +74,13 @@ describe('getUserProfile', () => {
 describe('updateUserProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(prisma.$transaction as unknown as Mock).mockImplementation((ops: unknown[]) =>
-      Promise.all(ops as Promise<unknown>[]),
-    )
   })
 
   // Given only "name" is provided
   // When updating the profile
   // Then the User update should only touch `name`, and BusinessMember shouldn't be touched at all
-  it('only updates the fields that were actually provided', async () => {
-    vi.mocked(prisma.user.update).mockResolvedValue({} as never)
-    vi.mocked(prisma.businessMember.update).mockResolvedValue({
+  it('passes only the provided fields to the model', async () => {
+    vi.mocked(userModel.updateUserAndMembership).mockResolvedValue({
       role: 'ADMIN',
       avatarUrl: null,
       phone: null,
@@ -108,14 +95,11 @@ describe('updateUserProfile', () => {
 
     await updateUserProfile('user-1', 'biz-1', { name: 'Nuevo Nombre' })
 
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      data: { name: 'Nuevo Nombre' },
-    })
-    expect(prisma.businessMember.update).toHaveBeenCalledWith({
-      where: { businessId_userId: { businessId: 'biz-1', userId: 'user-1' }, status: 'ACTIVE' },
-      data: {},
-      include: { user: true },
+    expect(userModel.updateUserAndMembership).toHaveBeenCalledWith('user-1', 'biz-1', {
+      name: 'Nuevo Nombre',
+      avatarUrl: undefined,
+      phone: undefined,
+      notificationPrefs: undefined,
     })
   })
 
@@ -123,8 +107,7 @@ describe('updateUserProfile', () => {
   // When updating the profile
   // Then the User update should be a no-op, and BusinessMember should only touch avatarUrl
   it('does not touch name or notificationPrefs when only avatarUrl changes', async () => {
-    vi.mocked(prisma.user.update).mockResolvedValue({} as never)
-    vi.mocked(prisma.businessMember.update).mockResolvedValue({
+    vi.mocked(userModel.updateUserAndMembership).mockResolvedValue({
       role: 'ADMIN',
       avatarUrl: 'https://cdn.test/new.png',
       phone: null,
@@ -134,11 +117,11 @@ describe('updateUserProfile', () => {
 
     await updateUserProfile('user-1', 'biz-1', { avatarUrl: 'https://cdn.test/new.png' })
 
-    expect(prisma.user.update).toHaveBeenCalledWith({ where: { id: 'user-1' }, data: {} })
-    expect(prisma.businessMember.update).toHaveBeenCalledWith({
-      where: { businessId_userId: { businessId: 'biz-1', userId: 'user-1' }, status: 'ACTIVE' },
-      data: { avatarUrl: 'https://cdn.test/new.png' },
-      include: { user: true },
+    expect(userModel.updateUserAndMembership).toHaveBeenCalledWith('user-1', 'biz-1', {
+      name: undefined,
+      avatarUrl: 'https://cdn.test/new.png',
+      phone: undefined,
+      notificationPrefs: undefined,
     })
   })
 })
@@ -152,29 +135,25 @@ describe('changeUserPassword', () => {
   // When changing the password
   // Then it should hash the new password and update the user
   it('hashes and stores the new password when the current one is correct', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+    vi.mocked(userModel.findUserById).mockResolvedValue({
       id: 'user-1',
       passwordHash: 'hash-actual',
     } as never)
     vi.mocked(hash.comparePassword).mockResolvedValue(true)
     vi.mocked(hash.hashPassword).mockResolvedValue('hash-nuevo')
-    vi.mocked(prisma.user.update).mockResolvedValue({} as never)
 
     await changeUserPassword('user-1', 'actual123', 'nueva12345')
 
     expect(hash.comparePassword).toHaveBeenCalledWith('actual123', 'hash-actual')
     expect(hash.hashPassword).toHaveBeenCalledWith('nueva12345')
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      data: { passwordHash: 'hash-nuevo' },
-    })
+    expect(userModel.updateUserPasswordHash).toHaveBeenCalledWith('user-1', 'hash-nuevo')
   })
 
   // Given the current password does not match the stored hash
   // When trying to change the password
   // Then it should throw a 401 AppError and never touch the database
   it('throws a 401 AppError when the current password is incorrect', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+    vi.mocked(userModel.findUserById).mockResolvedValue({
       id: 'user-1',
       passwordHash: 'hash-actual',
     } as never)
@@ -183,14 +162,14 @@ describe('changeUserPassword', () => {
     await expect(changeUserPassword('user-1', 'incorrecta', 'nueva12345')).rejects.toMatchObject({
       statusCode: 401,
     })
-    expect(prisma.user.update).not.toHaveBeenCalled()
+    expect(userModel.updateUserPasswordHash).not.toHaveBeenCalled()
   })
 
   // Given a user who signed up via social login only (no password set)
   // When trying to change the password
   // Then it should throw a 400 AppError
   it('throws a 400 AppError when the user has no password set', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+    vi.mocked(userModel.findUserById).mockResolvedValue({
       id: 'user-1',
       passwordHash: null,
     } as never)
@@ -218,7 +197,7 @@ describe('uploadUserAvatar', () => {
       callback(undefined, { secure_url: 'https://cdn.cloudinary.com/avatar.png' })
       return { end: vi.fn() }
     }) as never)
-    vi.mocked(prisma.businessMember.update).mockResolvedValue({
+    vi.mocked(userModel.updateMembershipAvatar).mockResolvedValue({
       role: 'ADMIN',
       avatarUrl: 'https://cdn.cloudinary.com/avatar.png',
       phone: null,
@@ -228,11 +207,11 @@ describe('uploadUserAvatar', () => {
 
     const profile = await uploadUserAvatar('user-1', 'biz-1', Buffer.from('fake-image'))
 
-    expect(prisma.businessMember.update).toHaveBeenCalledWith({
-      where: { businessId_userId: { businessId: 'biz-1', userId: 'user-1' }, status: 'ACTIVE' },
-      data: { avatarUrl: 'https://cdn.cloudinary.com/avatar.png' },
-      include: { user: true },
-    })
+    expect(userModel.updateMembershipAvatar).toHaveBeenCalledWith(
+      'user-1',
+      'biz-1',
+      'https://cdn.cloudinary.com/avatar.png',
+    )
     expect(profile.avatarUrl).toBe('https://cdn.cloudinary.com/avatar.png')
   })
 
@@ -251,6 +230,6 @@ describe('uploadUserAvatar', () => {
     await expect(
       uploadUserAvatar('user-1', 'biz-1', Buffer.from('fake-image')),
     ).rejects.toThrow('cloudinary is down')
-    expect(prisma.businessMember.update).not.toHaveBeenCalled()
+    expect(userModel.updateMembershipAvatar).not.toHaveBeenCalled()
   })
 })
