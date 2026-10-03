@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import prisma from './db'
-import { hashPassword } from '../features/auth/auth.service'
+import { hashPassword } from '../shared/hash'
 
 describe('Business and User models', () => {
   // Given valid business and user data
