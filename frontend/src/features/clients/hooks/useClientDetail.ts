@@ -13,7 +13,6 @@ export interface ClientDetail {
   zone: string | null
   latitude: number | null
   longitude: number | null
-  notes: string | null
   lastContact: string | null
   clientTags: ClientTag[]
   createdAt: string
