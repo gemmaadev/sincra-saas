@@ -1,8 +1,5 @@
-import prisma from '../../config/db'
+import { findTagsByBusiness } from './tag.model'
 
 export async function listTags(businessId: string) {
-  return prisma.tag.findMany({
-    where: { businessId },
-    orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
-  })
+  return findTagsByBusiness(businessId)
 }
