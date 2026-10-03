@@ -1,32 +1,36 @@
 import { Resend } from 'resend'
-import prisma from '../../config/db'
 import { AppError } from '../../shared/AppError'
 import { hashPassword } from '../../shared/hash'
 import { signInvitationToken, verifyInvitationToken } from '../../shared/jwt'
+import { findUserByEmail, findUserById, insertUser } from '../user/user.model'
+import {
+  findMembership,
+  insertPendingEmployee,
+  setInvitationCode,
+  activateInvitedMember,
+  findMembersWithUser,
+} from './team.model'
+import type { TeamMember } from './team.types'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function inviteMember(businessId: string, email: string, name: string) {
-  const existingUser = await prisma.user.findUnique({ where: { email } })
+  const existingUser = await findUserByEmail(email)
 
   if (existingUser) {
-    const existingMembership = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId: existingUser.id } },
-    })
+    const existingMembership = await findMembership(businessId, existingUser.id)
 
     if (existingMembership) {
       throw new AppError('Este usuario ya pertenece a este negocio', 409, 'ALREADY_MEMBER')
     }
   }
 
-  const user = existingUser ?? (await prisma.user.create({ data: { name, email } }))
+  const user = existingUser ?? (await insertUser(name, email))
 
-  await prisma.businessMember.create({
-    data: { businessId, userId: user.id, role: 'EMPLOYEE', status: 'PENDING' },
-  })
+  await insertPendingEmployee(businessId, user.id)
 
   const invitationToken = signInvitationToken({ userId: user.id, businessId, invite: true })
-  await prisma.user.update({ where: { id: user.id }, data: { invitationCode: invitationToken } })
+  await setInvitationCode(user.id, invitationToken)
 
   const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invitationToken}`
 
@@ -50,7 +54,7 @@ export async function acceptInvite(token: string, newPassword?: string) {
     throw new AppError('La invitación no es válida o ha caducado', 401, 'INVALID_TOKEN')
   }
 
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } })
+  const user = await findUserById(payload.userId)
 
   if (!user || user.invitationCode !== token) {
     throw new AppError('La invitación no es válida o ha caducado', 401, 'INVALID_TOKEN')
@@ -58,23 +62,11 @@ export async function acceptInvite(token: string, newPassword?: string) {
 
   const passwordHash = newPassword ? await hashPassword(newPassword) : undefined
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: user.id },
-      data: { invitationCode: null, ...(passwordHash && { passwordHash }) },
-    }),
-    prisma.businessMember.update({
-      where: { businessId_userId: { businessId: payload.businessId, userId: user.id } },
-      data: { status: 'ACTIVE' },
-    }),
-  ])
+  await activateInvitedMember(user.id, payload.businessId, passwordHash)
 }
 
-export async function listBusinessMembers(businessId: string) {
-  const memberships = await prisma.businessMember.findMany({
-    where: { businessId },
-    include: { user: true },
-  })
+export async function listBusinessMembers(businessId: string): Promise<TeamMember[]> {
+  const memberships = await findMembersWithUser(businessId)
 
   return memberships.map((membership) => ({
     id: membership.user.id,
