@@ -7,6 +7,7 @@ import { Checkbox } from '@/shared/components/checkbox'
 import { SincraLogo } from '@/shared/components/logo'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
+import { EMAIL_PATTERN } from '@/shared/utils'
 
 interface LoginFormData {
   email: string
@@ -56,7 +57,7 @@ export default function LoginPage() {
             {...register('email', {
               required: 'El email es obligatorio',
               pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                value: EMAIL_PATTERN,
                 message: 'Introduce un email válido',
               },
             })}

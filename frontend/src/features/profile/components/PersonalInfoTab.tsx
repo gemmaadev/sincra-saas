@@ -12,8 +12,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
 import { SectionHeader } from './SectionHeader'
-
-const PHONE_PATTERN = /^[+\d][\d\s]{6,}$/
+import { PHONE_PATTERN } from '@/shared/utils'
 
 interface PersonalInfoForm {
   name: string

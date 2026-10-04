@@ -7,6 +7,7 @@ import { Input, PasswordInput } from '@/shared/components/input'
 import { Checkbox } from '@/shared/components/checkbox'
 import { saveRegisterCredentials } from '@/features/auth/utils/registerCredentials'
 import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
+import { EMAIL_PATTERN } from '@/shared/utils'
 
 interface RegisterFormData {
   name: string
@@ -87,7 +88,7 @@ export default function RegisterPage() {
             {...register('email', {
               required: 'El email es obligatorio',
               pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                value: EMAIL_PATTERN,
                 message: 'Introduce un email válido',
               },
             })}
