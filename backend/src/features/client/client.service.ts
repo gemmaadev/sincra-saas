@@ -9,22 +9,47 @@ import {
   findClientWithTags,
   updateClientById,
   deleteClientById,
+  getUniqueViolationFields,
 } from './client.model'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
+function describeDuplicate(fields: string[]): string {
+  const target = fields.join(' ')
+
+  if (target.includes('email')) return 'Ya existe un cliente con ese email'
+  if (target.includes('phone')) return 'Ya existe un cliente con ese teléfono'
+  return 'Ya existe un cliente con esos datos'
+}
+
+async function rejectDuplicates<T>(save: () => Promise<T>): Promise<T> {
+  try {
+    return await save()
+  } catch (error) {
+    const duplicatedFields = getUniqueViolationFields(error)
+
+    if (duplicatedFields) {
+      throw new AppError(describeDuplicate(duplicatedFields), 409, 'DUPLICATE_CLIENT')
+    }
+
+    throw error
+  }
+}
+
 export async function createClient(businessId: string, input: CreateClientInput) {
-  return insertClient({
-    businessId,
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    channels: input.channels ?? [],
-    type: input.type,
-    address: input.address,
-    zone: input.zone,
-    latitude: input.latitude,
-    longitude: input.longitude,
-  })
+  return rejectDuplicates(() =>
+    insertClient({
+      businessId,
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      channels: input.channels ?? [],
+      type: input.type,
+      address: input.address,
+      zone: input.zone,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    }),
+  )
 }
 
 export async function listClients(businessId: string, filters: ListClientsFilters) {
@@ -66,7 +91,7 @@ export async function getClientById(businessId: string, clientId: string) {
 export async function updateClient(businessId: string, clientId: string, input: UpdateClientInput) {
   await assertClientExists(businessId, clientId)
 
-  return updateClientById(clientId, input)
+  return rejectDuplicates(() => updateClientById(clientId, input))
 }
 
 export async function deleteClient(businessId: string, clientId: string) {
