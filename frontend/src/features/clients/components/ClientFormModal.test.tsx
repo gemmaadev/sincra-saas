@@ -1,8 +1,16 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { api, ApiError } from '@/shared/services'
+import { withQueryClient } from '@/test/withQueryClient'
 import { ClientFormModal } from './ClientFormModal'
 import type { ClientDetail } from '../types/client.types'
+
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { post: vi.fn(), patch: vi.fn() } }
+})
 
 const mockClient: ClientDetail = {
   id: 'client-1',
@@ -22,14 +30,23 @@ const mockClient: ClientDetail = {
 }
 
 function renderModal(props: Partial<React.ComponentProps<typeof ClientFormModal>> = {}) {
-  return render(
-    <MantineProvider>
-      <ClientFormModal opened onClose={vi.fn()} {...props} />
-    </MantineProvider>,
+  const onClose = vi.fn()
+  render(
+    withQueryClient(
+      <MantineProvider>
+        <ClientFormModal opened onClose={onClose} {...props} />
+      </MantineProvider>,
+    ),
   )
+  return { onClose: props.onClose ?? onClose, user: userEvent.setup() }
 }
 
 describe('ClientFormModal', () => {
+  beforeEach(() => {
+    vi.mocked(api.post).mockReset()
+    vi.mocked(api.patch).mockReset()
+  })
+
   // Given no client is passed
   // When the modal is opened
   // Then it should be in create mode, titled "Nuevo cliente"
@@ -106,5 +123,91 @@ describe('ClientFormModal', () => {
   it('renders nothing when it is not opened', () => {
     renderModal({ opened: false })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+  // Given a valid new client
+  // When the user submits the create form
+  // Then the client should be created with empty optional fields as null and the modal closed
+  it('creates the client and closes the modal', async () => {
+    vi.mocked(api.post).mockResolvedValue({ client: mockClient })
+    const { onClose, user } = renderModal()
+
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(api.post).toHaveBeenCalledWith('/clients', {
+      name: 'Laura García',
+      email: null,
+      phone: null,
+      channels: ['GMAIL'],
+      type: null,
+      zone: null,
+      address: null,
+    })
+  })
+
+  // Given an existing client
+  // When the user edits the name and saves
+  // Then the client should be updated by id and the modal closed
+  it('updates the client and closes the modal', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ client: mockClient })
+    const { onClose, user } = renderModal({ client: mockClient })
+
+    await user.clear(screen.getByLabelText('Nombre'))
+    await user.type(screen.getByLabelText('Nombre'), 'Laura Gómez')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(api.patch).toHaveBeenCalledWith(
+      '/clients/client-1',
+      expect.objectContaining({ name: 'Laura Gómez', channels: ['GMAIL'] }),
+    )
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  // Given the backend rejects the save with a message
+  // When the user submits the form
+  // Then that message should be shown and the modal should stay open
+  it('shows the backend error and stays open when saving fails', async () => {
+    vi.mocked(api.post).mockRejectedValue(
+      new ApiError('Ya existe un cliente con ese email', 409, 'DUPLICATE_CLIENT'),
+    )
+    const { onClose, user } = renderModal()
+
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    expect(await screen.findByText('Ya existe un cliente con ese email')).toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  // Given an unexpected failure that is not an API error
+  // When the user submits the form
+  // Then a generic error message should be shown
+  it('shows a generic error when saving fails unexpectedly', async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error('network down'))
+    const { user } = renderModal()
+
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    expect(
+      await screen.findByText('No se ha podido guardar el cliente. Inténtalo de nuevo.'),
+    ).toBeInTheDocument()
+  })
+
+  // Given the form is invalid
+  // When the user submits it
+  // Then nothing should be sent to the API
+  it('does not call the API when the form is invalid', async () => {
+    const { user } = renderModal()
+
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    expect(await screen.findByText('El nombre es obligatorio')).toBeInTheDocument()
+    expect(api.post).not.toHaveBeenCalled()
   })
 })

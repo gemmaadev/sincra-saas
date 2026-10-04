@@ -9,6 +9,8 @@ interface ClientFormProps {
   client?: ClientDetail
   onSubmit: (values: ClientFormValues) => void
   onCancel: () => void
+  isSubmitting?: boolean
+  submitError?: string
 }
 
 function toFormValues(client?: ClientDetail): ClientFormValues {
@@ -37,7 +39,13 @@ function FormSection({ title, children }: FormSectionProps) {
   )
 }
 
-export function ClientForm({ client, onSubmit, onCancel }: ClientFormProps) {
+export function ClientForm({
+  client,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+  submitError,
+}: ClientFormProps) {
   const {
     register,
     handleSubmit,
@@ -126,11 +134,19 @@ export function ClientForm({ client, onSubmit, onCancel }: ClientFormProps) {
         </div>
       </FormSection>
 
+      {submitError && (
+        <p role="alert" className="text-sm text-error">
+          {submitError}
+        </p>
+      )}
+
       <div className="flex justify-end gap-3 border-t border-neutral-100 pt-5">
         <SincraButton type="button" variant="secondary" onClick={onCancel}>
           Cancelar
         </SincraButton>
-        <SincraButton type="submit">{client ? 'Guardar cambios' : 'Crear cliente'}</SincraButton>
+        <SincraButton type="submit" loading={isSubmitting}>
+          {client ? 'Guardar cambios' : 'Crear cliente'}
+        </SincraButton>
       </div>
     </form>
   )

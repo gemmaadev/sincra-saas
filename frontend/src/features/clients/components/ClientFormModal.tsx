@@ -1,7 +1,9 @@
 import { Modal } from '@mantine/core'
 import { UserRound } from 'lucide-react'
+import { ApiError } from '@/shared/services'
+import { useSaveClient } from '../hooks/useSaveClient'
 import { ClientForm } from './ClientForm'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail, ClientFormValues } from '../types/client.types'
 
 const MODAL_PROPS = {
   size: 'lg',
@@ -27,11 +29,27 @@ interface ClientFormModalProps {
 
 export function ClientFormModal({ opened, onClose, client }: ClientFormModalProps) {
   const isEditing = client !== undefined
+  const saveClient = useSaveClient(client?.id)
+
+  function handleClose() {
+    saveClient.reset()
+    onClose()
+  }
+
+  function handleSubmit(values: ClientFormValues) {
+    saveClient.mutate(values, { onSuccess: handleClose })
+  }
+
+  const submitError = saveClient.isError
+    ? saveClient.error instanceof ApiError
+      ? saveClient.error.message
+      : 'No se ha podido guardar el cliente. Inténtalo de nuevo.'
+    : undefined
 
   return (
     <Modal
       opened={opened}
-      onClose={onClose}
+      onClose={handleClose}
       title={
         <span className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-lg text-primary">
@@ -44,7 +62,13 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
       }
       {...MODAL_PROPS}
     >
-      <ClientForm client={client} onSubmit={() => undefined} onCancel={onClose} />
+      <ClientForm
+        client={client}
+        onSubmit={handleSubmit}
+        onCancel={handleClose}
+        isSubmitting={saveClient.isPending}
+        submitError={submitError}
+      />
     </Modal>
   )
 }

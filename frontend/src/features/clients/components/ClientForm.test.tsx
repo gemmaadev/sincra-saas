@@ -134,4 +134,23 @@ describe('ClientForm', () => {
 
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
+  // Given a submit error coming from the parent
+  // When the form is rendered
+  // Then the error should be announced
+  it('shows the submit error', () => {
+    renderForm({ submitError: 'Ya existe un cliente con ese email' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Ya existe un cliente con ese email')
+  })
+
+  // Given the form is being submitted
+  // When it is rendered
+  // Then the submit button should be disabled and busy
+  it('disables the submit button while submitting', () => {
+    renderForm({ isSubmitting: true })
+
+    const submitButton = screen.getByRole('button', { name: 'Crear cliente' })
+    expect(submitButton).toBeDisabled()
+    expect(submitButton).toHaveAttribute('aria-busy', 'true')
+  })
 })
