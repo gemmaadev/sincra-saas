@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ClientsPage } from './ClientsPage'
+import ClientsPage from './ClientsPage'
 import { api } from '@/shared/services'
 
 vi.mock('@/shared/services', () => ({

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ResetPasswordPage } from './ResetPasswordPage'
+import ResetPasswordPage from './ResetPasswordPage'
 import { api, ApiError } from '@/shared/services'
 
 vi.mock('@/shared/services', async (importOriginal) => {

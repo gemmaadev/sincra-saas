@@ -5,7 +5,7 @@ import { NotificationsTab } from '@/features/profile/components/NotificationsTab
 import { SecurityTab } from '@/features/profile/components/SecurityTab'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 
-export function ProfilePage() {
+export default function ProfilePage() {
   const { user } = useAuth()
 
   if (!user) return null

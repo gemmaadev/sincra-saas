@@ -10,7 +10,7 @@ import { KpiCard } from '@/features/clients/components/KpiCard'
 import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
 import { Table, EmptyState, Pagination } from '@/shared/components'
 
-export function ClientsPage() {
+export default function ClientsPage() {
   const navigate = useNavigate()
   const detailMatch = useMatch('/clients/:id')
   const {

@@ -1,3 +1,3 @@
-export function InboxPage() {
+export default function InboxPage() {
   return <h1 className="text-xl font-semibold text-ink">Bandeja de entrada</h1>
 }

@@ -19,7 +19,7 @@ function sectorLabel(sector?: string) {
   return SECTOR_OPTIONS.find((option) => option.value === sector)?.label ?? sector
 }
 
-export function SelectBusinessPage() {
+export default function SelectBusinessPage() {
   const navigate = useNavigate()
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [isLoading, setIsLoading] = useState(true)
