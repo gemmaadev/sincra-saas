@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router'
 import { TokenPasswordForm } from '@/features/auth/components/TokenPasswordForm'
 import { useAcceptInvite } from '@/features/auth/hooks/useAcceptInvite'
 
-export function AcceptInvitePage() {
+export default function AcceptInvitePage() {
   const navigate = useNavigate()
   const { acceptInvite, isSubmitting, error } = useAcceptInvite()
 

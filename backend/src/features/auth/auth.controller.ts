@@ -17,12 +17,32 @@ import {
   resetPassword as resetPasswordService,
 } from './auth.service'
 import { comparePassword } from '../../shared/hash'
+import type {
+  LoginBody,
+  RegisterInput,
+  OnboardingInput,
+  SelectBusinessBody,
+  SocialLoginResult,
+  GoogleLoginBody,
+  ForgotPasswordBody,
+  ResetPasswordBody,
+} from './auth.types'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-interface LoginBody {
-  email: string
-  password: string
+const SESSION_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+const PENDING_COOKIE_MAX_AGE_MS = 10 * 60 * 1000
+
+function setTokenCookie(res: Response, token: string, maxAge: number) {
+  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge })
+}
+
+function setSessionCookie(res: Response, token: string) {
+  setTokenCookie(res, token, SESSION_COOKIE_MAX_AGE_MS)
+}
+
+function setPendingCookie(res: Response, token: string) {
+  setTokenCookie(res, token, PENDING_COOKIE_MAX_AGE_MS)
 }
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -52,13 +72,13 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       role: membership.role,
     })
 
-    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
+    setSessionCookie(res, token)
     res.json({ needsBusinessSelection: false })
     return
   }
 
   const pendingToken = signPendingToken({ userId: user.id, pending: true })
-  res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
+  setPendingCookie(res, pendingToken)
 
   res.json({
     needsBusinessSelection: true,
@@ -70,19 +90,9 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   })
 })
 
-interface RegisterBody {
-  name: string
-  email: string
-  password: string
-  businessName: string
-  sector?: string
-  description?: string
-  country?: string
-}
-
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, password, businessName, sector, description, country } =
-    req.body as RegisterBody
+    req.body as RegisterInput
 
   if (!name || !email || !password || !businessName) {
     throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
@@ -117,7 +127,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
+  setSessionCookie(res, token)
   res.status(201).json({ success: true })
 })
 
@@ -125,10 +135,6 @@ export const getMyBusinesses = asyncHandler(async (req: Request, res: Response) 
   const businesses = await getUserBusinesses(req.userId!)
   res.json({ businesses })
 })
-
-interface SelectBusinessBody {
-  businessId: string
-}
 
 export const selectBusiness = asyncHandler(async (req: Request, res: Response) => {
   const { businessId } = req.body as SelectBusinessBody
@@ -158,7 +164,7 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
+  setSessionCookie(res, token)
   res.json({ success: true })
 })
 
@@ -190,12 +196,6 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 
 //Social login
 
-interface SocialLoginResult {
-  needsOnboarding: boolean
-  needsBusinessSelection: boolean
-  businesses?: { businessId: string; name: string; role: string }[]
-}
-
 async function resolveSocialLogin(
   res: Response,
   profile: { email: string; name: string; googleId?: string; microsoftId?: string },
@@ -204,7 +204,7 @@ async function resolveSocialLogin(
 
   if (user.memberships.length === 0) {
     const pendingToken = signPendingToken({ userId: user.id, pending: true })
-    res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
+    setPendingCookie(res, pendingToken)
     return { needsOnboarding: true, needsBusinessSelection: false }
   }
 
@@ -215,12 +215,12 @@ async function resolveSocialLogin(
       businessId: membership.businessId,
       role: membership.role,
     })
-    res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
+    setSessionCookie(res, token)
     return { needsOnboarding: false, needsBusinessSelection: false }
   }
 
   const pendingToken = signPendingToken({ userId: user.id, pending: true })
-  res.cookie('token', pendingToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 10 * 60 * 1000 })
+  setPendingCookie(res, pendingToken)
   return {
     needsOnboarding: false,
     needsBusinessSelection: true,
@@ -246,10 +246,6 @@ function socialLoginRedirectPath(result: SocialLoginResult): string {
   return '/inbox'
 }
 
-interface GoogleLoginBody {
-  accessToken: string
-}
-
 export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) => {
   const { accessToken } = req.body as GoogleLoginBody
 
@@ -269,15 +265,8 @@ export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) 
 
 //Onboarding after social login without business
 
-interface OnboardingBody {
-  businessName: string
-  sector?: string
-  description?: string
-  country?: string
-}
-
 export const completeOnboarding = asyncHandler(async (req: Request, res: Response) => {
-  const { businessName, sector, description, country } = req.body as OnboardingBody
+  const { businessName, sector, description, country } = req.body as OnboardingInput
   const pendingToken = req.cookies?.token
 
   if (!pendingToken) {
@@ -309,7 +298,7 @@ export const completeOnboarding = asyncHandler(async (req: Request, res: Respons
     role: membership.role,
   })
 
-  res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 })
+  setSessionCookie(res, token)
   res.json({ success: true })
 })
 
@@ -362,10 +351,6 @@ export const microsoftCallback = asyncHandler(async (req: Request, res: Response
 
 // --- Password recovery ---
 
-interface ForgotPasswordBody {
-  email: string
-}
-
 export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body as ForgotPasswordBody
 
@@ -383,11 +368,6 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
   // Always respond the same way, whether or not the email exists
   res.json({ success: true })
 })
-
-interface ResetPasswordBody {
-  token: string
-  newPassword: string
-}
 
 export const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
   const { token, newPassword } = req.body as ResetPasswordBody

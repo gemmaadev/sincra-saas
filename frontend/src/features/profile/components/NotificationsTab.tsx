@@ -6,7 +6,7 @@ import { Toggle } from '@/shared/components/toggle'
 import { SectionHeader } from './SectionHeader'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
-import type { NotificationPrefs } from '../hooks/useProfile'
+import type { NotificationPrefs } from '../types/profile.types'
 
 interface PrefDefinition {
   key: keyof NotificationPrefs

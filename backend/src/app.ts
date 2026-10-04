@@ -9,6 +9,7 @@ import userRoutes from './features/user/user.routes'
 import teamRoutes from './features/team/team.routes'
 import clientRoutes from './features/client/client.routes'
 import tagRoutes from './features/tag/tag.routes'
+import noteRoutes from './features/note/note.routes'
 
 const app = express()
 
@@ -27,6 +28,7 @@ app.use(userRoutes)
 app.use(teamRoutes)
 app.use(clientRoutes)
 app.use(tagRoutes)
+app.use(noteRoutes)
 
 app.get(
   '/health',

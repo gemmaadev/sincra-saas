@@ -10,7 +10,7 @@ interface ForgotPasswordFormData {
   email: string
 }
 
-export function ForgotPasswordPage() {
+export default function ForgotPasswordPage() {
   const navigate = useNavigate()
   const { requestPasswordReset, isSubmitting } = useForgotPassword()
 

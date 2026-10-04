@@ -7,8 +7,8 @@ import {
   updateUserProfile,
   changeUserPassword,
   uploadUserAvatar,
-  type NotificationPrefs,
 } from './user.service'
+import type { UpdateProfileInput, ChangePasswordBody } from './user.types'
 
 const AVATAR_MAX_SIZE_BYTES = 2 * 1024 * 1024
 
@@ -38,15 +38,8 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   res.json({ user: profile })
 })
 
-interface UpdateProfileBody {
-  name?: string
-  avatarUrl?: string
-  phone?: string
-  notificationPrefs?: NotificationPrefs
-}
-
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-  const { name, avatarUrl, phone, notificationPrefs } = req.body as UpdateProfileBody
+  const { name, avatarUrl, phone, notificationPrefs } = req.body as UpdateProfileInput
 
   if (name !== undefined && name.trim().length < 2) {
     throw new AppError('El nombre es demasiado corto', 400, 'INVALID_NAME')
@@ -61,11 +54,6 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 
   res.json({ user: profile })
 })
-
-interface ChangePasswordBody {
-  currentPassword: string
-  newPassword: string
-}
 
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body as ChangePasswordBody

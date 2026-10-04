@@ -1,46 +1,89 @@
-import { describe, it, expect } from 'vitest'
-import prisma from '../../config/db'
-import { listClients } from './client.service'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { AppError } from '../../shared/AppError'
+import * as clientModel from './client.model'
+import { listClients, createClient, updateClient, deleteClient } from './client.service'
+
+vi.mock('./client.model')
 
 describe('listClients', () => {
-  // Given a business with one client created today and one created 60 days ago
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(clientModel.findClientsPage).mockResolvedValue([])
+  })
+
+  // Given a business with 2 clients, 1 of them created in the last 30 days
   // When listClients is called
-  // Then newClientsCount should only count the client created within the last 30 days
+  // Then newClientsCount comes from a count restricted to the last 30 days
   it('counts only clients created in the last 30 days as new', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
+    vi.mocked(clientModel.countClients).mockResolvedValueOnce(2).mockResolvedValueOnce(1)
 
-    const sixtyDaysAgo = new Date()
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
-
-    await prisma.client.create({
-      data: { businessId: business.id, name: 'Cliente reciente' },
-    })
-    await prisma.client.create({
-      data: { businessId: business.id, name: 'Cliente antiguo', createdAt: sixtyDaysAgo },
-    })
-
-    const result = await listClients(business.id, {})
+    const result = await listClients('business-1', {})
 
     expect(result.pagination.total).toBe(2)
     expect(result.newClientsCount).toBe(1)
-
-    await prisma.business.delete({ where: { id: business.id } })
+    const newClientsWhere = vi.mocked(clientModel.countClients).mock.calls[1][0]
+    expect(newClientsWhere.businessId).toBe('business-1')
+    expect(newClientsWhere.createdAt).toEqual({ gte: expect.any(Date) })
   })
 
-  // Given a client that belongs to a different business
-  // When listClients is called for the current business
-  // Then that other client should not count towards newClientsCount
-  it('does not count new clients from another business', async () => {
-    const business = await prisma.business.create({ data: { name: 'Negocio de prueba' } })
-    const otherBusiness = await prisma.business.create({ data: { name: 'Otro negocio' } })
+  // Given a search term and a channel filter
+  // When listClients is called
+  // Then the where clause is scoped to the business and includes both filters
+  it('builds the where clause from the filters', async () => {
+    vi.mocked(clientModel.countClients).mockResolvedValue(0)
 
-    await prisma.client.create({ data: { businessId: otherBusiness.id, name: 'Cliente ajeno' } })
+    await listClients('business-1', { channel: 'EMAIL', search: 'ana' })
 
-    const result = await listClients(business.id, {})
+    const where = vi.mocked(clientModel.findClientsPage).mock.calls[0][0]
+    expect(where.businessId).toBe('business-1')
+    expect(where.channels).toEqual({ has: 'EMAIL' })
+    expect(where.OR).toHaveLength(3)
+  })
+})
 
-    expect(result.newClientsCount).toBe(0)
+describe('createClient', () => {
+  beforeEach(() => vi.resetAllMocks())
 
-    await prisma.business.delete({ where: { id: business.id } })
-    await prisma.business.delete({ where: { id: otherBusiness.id } })
+  // Given no channels in the input
+  // When createClient is called
+  // Then channels default to an empty list
+  it('defaults channels to an empty list', async () => {
+    await createClient('business-1', { name: 'Ana' })
+
+    expect(clientModel.insertClient).toHaveBeenCalledWith(
+      expect.objectContaining({ businessId: 'business-1', name: 'Ana', channels: [] }),
+    )
+  })
+})
+
+describe('updateClient / deleteClient', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given a client that does not belong to the business
+  // When it is updated or deleted
+  // Then a 404 CLIENT_NOT_FOUND is thrown and nothing is written
+  it('throws CLIENT_NOT_FOUND when the client is not found', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue(null)
+
+    await expect(updateClient('business-1', 'client-1', { name: 'Ana' })).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'CLIENT_NOT_FOUND',
+    })
+    await expect(deleteClient('business-1', 'client-1')).rejects.toBeInstanceOf(AppError)
+    expect(clientModel.updateClientById).not.toHaveBeenCalled()
+    expect(clientModel.deleteClientById).not.toHaveBeenCalled()
+  })
+
+  // Given an existing client
+  // When it is updated and deleted
+  // Then the model writes are called with the client id
+  it('writes through the model when the client exists', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+
+    await updateClient('business-1', 'client-1', { name: 'Ana' })
+    await deleteClient('business-1', 'client-1')
+
+    expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', { name: 'Ana' })
+    expect(clientModel.deleteClientById).toHaveBeenCalledWith('client-1')
   })
 })

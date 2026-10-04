@@ -2,7 +2,7 @@ import { Search } from 'lucide-react'
 import { Input, Select } from '@/shared/components'
 import { useTags } from '@/shared/hooks'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
-import type { ChannelFilter } from '../hooks/useClients'
+import type { ChannelFilter } from '../types/client.types'
 
 interface ClientsFilterBarProps {
   search: string

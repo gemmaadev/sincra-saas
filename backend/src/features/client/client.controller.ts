@@ -2,23 +2,11 @@ import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
 import { createClient, listClients, getClientById, updateClient, deleteClient } from './client.service'
-import type { Channel } from '../../generated/prisma/client'
-
-interface CreateClientBody {
-  name: string
-  email?: string
-  phone?: string
-  channels?: Channel[]
-  type?: string
-  address?: string
-  zone?: string
-  latitude?: number
-  longitude?: number
-}
+import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, phone, channels, type, address, zone, latitude, longitude } =
-    req.body as CreateClientBody
+    req.body as CreateClientInput
 
   if (!name?.trim()) {
     throw new AppError('El nombre es obligatorio', 400, 'MISSING_FIELDS')
@@ -43,17 +31,8 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json({ client })
 })
 
-interface ListClientsQuery {
-  page?: string
-  limit?: string
-  channel?: Channel
-  type?: string
-  tagId?: string
-  search?: string
-}
-
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { page, limit, channel, type, tagId, search } = req.query as ListClientsQuery
+  const { page, limit, channel, type, tagId, search } = req.query as ListClientsFilters
 
   const result = await listClients(req.businessId!, { page, limit, channel, type, tagId, search })
 
@@ -70,20 +49,8 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
   res.json({ client })
 })
 
-interface UpdateClientBody {
-  name?: string
-  email?: string
-  phone?: string
-  channels?: Channel[]
-  type?: string
-  address?: string
-  zone?: string
-  latitude?: number
-  longitude?: number
-}
-
 export const update = asyncHandler(async (req: Request, res: Response) => {
-  const body = req.body as UpdateClientBody
+  const body = req.body as UpdateClientInput
 
   if (body.name !== undefined && !body.name.trim()) {
     throw new AppError('El nombre no puede estar vacío', 400, 'INVALID_NAME')

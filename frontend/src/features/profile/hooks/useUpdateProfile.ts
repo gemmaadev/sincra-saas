@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-import type { NotificationPrefs, Profile } from './useProfile'
+import type { NotificationPrefs, Profile } from '../types/profile.types'
 
 interface UpdateProfileInput {
   name?: string

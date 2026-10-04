@@ -2,11 +2,7 @@ import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
 import { inviteMember, acceptInvite, listBusinessMembers } from './team.service'
-
-interface InviteBody {
-  email: string
-  name: string
-}
+import type { InviteBody, AcceptInviteBody } from './team.types'
 
 export const invite = asyncHandler(async (req: Request, res: Response) => {
   const { email, name } = req.body as InviteBody
@@ -18,11 +14,6 @@ export const invite = asyncHandler(async (req: Request, res: Response) => {
   await inviteMember(req.businessId!, email, name)
   res.status(201).json({ success: true })
 })
-
-interface AcceptInviteBody {
-  token: string
-  newPassword?: string
-}
 
 export const accept = asyncHandler(async (req: Request, res: Response) => {
   const { token, newPassword } = req.body as AcceptInviteBody
