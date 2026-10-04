@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
 import { Drawer } from '@mantine/core'
 import { Users, UserPlus, Repeat, ShoppingCart, Plus } from 'lucide-react'
@@ -6,6 +7,7 @@ import { useClientsFilters } from '@/features/clients/hooks/useClientsFilters'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
 import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTableSkeleton'
 import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
+import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { KpiCard } from '@/features/clients/components/KpiCard'
 import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
 import { Table, EmptyState, Pagination, SincraButton } from '@/shared/components'
@@ -26,6 +28,7 @@ export default function ClientsPage() {
   } = useClientsFilters()
 
   const { data, isLoading, isError } = useClients(queryParams)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false)
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +40,7 @@ export default function ClientsPage() {
             completo.
           </p>
         </div>
-        <SincraButton className="shrink-0">
+        <SincraButton className="shrink-0" onClick={() => setIsCreateModalOpen(true)}>
           <Plus size={16} aria-hidden="true" />
           Nuevo cliente
         </SincraButton>
@@ -102,6 +105,8 @@ export default function ClientsPage() {
       >
         {detailMatch && <ClientDetailPanel id={detailMatch.params.id!} />}
       </Drawer>
+
+      <ClientFormModal opened={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   )
 }
