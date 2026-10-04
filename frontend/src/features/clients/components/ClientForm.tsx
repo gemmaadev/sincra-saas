@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
-import { Input, Checkbox } from '@/shared/components'
+import { Input, Checkbox, SincraButton } from '@/shared/components'
+import { EMAIL_PATTERN, PHONE_PATTERN } from '@/shared/utils'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import type { ChannelFilter, ClientDetail, ClientFormValues } from '../types/client.types'
 
 interface ClientFormProps {
   client?: ClientDetail
+  onSubmit: (values: ClientFormValues) => void
+  onCancel: () => void
 }
 
 function toFormValues(client?: ClientDetail): ClientFormValues {
@@ -34,16 +37,40 @@ function FormSection({ title, children }: FormSectionProps) {
   )
 }
 
-export function ClientForm({ client }: ClientFormProps) {
-  const { register } = useForm<ClientFormValues>({ defaultValues: toFormValues(client) })
+export function ClientForm({ client, onSubmit, onCancel }: ClientFormProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ClientFormValues>({ defaultValues: toFormValues(client) })
 
   return (
-    <form noValidate className="flex flex-col gap-8">
+    <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
       <FormSection title="Contacto">
-        <Input label="Nombre" {...register('name')} />
+        <Input
+          label="Nombre"
+          error={errors.name?.message}
+          {...register('name', {
+            validate: (value) => value.trim() !== '' || 'El nombre es obligatorio',
+          })}
+        />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Input label="Email" type="email" {...register('email')} />
-          <Input label="Teléfono" type="tel" {...register('phone')} />
+          <Input
+            label="Email"
+            type="email"
+            error={errors.email?.message}
+            {...register('email', {
+              pattern: { value: EMAIL_PATTERN, message: 'Introduce un email válido' },
+            })}
+          />
+          <Input
+            label="Teléfono"
+            type="tel"
+            error={errors.phone?.message}
+            {...register('phone', {
+              pattern: { value: PHONE_PATTERN, message: 'Introduce un teléfono válido' },
+            })}
+          />
         </div>
       </FormSection>
 
@@ -66,12 +93,20 @@ export function ClientForm({ client }: ClientFormProps) {
                         {brand.name}
                       </span>
                     }
-                    {...register('channels')}
+                    {...register('channels', {
+                      validate: (value) =>
+                        value.length > 0 || 'Indica al menos un canal de contacto',
+                    })}
                   />
                 </div>
               )
             })}
           </div>
+          {errors.channels && (
+            <span role="alert" className="text-xs text-error">
+              {errors.channels.message}
+            </span>
+          )}
         </fieldset>
         <Input
           label="Tipo de cliente"
@@ -90,6 +125,13 @@ export function ClientForm({ client }: ClientFormProps) {
           />
         </div>
       </FormSection>
+
+      <div className="flex justify-end gap-3 border-t border-neutral-100 pt-5">
+        <SincraButton type="button" variant="secondary" onClick={onCancel}>
+          Cancelar
+        </SincraButton>
+        <SincraButton type="submit">{client ? 'Guardar cambios' : 'Crear cliente'}</SincraButton>
+      </div>
     </form>
   )
 }

@@ -44,7 +44,7 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
       }
       {...MODAL_PROPS}
     >
-      <ClientForm client={client} />
+      <ClientForm client={client} onSubmit={() => undefined} onCancel={onClose} />
     </Modal>
   )
 }
