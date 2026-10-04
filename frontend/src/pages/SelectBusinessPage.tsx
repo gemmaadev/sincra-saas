@@ -1,18 +1,10 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Building2 } from 'lucide-react'
-import { api, ApiError } from '@/shared/services'
-import type { SuccessResponse } from '@/shared/types'
+import { useUserBusinesses } from '@/features/auth/hooks/useUserBusinesses'
+import { useSelectBusiness } from '@/features/auth/hooks/useSelectBusiness'
 import { SECTOR_OPTIONS } from '@/features/onboarding/onboarding.constants'
 import { ExitHeader } from '@/shared/components/exit-header/ExitHeader'
 import { Card } from '@/shared/components/card'
-
-interface Business {
-  businessId: string
-  name: string
-  sector?: string
-  role: 'ADMIN' | 'EMPLOYEE'
-}
 
 function sectorLabel(sector?: string) {
   if (!sector) return null
@@ -21,46 +13,10 @@ function sectorLabel(sector?: string) {
 
 export default function SelectBusinessPage() {
   const navigate = useNavigate()
-  const [businesses, setBusinesses] = useState<Business[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectingId, setSelectingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { data: businesses = [], isLoading, isError } = useUserBusinesses()
+  const { selectBusiness, selectingBusinessId, error: selectError } = useSelectBusiness()
 
-  useEffect(() => {
-    let isMounted = true
-
-    api
-      .get<{ businesses: Business[] }>('/users/me/businesses')
-      .then((data) => {
-        if (isMounted) setBusinesses(data.businesses)
-      })
-      .catch(() => {
-        if (isMounted) setError('No se pudieron cargar tus negocios. Inténtalo de nuevo.')
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  const handleSelect = async (businessId: string) => {
-    setError(null)
-    setSelectingId(businessId)
-    try {
-      await api.post<SuccessResponse>('/auth/select-business', { businessId })
-      navigate('/inbox')
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : 'No se pudo entrar a ese negocio. Inténtalo de nuevo.',
-      )
-      setSelectingId(null)
-    }
-  }
+  const error = isError ? 'No se pudieron cargar tus negocios. Inténtalo de nuevo.' : selectError
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -88,8 +44,8 @@ export default function SelectBusinessPage() {
               >
                 <button
                   type="button"
-                  onClick={() => handleSelect(business.businessId)}
-                  disabled={selectingId !== null}
+                  onClick={() => selectBusiness(business.businessId)}
+                  disabled={selectingBusinessId !== null}
                   className="flex w-full items-center gap-3 text-left"
                 >
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-lg text-primary">
@@ -97,7 +53,7 @@ export default function SelectBusinessPage() {
                   </span>
                   <div className="flex flex-col gap-0.5">
                     <span className="font-semibold text-ink">
-                      {selectingId === business.businessId ? 'Entrando...' : business.name}
+                      {selectingBusinessId === business.businessId ? 'Entrando...' : business.name}
                     </span>
                     {sectorLabel(business.sector) && (
                       <span className="text-sm text-ink-muted">{sectorLabel(business.sector)}</span>
