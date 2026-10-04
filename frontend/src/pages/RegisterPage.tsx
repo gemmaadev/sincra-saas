@@ -4,6 +4,7 @@ import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { Input, PasswordInput } from '@/shared/components/input'
+import { Checkbox } from '@/shared/components/checkbox'
 import { saveRegisterCredentials } from '@/features/auth/utils/registerCredentials'
 import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
 
@@ -113,25 +114,24 @@ export default function RegisterPage() {
             })}
           />
 
-          <label className="flex items-start gap-2 text-sm text-ink-muted">
-            <input
-              type="checkbox"
-              {...register('acceptTerms', {
-                required: 'Debes aceptar los términos para continuar',
-              })}
-            />
-            <span>
-              Acepto los{' '}
-              <a href="/terminos" className="text-primary">
-                Términos y Condiciones
-              </a>{' '}
-              y la{' '}
-              <a href="/privacidad" className="text-primary">
-                Política de Privacidad
-              </a>
-            </span>
-          </label>
-          {errors.acceptTerms && <p className="text-sm text-error">{errors.acceptTerms.message}</p>}
+          <Checkbox
+            label={
+              <>
+                Acepto los{' '}
+                <a href="/terminos" className="text-primary">
+                  Términos y Condiciones
+                </a>{' '}
+                y la{' '}
+                <a href="/privacidad" className="text-primary">
+                  Política de Privacidad
+                </a>
+              </>
+            }
+            error={errors.acceptTerms?.message}
+            {...register('acceptTerms', {
+              required: 'Debes aceptar los términos para continuar',
+            })}
+          />
 
           <SincraButton type="submit" variant="primary">
             Continuar

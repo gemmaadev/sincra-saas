@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { AuthLayout } from '@/app/layout/AuthLayout'
 import { SincraButton } from '@/shared/components/button'
 import { Input, PasswordInput } from '@/shared/components/input'
+import { Checkbox } from '@/shared/components/checkbox'
 import { SincraLogo } from '@/shared/components/logo'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons'
@@ -69,10 +70,7 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-sm text-ink-muted">
-              <input type="checkbox" {...register('remember')} />
-              Recordarme
-            </label>
+            <Checkbox label="Recordarme" {...register('remember')} />
             <Link to="/forgot-password" className="text-sm text-primary">
               ¿Has olvidado tu contraseña?
             </Link>
