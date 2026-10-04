@@ -24,7 +24,7 @@ const mockClient = {
 }
 
 function mockApiGet(overrides?: {
-  data?: typeof mockClient[]
+  data?: (typeof mockClient)[]
   total?: number
   newClientsCount?: number
 }) {
@@ -68,6 +68,25 @@ describe('ClientsPage', () => {
   it('renders the clients returned by the API', async () => {
     renderClientsPage()
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
+  })
+
+  // Given the clients page header
+  // When ClientsPage is rendered
+  // Then a "Nuevo cliente" button should be available to create a client
+  it('shows the "Nuevo cliente" button', async () => {
+    renderClientsPage()
+    expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeInTheDocument()
+  })
+
+  // Given the clients page
+  // When the user clicks "Nuevo cliente"
+  // Then the create client modal should open
+  it('opens the create modal when "Nuevo cliente" is clicked', async () => {
+    renderClientsPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Nuevo cliente' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument()
   })
 
   // Given the clients table is rendered

@@ -3,24 +3,24 @@ import type { PaginationQuery } from '../../shared/utils/pagination.types'
 
 export interface CreateClientInput {
   name: string
-  email?: string
-  phone?: string
+  email?: string | null
+  phone?: string | null
   channels?: Channel[]
-  type?: string
-  address?: string
-  zone?: string
+  type?: string | null
+  address?: string | null
+  zone?: string | null
   latitude?: number
   longitude?: number
 }
 
 export interface UpdateClientInput {
   name?: string
-  email?: string
-  phone?: string
+  email?: string | null
+  phone?: string | null
   channels?: Channel[]
-  type?: string
-  address?: string
-  zone?: string
+  type?: string | null
+  address?: string | null
+  zone?: string | null
   latitude?: number
   longitude?: number
 }

@@ -12,8 +12,8 @@ import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
 import { SectionHeader } from './SectionHeader'
-
-const PHONE_PATTERN = /^[+\d][\d\s]{6,}$/
+import { PHONE_PATTERN } from '@/shared/utils'
+import { notifySuccess } from '@/shared/utils/notify'
 
 interface PersonalInfoForm {
   name: string
@@ -34,7 +34,6 @@ export function PersonalInfoTab({ user }: PersonalInfoTabProps) {
   const { data: profile, isLoading, isError } = useProfile()
   const updateProfile = useUpdateProfile()
   const [isEditing, setIsEditing] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -47,7 +46,6 @@ export function PersonalInfoTab({ user }: PersonalInfoTabProps) {
   })
 
   function startEditing() {
-    setSaved(false)
     setError(null)
     setIsEditing(true)
   }
@@ -64,7 +62,7 @@ export function PersonalInfoTab({ user }: PersonalInfoTabProps) {
       await updateProfile.mutateAsync({ name: data.name, phone: data.phone })
       await login()
       setIsEditing(false)
-      setSaved(true)
+      notifySuccess('Cambios guardados')
     } catch {
       setError('No se pudieron guardar los cambios. Inténtalo de nuevo.')
     }
@@ -164,7 +162,6 @@ export function PersonalInfoTab({ user }: PersonalInfoTabProps) {
             <CopyableField label="Correo electrónico" value={user.email} />
             <CopyableField label="Teléfono" value={profile.phone ?? 'Sin definir'} />
           </div>
-          {saved && <span className="pt-3 text-sm text-success">Cambios guardados</span>}
         </div>
       )}
     </Card>

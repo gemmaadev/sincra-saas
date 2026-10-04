@@ -87,3 +87,49 @@ describe('updateClient / deleteClient', () => {
     expect(clientModel.deleteClientById).toHaveBeenCalledWith('client-1')
   })
 })
+
+describe('duplicated clients', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given the database rejects a new client because its email is already used
+  // When createClient is called
+  // Then a 409 DUPLICATE_CLIENT error naming the email should be thrown
+  it('rejects a duplicated email when creating', async () => {
+    const databaseError = new Error('unique')
+    vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
+    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'email'])
+
+    await expect(
+      createClient('business-1', { name: 'Ana', email: 'a@a.com' }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'DUPLICATE_CLIENT',
+      message: 'Ya existe un cliente con ese email',
+    })
+  })
+
+  // Given the database rejects an update because the phone is already used
+  // When updateClient is called
+  // Then a 409 DUPLICATE_CLIENT error naming the phone should be thrown
+  it('rejects a duplicated phone when updating', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(clientModel.updateClientById).mockRejectedValue(new Error('unique'))
+    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'phone'])
+
+    await expect(updateClient('business-1', 'client-1', { phone: '600' })).rejects.toMatchObject({
+      statusCode: 409,
+      message: 'Ya existe un cliente con ese teléfono',
+    })
+  })
+
+  // Given a failure that is not a unique violation
+  // When createClient is called
+  // Then the original error should be rethrown untouched
+  it('rethrows errors that are not duplicates', async () => {
+    const databaseError = new Error('connection lost')
+    vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
+    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(null)
+
+    await expect(createClient('business-1', { name: 'Ana' })).rejects.toBe(databaseError)
+  })
+})

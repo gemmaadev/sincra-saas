@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import type { ClientDetail } from '../types/client.types'
 
@@ -25,7 +25,7 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then the client's name should be shown
   it('shows the client name', () => {
-    render(<ClientDetailHeader client={mockClient} />)
+    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} />)
     expect(screen.getByText('Laura García')).toBeInTheDocument()
   })
 
@@ -36,6 +36,7 @@ describe('ClientDetailHeader', () => {
     render(
       <ClientDetailHeader
         client={{ ...mockClient, email: 'laura@ejemplo.test', phone: '+34600000000' }}
+        onEdit={vi.fn()}
       />,
     )
     expect(screen.getByText('laura@ejemplo.test')).toBeInTheDocument()
@@ -46,7 +47,7 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then a dash should be shown instead
   it('shows a dash when there is no email or phone', () => {
-    render(<ClientDetailHeader client={mockClient} />)
+    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} />)
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
@@ -54,17 +55,28 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then each channel's brand icon should be shown
   it('shows an icon for each of the client channels', () => {
-    render(<ClientDetailHeader client={mockClient} />)
+    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} />)
     expect(screen.getByLabelText('Gmail')).toBeInTheDocument()
     expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
   })
 
   // Given a client
+  // When the user clicks the edit action
+  // Then onEdit should be called
+  it('calls onEdit when the edit action is clicked', () => {
+    const onEdit = vi.fn()
+    render(<ClientDetailHeader client={mockClient} onEdit={onEdit} />)
+
+    fireEvent.click(screen.getByLabelText('Editar cliente'))
+
+    expect(onEdit).toHaveBeenCalledTimes(1)
+  })
+
+  // Given a client
   // When ClientDetailHeader is rendered
-  // Then the edit and delete actions should be present but disabled
-  it('shows the edit and delete actions as disabled', () => {
-    render(<ClientDetailHeader client={mockClient} />)
-    expect(screen.getByLabelText('Editar cliente')).toBeDisabled()
+  // Then the delete action should be present but disabled (its modal is another card)
+  it('shows the delete action as disabled', () => {
+    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} />)
     expect(screen.getByLabelText('Eliminar cliente')).toBeDisabled()
   })
 })
