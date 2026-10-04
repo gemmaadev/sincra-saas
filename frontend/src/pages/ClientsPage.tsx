@@ -1,6 +1,6 @@
 import { useMatch, useNavigate } from 'react-router'
 import { Drawer } from '@mantine/core'
-import { Users, UserPlus, Repeat, ShoppingCart } from 'lucide-react'
+import { Users, UserPlus, Repeat, ShoppingCart, Plus } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import { useClientsFilters } from '@/features/clients/hooks/useClientsFilters'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
@@ -8,7 +8,7 @@ import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTable
 import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
 import { KpiCard } from '@/features/clients/components/KpiCard'
 import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
-import { Table, EmptyState, Pagination } from '@/shared/components'
+import { Table, EmptyState, Pagination, SincraButton } from '@/shared/components'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
@@ -29,12 +29,18 @@ export default function ClientsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col">
-        <h1 className="text-xl font-semibold text-ink">Clientes</h1>
-        <p className="text-ink">
-          Gestiona todos tus clientes en un único lugar. Busca, filtra y accede a su historial
-          completo.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col">
+          <h1 className="text-xl font-semibold text-ink">Clientes</h1>
+          <p className="text-ink">
+            Gestiona todos tus clientes en un único lugar. Busca, filtra y accede a su historial
+            completo.
+          </p>
+        </div>
+        <SincraButton className="shrink-0">
+          <Plus size={16} aria-hidden="true" />
+          Nuevo cliente
+        </SincraButton>
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <KpiCard

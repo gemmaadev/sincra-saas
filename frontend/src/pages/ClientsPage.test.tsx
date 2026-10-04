@@ -70,6 +70,14 @@ describe('ClientsPage', () => {
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
   })
 
+  // Given the clients page header
+  // When ClientsPage is rendered
+  // Then a "Nuevo cliente" button should be available to create a client
+  it('shows the "Nuevo cliente" button', async () => {
+    renderClientsPage()
+    expect(await screen.findByRole('button', { name: 'Nuevo cliente' })).toBeInTheDocument()
+  })
+
   // Given the clients table is rendered
   // When the user clicks a row
   // Then the client detail drawer should open showing that client's data
