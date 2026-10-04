@@ -58,6 +58,48 @@ describe('ClientFormModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // Given the modal is opened to create a client
+  // When it is rendered
+  // Then every field should be shown empty and no channel selected
+  it('shows empty fields in create mode', () => {
+    renderModal()
+
+    expect(screen.getByLabelText('Nombre')).toHaveValue('')
+    expect(screen.getByLabelText('Email')).toHaveValue('')
+    expect(screen.getByLabelText('Teléfono')).toHaveValue('')
+    expect(screen.getByLabelText('Tipo de cliente')).toHaveValue('')
+    expect(screen.getByLabelText('Zona')).toHaveValue('')
+    expect(screen.getByLabelText('Dirección')).toHaveValue('')
+    expect(screen.getByRole('checkbox', { name: 'Gmail' })).not.toBeChecked()
+  })
+
+  // Given an existing client with data
+  // When the modal is opened to edit it
+  // Then the fields should be prefilled and only its channels checked
+  it('prefills the fields with the client data in edit mode', () => {
+    renderModal({
+      client: {
+        ...mockClient,
+        email: 'laura@ejemplo.test',
+        phone: '+34600000000',
+        channels: ['GMAIL', 'WHATSAPP'],
+        type: 'empresa',
+        zone: 'Barcelona',
+        address: 'Carrer Major 1',
+      },
+    })
+
+    expect(screen.getByLabelText('Nombre')).toHaveValue('Laura García')
+    expect(screen.getByLabelText('Email')).toHaveValue('laura@ejemplo.test')
+    expect(screen.getByLabelText('Teléfono')).toHaveValue('+34600000000')
+    expect(screen.getByLabelText('Tipo de cliente')).toHaveValue('empresa')
+    expect(screen.getByLabelText('Zona')).toHaveValue('Barcelona')
+    expect(screen.getByLabelText('Dirección')).toHaveValue('Carrer Major 1')
+    expect(screen.getByRole('checkbox', { name: 'Gmail' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'WhatsApp' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Outlook' })).not.toBeChecked()
+  })
+
   // Given the modal is closed
   // When it is rendered
   // Then nothing should be shown

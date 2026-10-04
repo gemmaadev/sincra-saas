@@ -67,3 +67,13 @@ export interface UseClientsParams {
   type?: string
   tagId?: string
 }
+
+export interface ClientFormValues {
+  name: string
+  email: string
+  phone: string
+  channels: ChannelFilter[]
+  type: string
+  zone: string
+  address: string
+}
