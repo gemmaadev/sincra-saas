@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api, ApiError } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 import { withQueryClient } from '@/test/withQueryClient'
 import { ClientFormModal } from './ClientFormModal'
 import type { ClientDetail } from '../types/client.types'
@@ -11,6 +12,8 @@ vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { post: vi.fn(), patch: vi.fn() } }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockClient: ClientDetail = {
   id: 'client-1',
@@ -45,6 +48,7 @@ describe('ClientFormModal', () => {
   beforeEach(() => {
     vi.mocked(api.post).mockReset()
     vi.mocked(api.patch).mockReset()
+    vi.mocked(notifySuccess).mockReset()
   })
 
   // Given no client is passed
@@ -136,6 +140,7 @@ describe('ClientFormModal', () => {
     await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(notifySuccess).toHaveBeenCalledWith('Cliente creado')
     expect(api.post).toHaveBeenCalledWith('/clients', {
       name: 'Laura García',
       email: null,
@@ -159,6 +164,7 @@ describe('ClientFormModal', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(notifySuccess).toHaveBeenCalledWith('Cliente actualizado')
     expect(api.patch).toHaveBeenCalledWith(
       '/clients/client-1',
       expect.objectContaining({ name: 'Laura Gómez', channels: ['GMAIL'] }),
@@ -181,6 +187,7 @@ describe('ClientFormModal', () => {
 
     expect(await screen.findByText('Ya existe un cliente con ese email')).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
+    expect(notifySuccess).not.toHaveBeenCalled()
   })
 
   // Given an unexpected failure that is not an API error

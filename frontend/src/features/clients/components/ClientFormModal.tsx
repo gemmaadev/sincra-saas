@@ -1,6 +1,7 @@
 import { Modal } from '@mantine/core'
 import { UserRound } from 'lucide-react'
 import { ApiError } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 import { useSaveClient } from '../hooks/useSaveClient'
 import { ClientForm } from './ClientForm'
 import type { ClientDetail, ClientFormValues } from '../types/client.types'
@@ -36,8 +37,13 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
     onClose()
   }
 
+  function handleSaved() {
+    notifySuccess(isEditing ? 'Cliente actualizado' : 'Cliente creado')
+    handleClose()
+  }
+
   function handleSubmit(values: ClientFormValues) {
-    saveClient.mutate(values, { onSuccess: handleClose })
+    saveClient.mutate(values, { onSuccess: handleSaved })
   }
 
   const submitError = saveClient.isError
