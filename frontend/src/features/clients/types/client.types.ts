@@ -77,3 +77,17 @@ export interface ClientFormValues {
   zone: string
   address: string
 }
+
+export interface ClientPayload {
+  name: string
+  email: string | null
+  phone: string | null
+  channels: ChannelFilter[]
+  type: string | null
+  zone: string | null
+  address: string | null
+}
+
+export interface ClientMutationResponse {
+  client: ClientDetail
+}
