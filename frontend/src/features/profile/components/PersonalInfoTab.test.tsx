@@ -5,6 +5,7 @@ import { PersonalInfoTab } from './PersonalInfoTab'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue, User } from '@/features/auth/context/AuthContext'
 import { api } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {
@@ -21,6 +22,8 @@ vi.mock('@/shared/services', () => {
     ApiError,
   }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const user: User = { id: '1', name: 'Laura García', email: 'laura@tienda.com', role: 'admin' }
 
@@ -60,6 +63,7 @@ function renderPersonalInfoTab() {
 
 describe('PersonalInfoTab', () => {
   beforeEach(() => {
+    vi.mocked(notifySuccess).mockReset()
     vi.mocked(api.get).mockReset()
     vi.mocked(api.patch).mockReset()
     vi.mocked(api.get).mockResolvedValue({ user: mockProfile })
@@ -157,8 +161,8 @@ describe('PersonalInfoTab', () => {
 
   // Given valid changes in the editable form
   // When the form is submitted
-  // Then it should PATCH /user/profile, refresh the session and show a confirmation
-  it('saves the changes, refreshes the session and shows a confirmation', async () => {
+  // Then it should PATCH /user/profile, refresh the session and show a success notification
+  it('saves the changes, refreshes the session and notifies it', async () => {
     const { login } = renderPersonalInfoTab()
     await waitFor(() => screen.getByRole('button', { name: 'Editar perfil' }))
     fireEvent.click(screen.getByRole('button', { name: 'Editar perfil' }))
@@ -167,7 +171,7 @@ describe('PersonalInfoTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Cambios guardados')).toBeInTheDocument()
+      expect(notifySuccess).toHaveBeenCalledWith('Cambios guardados')
     })
     expect(api.patch).toHaveBeenCalledWith('/user/profile', {
       name: 'Laura Nueva',

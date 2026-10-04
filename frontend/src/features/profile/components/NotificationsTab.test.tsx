@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NotificationsTab } from './NotificationsTab'
 import { api } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {
@@ -19,6 +20,8 @@ vi.mock('@/shared/services', () => {
     ApiError,
   }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockProfile = {
   id: '1',
@@ -47,6 +50,7 @@ function renderNotificationsTab() {
 
 describe('NotificationsTab', () => {
   beforeEach(() => {
+    vi.mocked(notifySuccess).mockReset()
     vi.mocked(api.get).mockReset()
     vi.mocked(api.patch).mockReset()
     vi.mocked(api.get).mockResolvedValue({ user: mockProfile })
@@ -89,7 +93,7 @@ describe('NotificationsTab', () => {
   // Given a changed preference
   // When the user clicks "Guardar cambios"
   // Then it should PATCH /user/profile with the updated preferences and show a confirmation
-  it('saves the preferences and shows a confirmation', async () => {
+  it('saves the preferences and notifies it', async () => {
     renderNotificationsTab()
     await waitFor(() => screen.getByRole('switch', { name: 'Resumen semanal' }))
     fireEvent.click(screen.getByRole('switch', { name: 'Resumen semanal' }))
@@ -97,7 +101,7 @@ describe('NotificationsTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Cambios guardados')).toBeInTheDocument()
+      expect(notifySuccess).toHaveBeenCalledWith('Cambios guardados')
     })
     expect(api.patch).toHaveBeenCalledWith('/user/profile', {
       notificationPrefs: {
@@ -109,21 +113,6 @@ describe('NotificationsTab', () => {
     })
   })
 
-  // Given the confirmation is already shown
-  // When the user toggles another preference
-  // Then the confirmation should be hidden again, since it no longer reflects saved state
-  it('hides the confirmation again after a further change', async () => {
-    renderNotificationsTab()
-    await waitFor(() => screen.getByRole('button', { name: 'Guardar cambios' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
-    await waitFor(() => {
-      expect(screen.getByText('Cambios guardados')).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Mensajes sin responder' }))
-
-    expect(screen.queryByText('Cambios guardados')).not.toBeInTheDocument()
-  })
 
   // Given the preferences request fails
   // When the tab is rendered
