@@ -5,9 +5,10 @@ import type { ClientDetail } from '../types/client.types'
 
 interface ClientDetailHeaderProps {
   client: ClientDetail
+  onEdit: () => void
 }
 
-export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
+export function ClientDetailHeader({ client, onEdit }: ClientDetailHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -53,13 +54,7 @@ export function ClientDetailHeader({ client }: ClientDetailHeaderProps) {
         </div>
       </div>
       <div className="flex gap-2">
-        <SincraButton
-          variant="secondary"
-          size="icon"
-          disabled
-          aria-label="Editar cliente"
-          title="Disponible próximamente"
-        >
+        <SincraButton variant="secondary" size="icon" aria-label="Editar cliente" onClick={onEdit}>
           <Pencil size={16} aria-hidden="true" />
         </SincraButton>
         <SincraButton

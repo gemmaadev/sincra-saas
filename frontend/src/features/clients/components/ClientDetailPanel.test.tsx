@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
 import { api } from '@/shared/services'
@@ -37,13 +38,28 @@ function mockApiGet() {
 function renderPanel(id = 'client-1') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <QueryClientProvider client={queryClient}>
-      <ClientDetailPanel id={id} />
-    </QueryClientProvider>,
+    <MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <ClientDetailPanel id={id} />
+      </QueryClientProvider>
+    </MantineProvider>,
   )
 }
 
 describe('ClientDetailPanel', () => {
+  // Given a loaded client
+  // When the user clicks the edit action
+  // Then the form modal should open in edit mode with the client's data
+  it('opens the edit modal prefilled with the client data', async () => {
+    mockApiGet()
+    renderPanel()
+
+    fireEvent.click(await screen.findByLabelText('Editar cliente'))
+
+    expect(await screen.findByRole('dialog', { name: 'Editar cliente' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Nombre')).toHaveValue('Laura García')
+  })
+
   // Given the client request has not resolved yet
   // When ClientDetailPanel is rendered
   // Then a loading message should be shown
