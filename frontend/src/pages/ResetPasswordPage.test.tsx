@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ResetPasswordPage from './ResetPasswordPage'
 import { api, ApiError } from '@/shared/services'
+import { withQueryClient } from '@/test/withQueryClient'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -21,9 +22,11 @@ vi.mock('react-router', async (importOriginal) => {
 function renderWithToken(token: string | null) {
   const initialEntry = token ? `/reset-password?token=${token}` : '/reset-password'
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <ResetPasswordPage />
-    </MemoryRouter>,
+    withQueryClient(
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <ResetPasswordPage />
+      </MemoryRouter>,
+    ),
   )
 }
 

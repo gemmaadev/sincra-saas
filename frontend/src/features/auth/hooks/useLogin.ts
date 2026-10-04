@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { api, ApiError } from '@/shared/services'
 import { useAuth } from './useAuth'
@@ -13,39 +13,33 @@ interface LoginResponse {
 }
 
 export function useLogin() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const submitLogin = useCallback(
-    async (credentials: LoginCredentials): Promise<boolean> => {
-      setError(null)
-      setIsSubmitting(true)
-
-      try {
-        const data = await api.post<LoginResponse>('/auth/login', credentials)
-
-        if (data.needsBusinessSelection) {
-          navigate('/select-business')
-        } else {
-          await login()
-          navigate('/inbox')
-        }
-        return true
-      } catch (error) {
-        setError(
-          error instanceof ApiError
-            ? error.message
-            : 'No se pudo iniciar sesión. Inténtalo de nuevo.',
-        )
-        return false
-      } finally {
-        setIsSubmitting(false)
+  const mutation = useMutation({
+    mutationFn: (credentials: LoginCredentials) =>
+      api.post<LoginResponse>('/auth/login', credentials),
+    onSuccess: async (data) => {
+      if (data.needsBusinessSelection) {
+        navigate('/select-business')
+        return
       }
+      await login()
+      navigate('/inbox')
     },
-    [login, navigate],
-  )
+  })
 
-  return { submitLogin, isSubmitting, error }
+  const submitLogin = (credentials: LoginCredentials): Promise<boolean> =>
+    mutation.mutateAsync(credentials).then(
+      () => true,
+      () => false,
+    )
+
+  const error = mutation.error
+    ? mutation.error instanceof ApiError
+      ? mutation.error.message
+      : 'No se pudo iniciar sesión. Inténtalo de nuevo.'
+    : null
+
+  return { submitLogin, isSubmitting: mutation.isPending, error }
 }

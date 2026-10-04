@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ForgotPasswordPage from './ForgotPasswordPage'
 import { api } from '@/shared/services'
+import { withQueryClient } from '@/test/withQueryClient'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -28,9 +29,11 @@ describe('ForgotPasswordPage', () => {
   // Then a required field error should be shown
   it('shows a validation error when submitted empty', async () => {
     render(
-      <MemoryRouter>
-        <ForgotPasswordPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <ForgotPasswordPage />
+        </MemoryRouter>,
+      ),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace' }))
@@ -46,9 +49,11 @@ describe('ForgotPasswordPage', () => {
   // Then an invalid email error should be shown
   it('shows an error when the email format is invalid', async () => {
     render(
-      <MemoryRouter>
-        <ForgotPasswordPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <ForgotPasswordPage />
+        </MemoryRouter>,
+      ),
     )
 
     fireEvent.change(screen.getByLabelText('Correo electrónico'), {
@@ -69,9 +74,11 @@ describe('ForgotPasswordPage', () => {
     vi.mocked(api.post).mockResolvedValue({ success: true })
 
     render(
-      <MemoryRouter>
-        <ForgotPasswordPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <ForgotPasswordPage />
+        </MemoryRouter>,
+      ),
     )
 
     fireEvent.change(screen.getByLabelText('Correo electrónico'), {

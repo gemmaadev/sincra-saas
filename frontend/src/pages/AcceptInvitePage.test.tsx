@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import AcceptInvitePage from './AcceptInvitePage'
 import { api, ApiError } from '@/shared/services'
+import { withQueryClient } from '@/test/withQueryClient'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -21,9 +22,11 @@ vi.mock('react-router', async (importOriginal) => {
 function renderWithToken(token: string | null) {
   const initialEntry = token ? `/accept-invite?token=${token}` : '/accept-invite'
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
-      <AcceptInvitePage />
-    </MemoryRouter>,
+    withQueryClient(
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <AcceptInvitePage />
+      </MemoryRouter>,
+    ),
   )
 }
 
