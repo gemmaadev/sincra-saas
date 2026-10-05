@@ -186,6 +186,109 @@ describe('updateClient / deleteClient', () => {
   })
 })
 
+describe('updateClient geocoding', () => {
+  const existingClient = {
+    id: 'client-1',
+    address: 'Carrer Major 1',
+    zone: 'Sabadell',
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
+    vi.mocked(clientModel.findClientById).mockResolvedValue(existingClient as never)
+  })
+
+  // Given a client in Sabadell
+  // When its zone changes to Barcelona
+  // Then the new location is geocoded (keeping the old address) and the coordinates are updated
+  it('recalculates the coordinates when the zone changes', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.38, longitude: 2.17 })
+
+    await updateClient('business-1', 'client-1', { zone: 'Barcelona' })
+
+    expect(geocodeAddress).toHaveBeenCalledWith({
+      address: 'Carrer Major 1',
+      zone: 'Barcelona',
+      countryCode: 'ES',
+    })
+    expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', {
+      zone: 'Barcelona',
+      latitude: 41.38,
+      longitude: 2.17,
+    })
+  })
+
+  // Given a client
+  // When its address changes
+  // Then the new address is geocoded with the current zone
+  it('recalculates the coordinates when the address changes', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.5, longitude: 2.1 })
+
+    await updateClient('business-1', 'client-1', { address: 'Carrer Nou 5' })
+
+    expect(geocodeAddress).toHaveBeenCalledWith(
+      expect.objectContaining({ address: 'Carrer Nou 5', zone: 'Sabadell' }),
+    )
+  })
+
+  // Given a client
+  // When the update sends the same address and zone, or neither
+  // Then nothing is geocoded and no coordinates are written
+  it('does not geocode when the address and zone are unchanged', async () => {
+    await updateClient('business-1', 'client-1', {
+      name: 'Ana',
+      address: 'Carrer Major 1',
+      zone: 'Sabadell',
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', {
+      name: 'Ana',
+      address: 'Carrer Major 1',
+      zone: 'Sabadell',
+    })
+  })
+
+  // Given the update brings its own coordinates (e.g. picked on the map)
+  // When the zone changes too
+  // Then the given coordinates are kept and nothing is geocoded
+  it('keeps the given coordinates without geocoding', async () => {
+    await updateClient('business-1', 'client-1', {
+      zone: 'Barcelona',
+      latitude: 41.1,
+      longitude: 2.2,
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', {
+      zone: 'Barcelona',
+      latitude: 41.1,
+      longitude: 2.2,
+    })
+  })
+
+  // Given the geocoder finds nothing
+  // When the zone changes
+  // Then the change is saved and the old coordinates are left untouched
+  it('saves the change without touching the coordinates when geocoding fails', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue(null)
+
+    await updateClient('business-1', 'client-1', { zone: 'Barcelona' })
+
+    expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', { zone: 'Barcelona' })
+  })
+
+  // Given a client with an address and a zone
+  // When both are cleared
+  // Then there is nothing to geocode
+  it('does not geocode when both address and zone are cleared', async () => {
+    await updateClient('business-1', 'client-1', { address: null, zone: null })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+  })
+})
+
 describe('duplicated clients', () => {
   beforeEach(() => vi.resetAllMocks())
 
