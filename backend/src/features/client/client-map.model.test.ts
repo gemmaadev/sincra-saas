@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import prisma from '../../config/db'
-import { findClientsForMap } from './client-map.model'
+import { findClientsForMap, findZoneCoordinates } from './client-map.model'
 
 vi.mock('../../config/db', () => ({
   default: { client: { findMany: vi.fn() } },
@@ -83,5 +83,22 @@ describe('findClientsForMap', () => {
         orderBy: { createdAt: 'desc' },
       }),
     )
+  })
+
+  // Given a business
+  // When the zone coordinates are requested
+  // Then only that business's clients with a zone and both coordinates should be asked for, with no other filter
+  it('asks only for clients that have a zone and coordinates, whatever the map filters', async () => {
+    await findZoneCoordinates('business-1')
+
+    expect(vi.mocked(prisma.client.findMany)).toHaveBeenCalledWith({
+      where: {
+        businessId: 'business-1',
+        zone: { not: null },
+        latitude: { not: null },
+        longitude: { not: null },
+      },
+      select: { zone: true, latitude: true, longitude: true },
+    })
   })
 })

@@ -30,3 +30,15 @@ export async function findClientsForMap(businessId: string, filters: ClientMapFi
     orderBy: { createdAt: 'desc' },
   })
 }
+
+export async function findZoneCoordinates(businessId: string) {
+  return prisma.client.findMany({
+    where: {
+      businessId,
+      zone: { not: null },
+      latitude: { not: null },
+      longitude: { not: null },
+    },
+    select: { zone: true, latitude: true, longitude: true },
+  })
+}

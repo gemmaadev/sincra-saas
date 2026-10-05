@@ -1,6 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as clientMapModel from './client-map.model'
 import type { ClientMapRecord } from './client-map.types'
-import { buildZoneSummary, buildChannelOrigin } from './client-map.service'
+import {
+  buildZoneSummary,
+  buildChannelOrigin,
+  computeZoneCentroids,
+  buildMapClients,
+  getClientMap,
+} from './client-map.service'
+
+vi.mock('./client-map.model')
 
 function record(overrides: Partial<ClientMapRecord> = {}): ClientMapRecord {
   return {
@@ -142,5 +151,189 @@ describe('buildChannelOrigin', () => {
     ])
 
     expect(origin.map((share) => share.channel)).toEqual(['GMAIL', 'INSTAGRAM', 'WHATSAPP'])
+  })
+})
+
+describe('computeZoneCentroids', () => {
+  // Given clients with coordinates in the same zone
+  // When the centroids are computed
+  // Then the zone should be the average of their coordinates
+  it('averages the coordinates of the clients of each zone', () => {
+    const centroids = computeZoneCentroids([
+      record({ zone: 'Barcelona', latitude: 41, longitude: 2 }),
+      record({ zone: 'Barcelona', latitude: 43, longitude: 4 }),
+      record({ zone: 'Girona', latitude: 42, longitude: 3 }),
+    ])
+
+    expect(centroids.get('barcelona')).toEqual({ latitude: 42, longitude: 3 })
+    expect(centroids.get('girona')).toEqual({ latitude: 42, longitude: 3 })
+  })
+
+  // Given the same zone written with different case
+  // When the centroids are computed
+  // Then they should be one zone
+  it('treats zones with different case as the same zone', () => {
+    const centroids = computeZoneCentroids([
+      record({ zone: 'Barcelona', latitude: 41, longitude: 2 }),
+      record({ zone: ' BARCELONA ', latitude: 43, longitude: 4 }),
+    ])
+
+    expect(centroids.size).toBe(1)
+    expect(centroids.get('barcelona')).toEqual({ latitude: 42, longitude: 3 })
+  })
+
+  // Given clients without zone or with a missing coordinate
+  // When the centroids are computed
+  // Then they should not contribute
+  it('ignores clients without a zone or without both coordinates', () => {
+    const centroids = computeZoneCentroids([
+      record({ zone: null, latitude: 41, longitude: 2 }),
+      record({ zone: 'Vic', latitude: 41, longitude: null }),
+      record({ zone: 'Vic', latitude: null, longitude: null }),
+    ])
+
+    expect(centroids.size).toBe(0)
+  })
+
+  // Given coordinates that do not average to a short number
+  // When the centroids are computed
+  // Then they should be rounded to 6 decimals
+  it('rounds the centroid to 6 decimals', () => {
+    const centroids = computeZoneCentroids([
+      record({ zone: 'A', latitude: 41.1234567, longitude: 2 }),
+      record({ zone: 'A', latitude: 41.1234568, longitude: 2 }),
+      record({ zone: 'A', latitude: 41.1234568, longitude: 2 }),
+    ])
+
+    expect(centroids.get('a')?.latitude).toBe(41.123457)
+  })
+})
+
+describe('buildMapClients', () => {
+  const centroids = new Map([['barcelona', { latitude: 41.4, longitude: 2.2 }]])
+
+  // Given a client with exact coordinates
+  // When the map clients are built
+  // Then it should keep them and not be marked as approximate
+  it('keeps the exact coordinates of a client', () => {
+    const [mapClient] = buildMapClients(
+      [record({ id: 'a', zone: 'Barcelona', latitude: 41.5, longitude: 2.1 })],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({ id: 'a', latitude: 41.5, longitude: 2.1, approximate: false })
+  })
+
+  // Given a client without coordinates but in a zone with a centroid
+  // When the map clients are built
+  // Then it should be placed at the zone centroid and marked as approximate
+  it('places a client without coordinates at the centroid of its zone', () => {
+    const [mapClient] = buildMapClients([record({ id: 'b', zone: ' barcelona ' })], centroids)
+
+    expect(mapClient).toMatchObject({
+      id: 'b',
+      latitude: 41.4,
+      longitude: 2.2,
+      approximate: true,
+    })
+  })
+
+  // Given clients that cannot be placed
+  // When the map clients are built
+  // Then they should be left out of the map
+  it('leaves out clients without coordinates and without a known zone', () => {
+    const mapClients = buildMapClients(
+      [record({ id: 'c', zone: 'Vic' }), record({ id: 'd', zone: null })],
+      centroids,
+    )
+
+    expect(mapClients).toEqual([])
+  })
+
+  // Given a client with only one coordinate
+  // When the map clients are built
+  // Then it should be treated as having none
+  it('treats a client with only one coordinate as having none', () => {
+    const [mapClient] = buildMapClients(
+      [record({ zone: 'Barcelona', latitude: 41.5, longitude: null })],
+      centroids,
+    )
+
+    expect(mapClient.approximate).toBe(true)
+  })
+
+  // Given clients in a given order
+  // When the map clients are built
+  // Then the order should be preserved
+  it('keeps the order of the clients', () => {
+    const mapClients = buildMapClients(
+      [
+        record({ id: 'first', latitude: 1, longitude: 1 }),
+        record({ id: 'second', latitude: 2, longitude: 2 }),
+      ],
+      centroids,
+    )
+
+    expect(mapClients.map((mapClient) => mapClient.id)).toEqual(['first', 'second'])
+  })
+})
+
+describe('getClientMap', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given a business with clients, some of them without coordinates
+  // When the map is requested with filters
+  // Then it should combine the points, the zone summary and the channel donut
+  it('combines the clients, the zones and the channel origin', async () => {
+    vi.mocked(clientMapModel.findClientsForMap).mockResolvedValue([
+      record({ id: 'a', zone: 'Barcelona', latitude: 41, longitude: 2, channels: ['GMAIL'] }),
+      record({ id: 'b', zone: 'Barcelona', channels: ['GMAIL', 'WHATSAPP'] }),
+      record({ id: 'c', zone: null, channels: [] }),
+    ])
+    vi.mocked(clientMapModel.findZoneCoordinates).mockResolvedValue([
+      { zone: 'Barcelona', latitude: 41, longitude: 2 },
+    ])
+
+    const result = await getClientMap('business-1', { channel: 'GMAIL' })
+
+    expect(result.total).toBe(3)
+    expect(result.clients).toEqual([
+      expect.objectContaining({ id: 'a', approximate: false }),
+      expect.objectContaining({ id: 'b', latitude: 41, longitude: 2, approximate: true }),
+    ])
+    expect(result.zones).toEqual([
+      { zone: 'Barcelona', count: 2, percentage: 66.7 },
+      { zone: 'Sin zona', count: 1, percentage: 33.3 },
+    ])
+    expect(result.channelOrigin.map((share) => share.channel)).toEqual(['GMAIL', 'WHATSAPP'])
+  })
+
+  // Given map filters
+  // When the map is requested
+  // Then the filters should apply to the clients but not to the zone coordinates
+  it('applies the filters to the clients but not to the zone coordinates', async () => {
+    vi.mocked(clientMapModel.findClientsForMap).mockResolvedValue([])
+    vi.mocked(clientMapModel.findZoneCoordinates).mockResolvedValue([])
+    const filters = { channel: 'GMAIL' as const, type: 'empresa' }
+
+    await getClientMap('business-1', filters)
+
+    expect(clientMapModel.findClientsForMap).toHaveBeenCalledWith('business-1', filters)
+    expect(clientMapModel.findZoneCoordinates).toHaveBeenCalledWith('business-1')
+  })
+
+  // Given a business without clients
+  // When the map is requested
+  // Then every part should be empty
+  it('returns an empty map when there are no clients', async () => {
+    vi.mocked(clientMapModel.findClientsForMap).mockResolvedValue([])
+    vi.mocked(clientMapModel.findZoneCoordinates).mockResolvedValue([])
+
+    expect(await getClientMap('business-1', {})).toEqual({
+      total: 0,
+      clients: [],
+      zones: [],
+      channelOrigin: [],
+    })
   })
 })

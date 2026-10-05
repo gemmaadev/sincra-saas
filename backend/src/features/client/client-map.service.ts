@@ -1,5 +1,15 @@
 import type { Channel } from '../../generated/prisma/client'
-import type { ChannelShare, ClientMapRecord, ZoneSummary } from './client-map.types'
+import { findClientsForMap, findZoneCoordinates } from './client-map.model'
+import type {
+  ChannelShare,
+  ClientMapFilters,
+  ClientMapRecord,
+  ClientMapResponse,
+  Coordinates,
+  MapClient,
+  ZonePoint,
+  ZoneSummary,
+} from './client-map.types'
 
 const NO_ZONE_LABEL = 'Sin zona'
 
@@ -9,6 +19,15 @@ function toPercentage(count: number, total: number): number {
 
 function getZoneLabel(zone: string | null): string {
   return zone?.trim() || NO_ZONE_LABEL
+}
+
+function getZoneKey(zone: string | null): string | null {
+  const trimmedZone = zone?.trim()
+  return trimmedZone ? trimmedZone.toLowerCase() : null
+}
+
+function roundCoordinate(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000
 }
 
 export function buildZoneSummary(records: ClientMapRecord[]): ZoneSummary[] {
@@ -51,4 +70,70 @@ export function buildChannelOrigin(records: ClientMapRecord[]): ChannelShare[] {
     .sort(
       (first, second) => second.count - first.count || first.channel.localeCompare(second.channel),
     )
+}
+
+export function computeZoneCentroids(points: ZonePoint[]): Map<string, Coordinates> {
+  const sums = new Map<string, { latitude: number; longitude: number; count: number }>()
+
+  for (const point of points) {
+    const key = getZoneKey(point.zone)
+    if (!key || point.latitude === null || point.longitude === null) continue
+
+    const sum = sums.get(key) ?? { latitude: 0, longitude: 0, count: 0 }
+    sum.latitude += point.latitude
+    sum.longitude += point.longitude
+    sum.count += 1
+    sums.set(key, sum)
+  }
+
+  const centroids = new Map<string, Coordinates>()
+  for (const [key, sum] of sums) {
+    centroids.set(key, {
+      latitude: roundCoordinate(sum.latitude / sum.count),
+      longitude: roundCoordinate(sum.longitude / sum.count),
+    })
+  }
+
+  return centroids
+}
+
+export function buildMapClients(
+  records: ClientMapRecord[],
+  centroids: Map<string, Coordinates>,
+): MapClient[] {
+  const mapClients: MapClient[] = []
+
+  for (const record of records) {
+    const { latitude, longitude, ...rest } = record
+
+    if (latitude !== null && longitude !== null) {
+      mapClients.push({ ...rest, latitude, longitude, approximate: false })
+      continue
+    }
+
+    const zoneKey = getZoneKey(record.zone)
+    const centroid = zoneKey ? centroids.get(zoneKey) : undefined
+    if (centroid) {
+      mapClients.push({ ...rest, ...centroid, approximate: true })
+    }
+  }
+
+  return mapClients
+}
+
+export async function getClientMap(
+  businessId: string,
+  filters: ClientMapFilters,
+): Promise<ClientMapResponse> {
+  const [records, zonePoints] = await Promise.all([
+    findClientsForMap(businessId, filters),
+    findZoneCoordinates(businessId),
+  ])
+
+  return {
+    total: records.length,
+    clients: buildMapClients(records, computeZoneCentroids(zonePoints)),
+    zones: buildZoneSummary(records),
+    channelOrigin: buildChannelOrigin(records),
+  }
 }

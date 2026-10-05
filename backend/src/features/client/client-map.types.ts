@@ -17,6 +17,13 @@ export interface ClientMapRecord {
   type: string | null
 }
 
+export interface Coordinates {
+  latitude: number
+  longitude: number
+}
+
+export type ZonePoint = Pick<ClientMapRecord, 'zone' | 'latitude' | 'longitude'>
+
 export interface MapClient {
   id: string
   name: string
