@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AppError } from '../../shared/AppError'
 import * as clientModel from './client.model'
+import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import { listClients, createClient, updateClient, deleteClient } from './client.service'
 
 vi.mock('./client.model')
+vi.mock('../../shared/utils/prismaErrors')
 
 describe('listClients', () => {
   beforeEach(() => {
@@ -97,7 +99,7 @@ describe('duplicated clients', () => {
   it('rejects a duplicated email when creating', async () => {
     const databaseError = new Error('unique')
     vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'email'])
+    vi.mocked(getUniqueViolationFields).mockReturnValue(['businessId', 'email'])
 
     await expect(
       createClient('business-1', { name: 'Ana', email: 'a@a.com' }),
@@ -114,7 +116,7 @@ describe('duplicated clients', () => {
   it('rejects a duplicated phone when updating', async () => {
     vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
     vi.mocked(clientModel.updateClientById).mockRejectedValue(new Error('unique'))
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'phone'])
+    vi.mocked(getUniqueViolationFields).mockReturnValue(['businessId', 'phone'])
 
     await expect(updateClient('business-1', 'client-1', { phone: '600' })).rejects.toMatchObject({
       statusCode: 409,
@@ -128,7 +130,7 @@ describe('duplicated clients', () => {
   it('rethrows errors that are not duplicates', async () => {
     const databaseError = new Error('connection lost')
     vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(null)
+    vi.mocked(getUniqueViolationFields).mockReturnValue(null)
 
     await expect(createClient('business-1', { name: 'Ana' })).rejects.toBe(databaseError)
   })

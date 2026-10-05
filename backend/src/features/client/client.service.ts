@@ -9,8 +9,8 @@ import {
   findClientWithTags,
   updateClientById,
   deleteClientById,
-  getUniqueViolationFields,
 } from './client.model'
+import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
 function describeDuplicate(fields: string[]): string {

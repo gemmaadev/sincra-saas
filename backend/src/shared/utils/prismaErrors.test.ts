@@ -1,8 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { Prisma } from '../../generated/prisma/client'
-import { getUniqueViolationFields } from './client.model'
-
-vi.mock('../../config/db', () => ({ default: {} }))
+import { getUniqueViolationFields } from './prismaErrors'
 
 function prismaError(code: string, target?: unknown) {
   return new Prisma.PrismaClientKnownRequestError('error', {
