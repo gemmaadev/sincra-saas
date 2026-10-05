@@ -2,7 +2,7 @@ import { useId } from 'react'
 import type { InputHTMLAttributes, ReactNode, Ref } from 'react'
 
 interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label: ReactNode
+  label?: ReactNode
   error?: string
   ref?: Ref<HTMLInputElement>
 }
@@ -23,7 +23,7 @@ export function Checkbox({ label, error, className = '', id, ref, ...props }: Ch
           className={`mt-0.5 size-4 accent-primary ${className}`}
           {...props}
         />
-        <span>{label}</span>
+        {label && <span>{label}</span>}
       </label>
       {error && (
         <span id={`${checkboxId}-error`} className="text-sm text-error">
