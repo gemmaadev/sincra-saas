@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { geocodeAddress } from './geocoding.service'
 
+let fakeNow = new Date('2026-01-01T00:00:00Z').getTime()
+
+async function geocode(input: Parameters<typeof geocodeAddress>[0]) {
+  const pending = geocodeAddress(input)
+  await vi.runAllTimersAsync()
+  return pending
+}
+
 function respondWith(body: unknown, init: { ok?: boolean; status?: number } = {}) {
   vi.mocked(fetch).mockResolvedValue({
     ok: init.ok ?? true,
@@ -15,10 +23,14 @@ function requestedUrl(): URL {
 
 describe('geocodeAddress', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'Date'] })
+    fakeNow += 60_000
+    vi.setSystemTime(fakeNow)
     vi.stubGlobal('fetch', vi.fn())
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
   })
@@ -29,7 +41,7 @@ describe('geocodeAddress', () => {
   it('returns the coordinates of the first result as numbers', async () => {
     respondWith([{ lat: '41.5467', lon: '2.1044' }])
 
-    const location = await geocodeAddress({
+    const location = await geocode({
       address: 'Carrer de Sant Pau 33',
       zone: 'Sabadell',
       countryCode: 'ES',
@@ -44,7 +56,7 @@ describe('geocodeAddress', () => {
   it('builds the Nominatim request from the address, the zone and the country', async () => {
     respondWith([{ lat: '41.5', lon: '2.1' }])
 
-    await geocodeAddress({ address: 'Carrer de Sant Pau 33', zone: 'Sabadell', countryCode: 'ES' })
+    await geocode({ address: 'Carrer de Sant Pau 33', zone: 'Sabadell', countryCode: 'ES' })
 
     const url = requestedUrl()
     expect(url.origin + url.pathname).toBe('https://nominatim.openstreetmap.org/search')
@@ -60,7 +72,7 @@ describe('geocodeAddress', () => {
   it('searches only by zone when there is no address', async () => {
     respondWith([{ lat: '41.5', lon: '2.1' }])
 
-    await geocodeAddress({ address: null, zone: 'Sabadell' })
+    await geocode({ address: null, zone: 'Sabadell' })
 
     expect(requestedUrl().searchParams.get('q')).toBe('Sabadell')
   })
@@ -71,7 +83,7 @@ describe('geocodeAddress', () => {
   it('does not restrict the country when none is given', async () => {
     respondWith([{ lat: '41.5', lon: '2.1' }])
 
-    await geocodeAddress({ address: 'Rambla Nova 45' })
+    await geocode({ address: 'Rambla Nova 45' })
 
     expect(requestedUrl().searchParams.has('countrycodes')).toBe(false)
   })
@@ -84,7 +96,7 @@ describe('geocodeAddress', () => {
     ['null values', { address: null, zone: null }],
     ['blank text', { address: '   ', zone: '' }],
   ])('does not call Nominatim with %s', async (_label, input) => {
-    expect(await geocodeAddress(input)).toBeNull()
+    expect(await geocode(input)).toBeNull()
     expect(fetch).not.toHaveBeenCalled()
   })
 
@@ -94,7 +106,7 @@ describe('geocodeAddress', () => {
   it('identifies the app and sets a timeout', async () => {
     respondWith([])
 
-    await geocodeAddress({ address: 'Rambla Nova 45' })
+    await geocode({ address: 'Rambla Nova 45' })
 
     const options = vi.mocked(fetch).mock.calls[0][1]
     expect((options?.headers as Record<string, string>)['User-Agent']).toBe('Sincra/1.0')
@@ -108,7 +120,7 @@ describe('geocodeAddress', () => {
     vi.stubEnv('GEOCODING_USER_AGENT', 'Sincra/1.0 (contact@example.com)')
     respondWith([])
 
-    await geocodeAddress({ address: 'Rambla Nova 45' })
+    await geocode({ address: 'Rambla Nova 45' })
 
     const options = vi.mocked(fetch).mock.calls[0][1]
     expect((options?.headers as Record<string, string>)['User-Agent']).toBe(
@@ -122,7 +134,7 @@ describe('geocodeAddress', () => {
   it('returns null when nothing is found', async () => {
     respondWith([])
 
-    expect(await geocodeAddress({ address: 'Calle que no existe 999' })).toBeNull()
+    expect(await geocode({ address: 'Calle que no existe 999' })).toBeNull()
   })
 
   // Given Nominatim answers with an error status (e.g. rate limited)
@@ -131,7 +143,7 @@ describe('geocodeAddress', () => {
   it.each([429, 500, 503])('returns null for a %i response', async (status) => {
     respondWith({}, { ok: false, status })
 
-    expect(await geocodeAddress({ address: 'Rambla Nova 45' })).toBeNull()
+    expect(await geocode({ address: 'Rambla Nova 45' })).toBeNull()
   })
 
   // Given the network fails or the request times out
@@ -143,7 +155,7 @@ describe('geocodeAddress', () => {
   ])('returns null on %s', async (_label, error) => {
     vi.mocked(fetch).mockRejectedValue(error)
 
-    expect(await geocodeAddress({ address: 'Rambla Nova 45' })).toBeNull()
+    expect(await geocode({ address: 'Rambla Nova 45' })).toBeNull()
   })
 
   // Given a response that is not valid JSON
@@ -156,7 +168,7 @@ describe('geocodeAddress', () => {
       json: () => Promise.reject(new SyntaxError('Unexpected token')),
     } as Response)
 
-    expect(await geocodeAddress({ address: 'Rambla Nova 45' })).toBeNull()
+    expect(await geocode({ address: 'Rambla Nova 45' })).toBeNull()
   })
 
   // Given a result with coordinates that make no sense
@@ -171,6 +183,40 @@ describe('geocodeAddress', () => {
   ])('returns null for %s', async (_label, body) => {
     respondWith(body)
 
-    expect(await geocodeAddress({ address: 'Rambla Nova 45' })).toBeNull()
+    expect(await geocode({ address: 'Rambla Nova 45' })).toBeNull()
+  })
+
+  // Given Nominatim allows one request per second
+  // When two addresses are geocoded at the same time
+  // Then the second request should wait one second after the first
+  it('spaces concurrent requests one second apart', async () => {
+    respondWith([{ lat: '41.5', lon: '2.1' }])
+
+    const first = geocodeAddress({ address: 'Rambla Nova 45' })
+    const second = geocodeAddress({ address: 'Carrer Major 2' })
+
+    await vi.advanceTimersByTimeAsync(0)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(999)
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(fetch).toHaveBeenCalledTimes(2)
+
+    await Promise.all([first, second])
+  })
+
+  // Given the last request was made more than a second ago
+  // When another address is geocoded
+  // Then it should be sent without waiting
+  it('does not delay a request when the previous one was long ago', async () => {
+    respondWith([{ lat: '41.5', lon: '2.1' }])
+
+    await geocode({ address: 'Rambla Nova 45' })
+    await vi.advanceTimersByTimeAsync(5000)
+    const pending = geocodeAddress({ address: 'Carrer Major 2' })
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(fetch).toHaveBeenCalledTimes(2)
+    await pending
   })
 })
