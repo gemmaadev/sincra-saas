@@ -3,6 +3,8 @@ import { AppError } from '../../shared/AppError'
 import * as clientModel from './client.model'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import * as tagModel from '../tag/tag.model'
+import * as authModel from '../auth/auth.model'
+import { geocodeAddress } from '../../shared/services/geocoding.service'
 import {
   listClients,
   createClient,
@@ -14,6 +16,8 @@ import {
 
 vi.mock('./client.model')
 vi.mock('../tag/tag.model')
+vi.mock('../auth/auth.model')
+vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
 
 describe('listClients', () => {
@@ -63,6 +67,89 @@ describe('createClient', () => {
 
     expect(clientModel.insertClient).toHaveBeenCalledWith(
       expect.objectContaining({ businessId: 'business-1', name: 'Ana', channels: [] }),
+    )
+  })
+})
+
+describe('createClient geocoding', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
+  })
+
+  // Given an address and a zone without coordinates, in a Spanish business
+  // When createClient is called
+  // Then the address is geocoded with the business country and the coordinates are saved
+  it('saves the geocoded coordinates when none are given', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.5467, longitude: 2.1044 })
+
+    await createClient('business-1', {
+      name: 'Ana',
+      address: 'Carrer de Sant Pau 33',
+      zone: 'Sabadell',
+    })
+
+    expect(authModel.findBusinessCountry).toHaveBeenCalledWith('business-1')
+    expect(geocodeAddress).toHaveBeenCalledWith({
+      address: 'Carrer de Sant Pau 33',
+      zone: 'Sabadell',
+      countryCode: 'ES',
+    })
+    expect(clientModel.insertClient).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 41.5467, longitude: 2.1044 }),
+    )
+  })
+
+  // Given only a zone
+  // When createClient is called
+  // Then the zone is geocoded
+  it('geocodes by zone when there is no address', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.5, longitude: 2.1 })
+
+    await createClient('business-1', { name: 'Ana', zone: 'Sabadell' })
+
+    expect(geocodeAddress).toHaveBeenCalledWith(
+      expect.objectContaining({ address: undefined, zone: 'Sabadell' }),
+    )
+  })
+
+  // Given the client already comes with coordinates
+  // When createClient is called
+  // Then they are kept and nothing is geocoded
+  it('keeps the given coordinates without geocoding', async () => {
+    await createClient('business-1', {
+      name: 'Ana',
+      address: 'Carrer de Sant Pau 33',
+      latitude: 41.1,
+      longitude: 2.2,
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(clientModel.insertClient).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 41.1, longitude: 2.2 }),
+    )
+  })
+
+  // Given neither address nor zone
+  // When createClient is called
+  // Then there is nothing to geocode
+  it('does not geocode a client without address or zone', async () => {
+    await createClient('business-1', { name: 'Ana', address: '  ' })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(authModel.findBusinessCountry).not.toHaveBeenCalled()
+  })
+
+  // Given the geocoder finds nothing
+  // When createClient is called
+  // Then the client is still created, without coordinates
+  it('creates the client without coordinates when geocoding fails', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue(null)
+
+    await createClient('business-1', { name: 'Ana', zone: 'Sabadell' })
+
+    expect(clientModel.insertClient).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Ana', latitude: undefined, longitude: undefined }),
     )
   })
 })

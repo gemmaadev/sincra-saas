@@ -14,6 +14,9 @@ import {
   markClientTagRemoved,
 } from './client.model'
 import { findTagById } from '../tag/tag.model'
+import { findBusinessCountry } from '../auth/auth.model'
+import { geocodeAddress } from '../../shared/services/geocoding.service'
+import type { GeocodedLocation } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
@@ -39,7 +42,28 @@ async function rejectDuplicates<T>(save: () => Promise<T>): Promise<T> {
   }
 }
 
+async function locateClient(
+  businessId: string,
+  input: CreateClientInput,
+): Promise<GeocodedLocation | null> {
+  if (input.latitude !== undefined && input.longitude !== undefined) {
+    return { latitude: input.latitude, longitude: input.longitude }
+  }
+
+  if (!input.address?.trim() && !input.zone?.trim()) return null
+
+  const countryCode = await findBusinessCountry(businessId)
+
+  return geocodeAddress({
+    address: input.address,
+    zone: input.zone,
+    countryCode: countryCode ?? undefined,
+  })
+}
+
 export async function createClient(businessId: string, input: CreateClientInput) {
+  const location = await locateClient(businessId, input)
+
   return rejectDuplicates(() =>
     insertClient({
       businessId,
@@ -50,8 +74,8 @@ export async function createClient(businessId: string, input: CreateClientInput)
       type: input.type,
       address: input.address,
       zone: input.zone,
-      latitude: input.latitude,
-      longitude: input.longitude,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
     }),
   )
 }
