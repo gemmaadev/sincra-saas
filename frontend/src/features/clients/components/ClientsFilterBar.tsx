@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
 import { Input, Select } from '@/shared/components'
-import { useTags } from '@/shared/hooks'
+import { useTags } from '@/features/tags/hooks/useTags'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import type { ChannelFilter } from '../types/client.types'
 

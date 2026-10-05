@@ -16,7 +16,7 @@ import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { TagPill } from '@/shared/components/tag-pill'
-import { useTags } from '@/shared/hooks'
+import { useTags } from '@/features/tags/hooks/useTags'
 import { Link } from 'react-router'
 
 const navItems = [

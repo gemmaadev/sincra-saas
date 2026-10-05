@@ -41,6 +41,7 @@ describe('TagsTab', () => {
             {
               id: 'ct-1',
               tagId: 'tag-1',
+              aiGenerated: false,
               tag: {
                 id: 'tag-1',
                 name: 'VIP',
