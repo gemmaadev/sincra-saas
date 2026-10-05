@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RegisterPage from './RegisterPage'
 import { AuthProvider } from '@/features/auth/context/AuthProvider'
 import { api, ApiError } from '@/shared/services'
-import { withQueryClient } from '@/test/withQueryClient'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {

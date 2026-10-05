@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ForgotPasswordPage from './ForgotPasswordPage'
 import { api } from '@/shared/services'
-import { withQueryClient } from '@/test/withQueryClient'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { withQueryClient } from '@/test/withQueryClient'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 import { ClientFormModal } from './ClientFormModal'
 import type { ClientDetail } from '../types/client.types'
 
