@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { create, list, getById, update, remove } from './client.controller'
+import { create, list, getById, update, remove, assignTag, removeTag } from './client.controller'
 import * as clientService from './client.service'
 import { AppError } from '../../shared/AppError'
 
@@ -250,5 +250,90 @@ describe('remove', () => {
     await remove(req, res, next as NextFunction)
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('assignTag', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a tag id in the body
+  // When assigning it to a client
+  // Then it should call the service with the business, client and tag, and respond 201
+  it('assigns the tag and responds 201 with the assignment', async () => {
+    const assignSpy = vi
+      .spyOn(clientService, 'assignTagToClient')
+      .mockResolvedValue({ id: 'assignment-1' } as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'client-1' },
+      body: { tagId: 'tag-1' },
+    })
+    const res = createMockResponse()
+
+    await assignTag(req, res, vi.fn() as NextFunction)
+
+    expect(assignSpy).toHaveBeenCalledWith('biz-1', 'client-1', 'tag-1')
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith({ clientTag: { id: 'assignment-1' } })
+  })
+
+  // Given a body without a tag id
+  // When assigning a tag
+  // Then it should throw a 400 AppError and not call the service
+  it('throws a 400 AppError when the tag id is missing', async () => {
+    const assignSpy = vi.spyOn(clientService, 'assignTagToClient')
+    const req = createMockRequest({ businessId: 'biz-1', params: { id: 'client-1' }, body: {} })
+    const next = vi.fn() as NextFunction
+
+    await assignTag(req, createMockResponse(), next)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_FIELDS' }),
+    )
+    expect(assignSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('removeTag', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a client id and a tag id
+  // When removing the tag
+  // Then it should call the service and respond 204
+  it('removes the tag and responds 204', async () => {
+    const removeSpy = vi.spyOn(clientService, 'removeTagFromClient').mockResolvedValue(undefined)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'client-1', tagId: 'tag-1' },
+    })
+    const res = createMockResponse()
+
+    await removeTag(req, res, vi.fn() as NextFunction)
+
+    expect(removeSpy).toHaveBeenCalledWith('biz-1', 'client-1', 'tag-1')
+    expect(res.status).toHaveBeenCalledWith(204)
+    expect(res.send).toHaveBeenCalled()
+  })
+
+  // Given the service rejects with a 404
+  // When removing the tag
+  // Then the error should reach the error handler
+  it('propagates the 404 AppError when the client does not have the tag', async () => {
+    vi.spyOn(clientService, 'removeTagFromClient').mockRejectedValue(
+      new AppError('El cliente no tiene esa etiqueta', 404, 'CLIENT_TAG_NOT_FOUND'),
+    )
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'client-1', tagId: 'tag-1' },
+    })
+    const next = vi.fn() as NextFunction
+
+    await removeTag(req, createMockResponse(), next)
+
+    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }))
   })
 })
