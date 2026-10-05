@@ -7,6 +7,13 @@ export interface ClientMapFilters {
   to?: Date
 }
 
+export interface ClientMapQuery {
+  channel?: unknown
+  type?: unknown
+  from?: unknown
+  to?: unknown
+}
+
 export interface ClientMapRecord {
   id: string
   name: string
