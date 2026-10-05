@@ -27,6 +27,7 @@ describe('geocodeAddress', () => {
     fakeNow += 60_000
     vi.setSystemTime(fakeNow)
     vi.stubGlobal('fetch', vi.fn())
+    vi.stubEnv('GEOCODING_USER_AGENT', undefined)
   })
 
   afterEach(() => {
