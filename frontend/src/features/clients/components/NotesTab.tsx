@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { SincraButton } from '@/shared/components'
+import { SincraButton, ConfirmDeleteModal } from '@/shared/components'
+import { ApiError } from '@/shared/services'
 import { formatDateTime } from '@/shared/utils/date'
+import { notifySuccess } from '@/shared/utils/notify'
 import { useClientNotes } from '../hooks/useClientNotes'
 import { useCreateNote } from '../hooks/useCreateNote'
 import { useDeleteNote } from '../hooks/useDeleteNote'
+import type { Note } from '../types/note.types'
 
 interface NotesTabProps {
   clientId: string
@@ -12,6 +15,7 @@ interface NotesTabProps {
 
 export function NotesTab({ clientId }: NotesTabProps) {
   const [content, setContent] = useState('')
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null)
   const { data: notes = [], isLoading, isError } = useClientNotes(clientId)
   const createNote = useCreateNote(clientId)
   const deleteNote = useDeleteNote(clientId)
@@ -19,6 +23,28 @@ export function NotesTab({ clientId }: NotesTabProps) {
   function handleAdd() {
     createNote.mutate(content, { onSuccess: () => setContent('') })
   }
+
+  function closeDeleteModal() {
+    deleteNote.reset()
+    setNoteToDelete(null)
+  }
+
+  function handleDelete() {
+    if (!noteToDelete) return
+
+    deleteNote.mutate(noteToDelete.id, {
+      onSuccess: () => {
+        notifySuccess('Nota eliminada')
+        closeDeleteModal()
+      },
+    })
+  }
+
+  const deleteError = deleteNote.isError
+    ? deleteNote.error instanceof ApiError
+      ? deleteNote.error.message
+      : 'No se ha podido eliminar la nota. Inténtalo de nuevo.'
+    : undefined
 
   return (
     <div className="flex flex-col gap-4">
@@ -66,8 +92,8 @@ export function NotesTab({ clientId }: NotesTabProps) {
               <button
                 type="button"
                 aria-label="Eliminar nota"
-                onClick={() => deleteNote.mutate(note.id)}
-                className="shrink-0 text-ink-muted hover:text-error"
+                onClick={() => setNoteToDelete(note)}
+                className="shrink-0 text-ink-muted hover:text-error cursor-pointer"
               >
                 <Trash2 size={14} aria-hidden="true" />
               </button>
@@ -75,6 +101,16 @@ export function NotesTab({ clientId }: NotesTabProps) {
           ))}
         </ul>
       )}
+
+      <ConfirmDeleteModal
+        opened={noteToDelete !== null}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        isLoading={deleteNote.isPending}
+        error={deleteError}
+        title="¿Eliminar nota?"
+        message="Se eliminará esta nota. Esta acción no se puede deshacer."
+      />
     </div>
   )
 }
