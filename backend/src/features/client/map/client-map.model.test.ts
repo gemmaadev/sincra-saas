@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import prisma from '../../config/db'
+import prisma from '../../../config/db'
 import { findClientsForMap, findZoneCoordinates } from './client-map.model'
 
-vi.mock('../../config/db', () => ({
+vi.mock('../../../config/db', () => ({
   default: { client: { findMany: vi.fn() } },
 }))
 

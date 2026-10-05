@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express'
-import { asyncHandler } from '../../shared/handlers/asyncHandler'
-import { AppError } from '../../shared/AppError'
-import { Channel } from '../../generated/prisma/client'
+import { asyncHandler } from '../../../shared/handlers/asyncHandler'
+import { AppError } from '../../../shared/AppError'
+import { Channel } from '../../../generated/prisma/client'
 import { getClientMap } from './client-map.service'
 import type { ClientMapFilters, ClientMapQuery } from './client-map.types'
 

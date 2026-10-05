@@ -3,7 +3,7 @@ import request from 'supertest'
 import app from '../../app'
 import { signToken } from '../../shared/jwt'
 import * as clientService from './client.service'
-import * as clientMapService from './client-map.service'
+import * as clientMapService from './map/client-map.service'
 
 describe('client tag routes', () => {
   beforeEach(() => {

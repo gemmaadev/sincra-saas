@@ -1,4 +1,4 @@
-import type { Channel } from '../../generated/prisma/client'
+import type { Channel } from '../../../generated/prisma/client'
 import { findClientsForMap, findZoneCoordinates } from './client-map.model'
 import type {
   ChannelShare,

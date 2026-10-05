@@ -1,5 +1,5 @@
-import prisma from '../../config/db'
-import type { Prisma } from '../../generated/prisma/client'
+import prisma from '../../../config/db'
+import type { Prisma } from '../../../generated/prisma/client'
 import type { ClientMapFilters } from './client-map.types'
 
 function buildMapWhere(businessId: string, filters: ClientMapFilters): Prisma.ClientWhereInput {

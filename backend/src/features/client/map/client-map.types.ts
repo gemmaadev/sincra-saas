@@ -1,4 +1,4 @@
-import type { Channel } from '../../generated/prisma/client'
+import type { Channel } from '../../../generated/prisma/client'
 
 export interface ClientMapFilters {
   channel?: Channel

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { create, list, getById, update, remove, assignTag, removeTag } from './client.controller'
-import { getMap } from './client-map.controller'
+import { getMap } from './map/client-map.controller'
 import { verifyAuth } from '../../middleware/verifyAuth'
 
 const router = Router()
