@@ -103,7 +103,9 @@ export default function ClientsPage() {
         closeButtonProps={{ 'aria-label': 'Cerrar' }}
         transitionProps={{ duration: 300, timingFunction: 'ease-out' }}
       >
-        {detailMatch && <ClientDetailPanel id={detailMatch.params.id!} />}
+        {detailMatch && (
+          <ClientDetailPanel id={detailMatch.params.id!} onDeleted={() => navigate('/clients')} />
+        )}
       </Drawer>
 
       <ClientFormModal opened={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
