@@ -1,9 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AppError } from '../../shared/AppError'
 import * as clientModel from './client.model'
-import { listClients, createClient, updateClient, deleteClient } from './client.service'
+import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
+import * as tagModel from '../tag/tag.model'
+import {
+  listClients,
+  createClient,
+  updateClient,
+  deleteClient,
+  assignTagToClient,
+  removeTagFromClient,
+} from './client.service'
 
 vi.mock('./client.model')
+vi.mock('../tag/tag.model')
+vi.mock('../../shared/utils/prismaErrors')
 
 describe('listClients', () => {
   beforeEach(() => {
@@ -97,7 +108,7 @@ describe('duplicated clients', () => {
   it('rejects a duplicated email when creating', async () => {
     const databaseError = new Error('unique')
     vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'email'])
+    vi.mocked(getUniqueViolationFields).mockReturnValue(['businessId', 'email'])
 
     await expect(
       createClient('business-1', { name: 'Ana', email: 'a@a.com' }),
@@ -114,7 +125,7 @@ describe('duplicated clients', () => {
   it('rejects a duplicated phone when updating', async () => {
     vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
     vi.mocked(clientModel.updateClientById).mockRejectedValue(new Error('unique'))
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(['businessId', 'phone'])
+    vi.mocked(getUniqueViolationFields).mockReturnValue(['businessId', 'phone'])
 
     await expect(updateClient('business-1', 'client-1', { phone: '600' })).rejects.toMatchObject({
       statusCode: 409,
@@ -128,8 +139,111 @@ describe('duplicated clients', () => {
   it('rethrows errors that are not duplicates', async () => {
     const databaseError = new Error('connection lost')
     vi.mocked(clientModel.insertClient).mockRejectedValue(databaseError)
-    vi.mocked(clientModel.getUniqueViolationFields).mockReturnValue(null)
+    vi.mocked(getUniqueViolationFields).mockReturnValue(null)
 
     await expect(createClient('business-1', { name: 'Ana' })).rejects.toBe(databaseError)
+  })
+})
+
+describe('assignTagToClient', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given a client and a tag of the same business, not assigned yet
+  // When the tag is assigned
+  // Then a new assignment is created
+  it('assigns the tag to the client', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue({ id: 'tag-1' } as never)
+    vi.mocked(clientModel.findActiveClientTag).mockResolvedValue(null)
+
+    await assignTagToClient('business-1', 'client-1', 'tag-1')
+
+    expect(tagModel.findTagById).toHaveBeenCalledWith('business-1', 'tag-1')
+    expect(clientModel.insertClientTag).toHaveBeenCalledWith('client-1', 'tag-1')
+  })
+
+  // Given a client that is not in the business
+  // When a tag is assigned
+  // Then CLIENT_NOT_FOUND is thrown and nothing is created
+  it('throws CLIENT_NOT_FOUND when the client is not in the business', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue(null)
+
+    await expect(assignTagToClient('business-1', 'client-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'CLIENT_NOT_FOUND',
+    })
+    expect(clientModel.insertClientTag).not.toHaveBeenCalled()
+  })
+
+  // Given a tag that belongs to another business
+  // When it is assigned
+  // Then TAG_NOT_FOUND is thrown and nothing is created
+  it('throws TAG_NOT_FOUND when the tag is not in the business', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue(null)
+
+    await expect(assignTagToClient('business-1', 'client-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'TAG_NOT_FOUND',
+    })
+    expect(clientModel.insertClientTag).not.toHaveBeenCalled()
+  })
+
+  // Given the client already has that tag active
+  // When it is assigned again
+  // Then a 409 TAG_ALREADY_ASSIGNED is thrown and no duplicate is created
+  it('rejects a tag that is already assigned', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue({ id: 'tag-1' } as never)
+    vi.mocked(clientModel.findActiveClientTag).mockResolvedValue({ id: 'assignment-1' } as never)
+
+    await expect(assignTagToClient('business-1', 'client-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'TAG_ALREADY_ASSIGNED',
+    })
+    expect(clientModel.insertClientTag).not.toHaveBeenCalled()
+  })
+})
+
+describe('removeTagFromClient', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given a client with an active assignment of the tag
+  // When the tag is removed
+  // Then the assignment is marked as removed (the row is kept)
+  it('marks the assignment as removed', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(clientModel.findActiveClientTag).mockResolvedValue({ id: 'assignment-1' } as never)
+
+    await removeTagFromClient('business-1', 'client-1', 'tag-1')
+
+    expect(clientModel.findActiveClientTag).toHaveBeenCalledWith('client-1', 'tag-1')
+    expect(clientModel.markClientTagRemoved).toHaveBeenCalledWith('assignment-1')
+  })
+
+  // Given a client that does not have that tag active
+  // When the tag is removed
+  // Then CLIENT_TAG_NOT_FOUND is thrown
+  it('throws CLIENT_TAG_NOT_FOUND when the client does not have the tag', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(clientModel.findActiveClientTag).mockResolvedValue(null)
+
+    await expect(removeTagFromClient('business-1', 'client-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'CLIENT_TAG_NOT_FOUND',
+    })
+    expect(clientModel.markClientTagRemoved).not.toHaveBeenCalled()
+  })
+
+  // Given a client that is not in the business
+  // When a tag is removed
+  // Then CLIENT_NOT_FOUND is thrown
+  it('throws CLIENT_NOT_FOUND when the client is not in the business', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue(null)
+
+    await expect(removeTagFromClient('business-1', 'client-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'CLIENT_NOT_FOUND',
+    })
   })
 })

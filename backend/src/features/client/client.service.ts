@@ -9,8 +9,12 @@ import {
   findClientWithTags,
   updateClientById,
   deleteClientById,
-  getUniqueViolationFields,
+  findActiveClientTag,
+  insertClientTag,
+  markClientTagRemoved,
 } from './client.model'
+import { findTagById } from '../tag/tag.model'
+import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
 function describeDuplicate(fields: string[]): string {
@@ -98,6 +102,33 @@ export async function deleteClient(businessId: string, clientId: string) {
   await assertClientExists(businessId, clientId)
 
   await deleteClientById(clientId)
+}
+
+export async function assignTagToClient(businessId: string, clientId: string, tagId: string) {
+  await assertClientExists(businessId, clientId)
+
+  const tag = await findTagById(businessId, tagId)
+  if (!tag) {
+    throw new AppError('Etiqueta no encontrada', 404, 'TAG_NOT_FOUND')
+  }
+
+  const activeAssignment = await findActiveClientTag(clientId, tagId)
+  if (activeAssignment) {
+    throw new AppError('Este cliente ya tiene esa etiqueta', 409, 'TAG_ALREADY_ASSIGNED')
+  }
+
+  return insertClientTag(clientId, tagId)
+}
+
+export async function removeTagFromClient(businessId: string, clientId: string, tagId: string) {
+  await assertClientExists(businessId, clientId)
+
+  const activeAssignment = await findActiveClientTag(clientId, tagId)
+  if (!activeAssignment) {
+    throw new AppError('El cliente no tiene esa etiqueta', 404, 'CLIENT_TAG_NOT_FOUND')
+  }
+
+  await markClientTagRemoved(activeAssignment.id)
 }
 
 async function assertClientExists(businessId: string, clientId: string) {

@@ -1,13 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-
-export interface Tag {
-  id: string
-  name: string
-  color: string
-  priority: 'LOW' | 'MEDIUM' | 'HIGH'
-  isDefault: boolean
-}
+import type { Tag } from '../types/tag.types'
 
 export function useTags() {
   return useQuery({

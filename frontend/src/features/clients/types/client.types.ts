@@ -1,16 +1,11 @@
-export type ChannelFilter = 'GMAIL' | 'OUTLOOK' | 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
+import type { Tag } from '@/features/tags/types/tag.types'
 
-export interface Tag {
-  id: string
-  name: string
-  color: string
-  priority: 'LOW' | 'MEDIUM' | 'HIGH'
-  isDefault: boolean
-}
+export type ChannelFilter = 'GMAIL' | 'OUTLOOK' | 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
 
 export interface ClientTag {
   id: string
   tagId: string
+  aiGenerated: boolean
   tag: Tag
 }
 

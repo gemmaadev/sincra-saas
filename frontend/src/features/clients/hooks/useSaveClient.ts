@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/services'
 import { toClientPayload } from '../utils/toClientPayload'
+import { invalidateClientQueries } from '../utils/invalidateClientQueries'
 import type { ClientFormValues, ClientMutationResponse } from '../types/client.types'
 
 export function useSaveClient(clientId?: string) {
@@ -14,11 +15,6 @@ export function useSaveClient(clientId?: string) {
         : await api.post<ClientMutationResponse>('/clients', payload)
       return client
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] })
-      if (clientId) {
-        queryClient.invalidateQueries({ queryKey: ['client', clientId] })
-      }
-    },
+    onSuccess: () => invalidateClientQueries(queryClient, clientId),
   })
 }

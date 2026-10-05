@@ -1,8 +1,21 @@
 import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
-import { createClient, listClients, getClientById, updateClient, deleteClient } from './client.service'
-import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
+import {
+  createClient,
+  listClients,
+  getClientById,
+  updateClient,
+  deleteClient,
+  assignTagToClient,
+  removeTagFromClient,
+} from './client.service'
+import type {
+  CreateClientInput,
+  UpdateClientInput,
+  ListClientsFilters,
+  AssignTagBody,
+} from './client.types'
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, phone, channels, type, address, zone, latitude, longitude } =
@@ -63,6 +76,24 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   await deleteClient(req.businessId!, req.params.id as string)
+
+  res.status(204).send()
+})
+
+export const assignTag = asyncHandler(async (req: Request, res: Response) => {
+  const { tagId } = req.body as AssignTagBody
+
+  if (typeof tagId !== 'string' || !tagId) {
+    throw new AppError('Indica la etiqueta', 400, 'MISSING_FIELDS')
+  }
+
+  const clientTag = await assignTagToClient(req.businessId!, req.params.id as string, tagId)
+
+  res.status(201).json({ clientTag })
+})
+
+export const removeTag = asyncHandler(async (req: Request, res: Response) => {
+  await removeTagFromClient(req.businessId!, req.params.id as string, req.params.tagId as string)
 
   res.status(204).send()
 })

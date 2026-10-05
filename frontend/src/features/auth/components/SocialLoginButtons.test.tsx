@@ -5,7 +5,7 @@ import { SocialLoginButtons } from './SocialLoginButtons'
 import { AuthContext } from '../context/AuthContext'
 import type { AuthContextValue } from '../context/AuthContext'
 import { api, ApiError } from '@/shared/services'
-import { withQueryClient } from '@/test/withQueryClient'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {

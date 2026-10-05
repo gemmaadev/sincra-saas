@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, ApiError } from '@/shared/services'
+import { invalidateClientQueries } from '../utils/invalidateClientQueries'
 
 function isAlreadyDeleted(reason: unknown): boolean {
   return reason instanceof ApiError && reason.status === 404
@@ -21,8 +22,6 @@ export function useBulkDeleteClients() {
 
       return { failedIds }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] })
-    },
+    onSettled: () => invalidateClientQueries(queryClient),
   })
 }

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import SelectBusinessPage from './SelectBusinessPage'
 import { api } from '@/shared/services'
-import { withQueryClient } from '@/test/withQueryClient'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 const mockNavigate = vi.fn()
 

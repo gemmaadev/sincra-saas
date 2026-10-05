@@ -1,7 +1,5 @@
 import prisma from '../../config/db'
-import { Prisma } from '../../generated/prisma/client'
-
-const UNIQUE_CONSTRAINT_ERROR_CODE = 'P2002'
+import type { Prisma } from '../../generated/prisma/client'
 
 const ACTIVE_CLIENT_TAGS_INCLUDE = {
   clientTags: { where: { removedAt: null }, include: { tag: true } },
@@ -44,14 +42,14 @@ export async function deleteClientById(clientId: string) {
   await prisma.client.delete({ where: { id: clientId } })
 }
 
-export function getUniqueViolationFields(error: unknown): string[] | null {
-  if (
-    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
-    error.code !== UNIQUE_CONSTRAINT_ERROR_CODE
-  ) {
-    return null
-  }
+export async function findActiveClientTag(clientId: string, tagId: string) {
+  return prisma.clientTag.findFirst({ where: { clientId, tagId, removedAt: null } })
+}
 
-  const target = error.meta?.target
-  return Array.isArray(target) ? target.map(String) : [String(target ?? '')]
+export async function insertClientTag(clientId: string, tagId: string) {
+  return prisma.clientTag.create({ data: { clientId, tagId }, include: { tag: true } })
+}
+
+export async function markClientTagRemoved(clientTagId: string) {
+  await prisma.clientTag.update({ where: { id: clientTagId }, data: { removedAt: new Date() } })
 }
