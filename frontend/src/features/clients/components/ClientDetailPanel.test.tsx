@@ -1,13 +1,17 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
-import { api } from '@/shared/services'
+import { api, ApiError } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
-vi.mock('@/shared/services', () => ({
-  api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}))
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
+})
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockClient = {
   id: 'client-1',
@@ -35,18 +39,79 @@ function mockApiGet() {
   })
 }
 
-function renderPanel(id = 'client-1') {
+function renderPanel(id = 'client-1', onDeleted = vi.fn()) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <ClientDetailPanel id={id} />
+        <ClientDetailPanel id={id} onDeleted={onDeleted} />
       </QueryClientProvider>
     </MantineProvider>,
   )
 }
 
 describe('ClientDetailPanel', () => {
+  beforeEach(() => {
+    vi.mocked(notifySuccess).mockReset()
+  })
+
+  // Given a loaded client
+  // When the user clicks the delete action
+  // Then a confirmation modal should open naming the client, and cancelling should close it
+  it('opens and closes the delete confirmation', async () => {
+    mockApiGet()
+    renderPanel()
+
+    fireEvent.click(await screen.findByLabelText('Eliminar cliente'))
+
+    const dialog = await screen.findByRole('dialog', { name: '¿Eliminar cliente?' })
+    expect(dialog).toHaveTextContent('Laura García')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '¿Eliminar cliente?' })).not.toBeInTheDocument(),
+    )
+  })
+
+  // Given the delete confirmation is open
+  // When the user confirms
+  // Then the client should be deleted, a notification shown and onDeleted called
+  it('deletes the client when the user confirms', async () => {
+    mockApiGet()
+    vi.mocked(api.delete).mockResolvedValue(null)
+    const onDeleted = vi.fn()
+    renderPanel('client-1', onDeleted)
+
+    fireEvent.click(await screen.findByLabelText('Eliminar cliente'))
+    await screen.findByRole('dialog', { name: '¿Eliminar cliente?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1))
+    expect(api.delete).toHaveBeenCalledWith('/clients/client-1')
+    expect(notifySuccess).toHaveBeenCalledWith('Cliente eliminado')
+  })
+
+  // Given the backend rejects the deletion
+  // When the user confirms
+  // Then the error should be shown in the modal and the user should not be redirected
+  it('shows the error and stays when the deletion fails', async () => {
+    mockApiGet()
+    vi.mocked(api.delete).mockRejectedValue(
+      new ApiError('Cliente no encontrado', 404, 'CLIENT_NOT_FOUND'),
+    )
+    const onDeleted = vi.fn()
+    renderPanel('client-1', onDeleted)
+
+    fireEvent.click(await screen.findByLabelText('Eliminar cliente'))
+    await screen.findByRole('dialog', { name: '¿Eliminar cliente?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    expect(await screen.findByText('Cliente no encontrado')).toBeInTheDocument()
+    expect(onDeleted).not.toHaveBeenCalled()
+    expect(notifySuccess).not.toHaveBeenCalled()
+  })
+
   // Given a loaded client
   // When the user clicks the edit action
   // Then the form modal should open in edit mode with the client's data

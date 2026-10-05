@@ -1,26 +1,10 @@
-import { Modal } from '@mantine/core'
 import { UserRound } from 'lucide-react'
+import { SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import { useSaveClient } from '../hooks/useSaveClient'
 import { ClientForm } from './ClientForm'
 import type { ClientDetail, ClientFormValues } from '../types/client.types'
-
-const MODAL_PROPS = {
-  size: 'lg',
-  centered: true,
-  radius: 'lg',
-  padding: 'xl',
-  overlayProps: { backgroundOpacity: 0.35, blur: 3 },
-  closeButtonProps: { 'aria-label': 'Cerrar' },
-  styles: {
-    header: {
-      borderBottom: '1px solid var(--color-neutral-100)',
-      paddingBottom: 'var(--mantine-spacing-md)',
-      marginBottom: 'var(--mantine-spacing-lg)',
-    },
-  },
-} as const
 
 interface ClientFormModalProps {
   opened: boolean
@@ -53,20 +37,11 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
     : undefined
 
   return (
-    <Modal
+    <SincraModal
       opened={opened}
       onClose={handleClose}
-      title={
-        <span className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-lg text-primary">
-            <UserRound size={26} aria-hidden="true" />
-          </span>
-          <span className="text-lg font-semibold text-ink">
-            {isEditing ? 'Editar cliente' : 'Nuevo cliente'}
-          </span>
-        </span>
-      }
-      {...MODAL_PROPS}
+      title={isEditing ? 'Editar cliente' : 'Nuevo cliente'}
+      icon={<UserRound size={26} className="text-primary" aria-hidden="true" />}
     >
       <ClientForm
         client={client}
@@ -75,6 +50,6 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
         isSubmitting={saveClient.isPending}
         submitError={submitError}
       />
-    </Modal>
+    </SincraModal>
   )
 }

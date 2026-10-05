@@ -16,5 +16,7 @@ export * from './select'
 export * from './toggle'
 export * from './tag-pill'
 export * from './pagination'
+export * from './selection-bar'
+export * from './modal'
 export * from './skeleton'
 

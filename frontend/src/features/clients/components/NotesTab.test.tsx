@@ -1,12 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, it, expect, vi } from 'vitest'
+import { MantineProvider } from '@mantine/core'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NotesTab } from './NotesTab'
-import { api } from '@/shared/services'
+import { api, ApiError } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
-vi.mock('@/shared/services', () => ({
-  api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}))
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
+})
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockNote = {
   id: 'note-1',
@@ -19,22 +24,27 @@ const mockNote = {
 function renderNotesTab() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <QueryClientProvider client={queryClient}>
-      <NotesTab clientId="client-1" />
-    </QueryClientProvider>,
+    <MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <NotesTab clientId="client-1" />
+      </QueryClientProvider>
+    </MantineProvider>,
   )
 }
 
 describe('NotesTab', () => {
+  beforeEach(() => {
+    vi.mocked(notifySuccess).mockReset()
+    vi.mocked(api.delete).mockReset()
+  })
+
   // Given a client with no notes
   // When NotesTab is rendered
   // Then an empty-state message should be shown
   it('shows an empty state when there are no notes', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [] })
     renderNotesTab()
-    expect(
-      await screen.findByText('Todavía no hay notas para este cliente.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Todavía no hay notas para este cliente.')).toBeInTheDocument()
   })
 
   // Given a client with notes
@@ -79,15 +89,69 @@ describe('NotesTab', () => {
 
   // Given an existing note
   // When the user clicks its delete button
-  // Then it should delete the note via DELETE /notes/:id
-  it('deletes a note when its delete button is clicked', async () => {
+  // Then a confirmation should open and nothing should be deleted yet
+  it('asks for confirmation before deleting a note', async () => {
+    vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
+    renderNotesTab()
+    await screen.findByText('Prefiere WhatsApp')
+
+    fireEvent.click(screen.getByLabelText('Eliminar nota'))
+
+    expect(await screen.findByRole('dialog', { name: '¿Eliminar nota?' })).toBeInTheDocument()
+    expect(api.delete).not.toHaveBeenCalled()
+  })
+
+  // Given the delete confirmation is open
+  // When the user confirms
+  // Then the note should be deleted via DELETE /notes/:id and a notification shown
+  it('deletes the note when the user confirms', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
     vi.mocked(api.delete).mockResolvedValue(undefined)
     renderNotesTab()
     await screen.findByText('Prefiere WhatsApp')
 
     fireEvent.click(screen.getByLabelText('Eliminar nota'))
+    await screen.findByRole('dialog', { name: '¿Eliminar nota?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
 
     await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/notes/note-1'))
+    await waitFor(() => expect(notifySuccess).toHaveBeenCalledWith('Nota eliminada'))
+  })
+
+  // Given the delete confirmation is open
+  // When the user cancels
+  // Then the note should not be deleted
+  it('keeps the note when the user cancels', async () => {
+    vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
+    renderNotesTab()
+    await screen.findByText('Prefiere WhatsApp')
+
+    fireEvent.click(screen.getByLabelText('Eliminar nota'))
+    await screen.findByRole('dialog', { name: '¿Eliminar nota?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '¿Eliminar nota?' })).not.toBeInTheDocument(),
+    )
+    expect(api.delete).not.toHaveBeenCalled()
+  })
+
+  // Given the backend rejects the deletion
+  // When the user confirms
+  // Then the error should be shown in the modal and no notification sent
+  it('shows the error when the deletion fails', async () => {
+    vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
+    vi.mocked(api.delete).mockRejectedValue(
+      new ApiError('Nota no encontrada', 404, 'NOTE_NOT_FOUND'),
+    )
+    renderNotesTab()
+    await screen.findByText('Prefiere WhatsApp')
+
+    fireEvent.click(screen.getByLabelText('Eliminar nota'))
+    await screen.findByRole('dialog', { name: '¿Eliminar nota?' })
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    expect(await screen.findByText('Nota no encontrada')).toBeInTheDocument()
+    expect(notifySuccess).not.toHaveBeenCalled()
   })
 })

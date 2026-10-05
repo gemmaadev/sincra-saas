@@ -43,4 +43,12 @@ describe('Checkbox', () => {
     expect(checkbox).toHaveAttribute('aria-invalid', 'true')
     expect(checkbox).toHaveAccessibleDescription('Debes aceptar')
   })
+
+  // Given a Checkbox without visible label but with an aria-label
+  // When it is rendered
+  // Then it should be reachable by that accessible name
+  it('can be named with aria-label when there is no visible label', () => {
+    render(<Checkbox aria-label="Seleccionar todos" />)
+    expect(screen.getByRole('checkbox', { name: 'Seleccionar todos' })).toBeInTheDocument()
+  })
 })
