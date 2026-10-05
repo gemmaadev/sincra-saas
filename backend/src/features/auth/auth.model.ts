@@ -128,3 +128,12 @@ export async function applyPasswordReset(userId: string, resetTokenId: string, p
     }),
   ])
 }
+
+export async function findBusinessCountry(businessId: string): Promise<string | null> {
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    select: { country: true },
+  })
+
+  return business?.country ?? null
+}

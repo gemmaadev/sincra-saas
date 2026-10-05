@@ -14,6 +14,9 @@ import {
   markClientTagRemoved,
 } from './client.model'
 import { findTagById } from '../tag/tag.model'
+import { findBusinessCountry } from '../auth/auth.model'
+import { geocodeAddress } from '../../shared/services/geocoding.service'
+import type { GeocodedLocation } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
 
@@ -39,7 +42,32 @@ async function rejectDuplicates<T>(save: () => Promise<T>): Promise<T> {
   }
 }
 
+async function geocodeClientLocation(
+  businessId: string,
+  address?: string | null,
+  zone?: string | null,
+): Promise<GeocodedLocation | null> {
+  if (!address?.trim() && !zone?.trim()) return null
+
+  const countryCode = await findBusinessCountry(businessId)
+
+  return geocodeAddress({ address, zone, countryCode: countryCode ?? undefined })
+}
+
+async function locateClient(
+  businessId: string,
+  input: CreateClientInput,
+): Promise<GeocodedLocation | null> {
+  if (input.latitude !== undefined && input.longitude !== undefined) {
+    return { latitude: input.latitude, longitude: input.longitude }
+  }
+
+  return geocodeClientLocation(businessId, input.address, input.zone)
+}
+
 export async function createClient(businessId: string, input: CreateClientInput) {
+  const location = await locateClient(businessId, input)
+
   return rejectDuplicates(() =>
     insertClient({
       businessId,
@@ -50,8 +78,8 @@ export async function createClient(businessId: string, input: CreateClientInput)
       type: input.type,
       address: input.address,
       zone: input.zone,
-      latitude: input.latitude,
-      longitude: input.longitude,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
     }),
   )
 }
@@ -92,10 +120,38 @@ export async function getClientById(businessId: string, clientId: string) {
   return findClientWithTags(businessId, clientId)
 }
 
-export async function updateClient(businessId: string, clientId: string, input: UpdateClientInput) {
-  await assertClientExists(businessId, clientId)
+function hasTextChanged(newValue: string | null | undefined, currentValue: string | null): boolean {
+  return newValue !== undefined && (newValue?.trim() || null) !== (currentValue?.trim() || null)
+}
 
-  return rejectDuplicates(() => updateClientById(clientId, input))
+async function relocateClient(
+  businessId: string,
+  existing: { address: string | null; zone: string | null },
+  input: UpdateClientInput,
+): Promise<GeocodedLocation | null> {
+  if (input.latitude !== undefined && input.longitude !== undefined) return null
+
+  const addressChanged = hasTextChanged(input.address, existing.address)
+  const zoneChanged = hasTextChanged(input.zone, existing.zone)
+  if (!addressChanged && !zoneChanged) return null
+
+  return geocodeClientLocation(
+    businessId,
+    input.address === undefined ? existing.address : input.address,
+    input.zone === undefined ? existing.zone : input.zone,
+  )
+}
+
+export async function updateClient(businessId: string, clientId: string, input: UpdateClientInput) {
+  const existing = await assertClientExists(businessId, clientId)
+  const location = await relocateClient(businessId, existing, input)
+
+  return rejectDuplicates(() =>
+    updateClientById(clientId, {
+      ...input,
+      ...(location && { latitude: location.latitude, longitude: location.longitude }),
+    }),
+  )
 }
 
 export async function deleteClient(businessId: string, clientId: string) {
@@ -137,4 +193,6 @@ async function assertClientExists(businessId: string, clientId: string) {
   if (!existing) {
     throw new AppError('Cliente no encontrado', 404, 'CLIENT_NOT_FOUND')
   }
+
+  return existing
 }
