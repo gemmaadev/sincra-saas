@@ -31,3 +31,7 @@ export interface ListClientsFilters extends PaginationQuery {
   tagId?: string
   search?: string
 }
+
+export interface AssignTagBody {
+  tagId: string
+}

@@ -41,3 +41,15 @@ export async function updateClientById(clientId: string, data: Prisma.ClientUpda
 export async function deleteClientById(clientId: string) {
   await prisma.client.delete({ where: { id: clientId } })
 }
+
+export async function findActiveClientTag(clientId: string, tagId: string) {
+  return prisma.clientTag.findFirst({ where: { clientId, tagId, removedAt: null } })
+}
+
+export async function insertClientTag(clientId: string, tagId: string) {
+  return prisma.clientTag.create({ data: { clientId, tagId }, include: { tag: true } })
+}
+
+export async function markClientTagRemoved(clientTagId: string) {
+  await prisma.clientTag.update({ where: { id: clientTagId }, data: { removedAt: new Date() } })
+}
