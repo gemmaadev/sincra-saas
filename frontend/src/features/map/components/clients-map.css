@@ -18,3 +18,11 @@
 .leaflet-bar a:hover {
   color: var(--color-ink);
 }
+
+.leaflet-popup-content {
+  margin: 16px;
+}
+
+.leaflet-popup-content p {
+  margin: 0;
+}
