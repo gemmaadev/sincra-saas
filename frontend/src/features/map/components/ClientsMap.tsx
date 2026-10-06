@@ -1,8 +1,11 @@
 import { MapContainer, TileLayer } from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-cluster'
 import type { FitBoundsOptions, LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
 import './clients-map.css'
 import { ClientMarker } from './ClientMarker'
+import { createClusterIcon } from '../utils/createClusterIcon'
 import type { MapClient } from '../types/map.types'
 
 const DEFAULT_CENTER: LatLngTuple = [41.6, 1.9]
@@ -31,14 +34,21 @@ export function ClientsMap({ clients, onEditClient, onDeleteClient }: ClientsMap
       className="isolate h-128 w-full rounded-card"
     >
       <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} />
-      {clients.map((client) => (
-        <ClientMarker
-          key={client.id}
-          client={client}
-          onEdit={onEditClient}
-          onDelete={onDeleteClient}
-        />
-      ))}
+      <MarkerClusterGroup
+        iconCreateFunction={createClusterIcon}
+        showCoverageOnHover={false}
+        maxClusterRadius={50}
+        chunkedLoading
+      >
+        {clients.map((client) => (
+          <ClientMarker
+            key={client.id}
+            client={client}
+            onEdit={onEditClient}
+            onDelete={onDeleteClient}
+          />
+        ))}
+      </MarkerClusterGroup>
     </MapContainer>
   )
 }
