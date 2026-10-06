@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { geocodeAddress } from './geocoding.service'
+import { geocodeAddress, searchAddresses } from './geocoding.service'
 
 let fakeNow = new Date('2026-01-01T00:00:00Z').getTime()
 
@@ -219,5 +219,138 @@ describe('geocodeAddress', () => {
 
     expect(fetch).toHaveBeenCalledTimes(2)
     await pending
+  })
+})
+
+describe('searchAddresses', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'Date'] })
+    fakeNow += 60_000
+    vi.setSystemTime(fakeNow)
+    vi.stubGlobal('fetch', vi.fn())
+    vi.stubEnv('GEOCODING_USER_AGENT', undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  async function search(query: string, countryCode?: string) {
+    const pending = searchAddresses(query, countryCode)
+    await vi.runAllTimersAsync()
+    return pending
+  }
+
+  const balmesResult = {
+    lat: '41.7346709',
+    lon: '1.8302486',
+    display_name: 'Carrer de Balmes, Manresa, Bages, Catalunya, Espanya',
+    address: { road: 'Carrer de Balmes', house_number: '71', city: 'Manresa' },
+  }
+
+  // Given Nominatim finds a street with a number in a city
+  // When the addresses are searched
+  // Then each candidate should carry its label, street with number, zone and coordinates
+  it('returns candidates with the street, the zone and the coordinates', async () => {
+    respondWith([balmesResult])
+
+    const candidates = await search('Carrer de Balmes 71, Manresa', 'ES')
+
+    expect(candidates).toEqual([
+      {
+        label: 'Carrer de Balmes, Manresa, Bages, Catalunya, Espanya',
+        address: 'Carrer de Balmes 71',
+        zone: 'Manresa',
+        latitude: 41.7346709,
+        longitude: 1.8302486,
+      },
+    ])
+  })
+
+  // Given a search
+  // When the request is sent
+  // Then it should ask for address details, up to five results and the business country
+  it('asks Nominatim for address details, five results and the country', async () => {
+    respondWith([])
+
+    await search('Rambla Nova', 'ES')
+
+    const url = requestedUrl()
+    expect(url.searchParams.get('q')).toBe('Rambla Nova')
+    expect(url.searchParams.get('addressdetails')).toBe('1')
+    expect(url.searchParams.get('limit')).toBe('5')
+    expect(url.searchParams.get('countrycodes')).toBe('es')
+  })
+
+  // Given a result without a street and a town instead of a city
+  // When the addresses are searched
+  // Then the street should be null and the town should be used as the zone
+  it('falls back to the town and leaves the street empty when there is no road', async () => {
+    respondWith([{ lat: '41.5', lon: '2.1', display_name: 'Vic', address: { town: 'Vic' } }])
+
+    const [candidate] = (await search('Vic')) ?? []
+
+    expect(candidate).toMatchObject({ address: null, zone: 'Vic' })
+  })
+
+  // Given a street without a house number
+  // When the addresses are searched
+  // Then the address should be just the street
+  it('returns only the street when there is no house number', async () => {
+    respondWith([
+      {
+        lat: '41.5',
+        lon: '2.1',
+        display_name: 'x',
+        address: { road: 'Carrer Major', city: 'Vic' },
+      },
+    ])
+
+    const [candidate] = (await search('Carrer Major, Vic')) ?? []
+
+    expect(candidate.address).toBe('Carrer Major')
+  })
+
+  // Given Nominatim finds nothing
+  // When the addresses are searched
+  // Then the result should be an empty list, not an error
+  it('returns an empty list when nothing is found', async () => {
+    respondWith([])
+
+    expect(await search('Calle inexistente 999')).toEqual([])
+  })
+
+  // Given a blank query
+  // When the addresses are searched
+  // Then nothing should be requested
+  it('does not call Nominatim with a blank query', async () => {
+    expect(await search('   ')).toEqual([])
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  // Given Nominatim is down, rate limited or times out
+  // When the addresses are searched
+  // Then the result should be null, so callers can tell it from "no results"
+  it.each([
+    ['a 429 response', () => respondWith({}, { ok: false, status: 429 })],
+    ['a network error', () => vi.mocked(fetch).mockRejectedValue(new TypeError('fetch failed'))],
+    ['a payload that is not a list', () => respondWith({ error: 'boom' })],
+  ])('returns null on %s', async (_label, arrange) => {
+    arrange()
+
+    expect(await search('Rambla Nova')).toBeNull()
+  })
+
+  // Given results where one has invalid coordinates
+  // When the addresses are searched
+  // Then that candidate should be skipped
+  it('skips results with invalid coordinates', async () => {
+    respondWith([{ lat: 'abc', lon: '2.1', display_name: 'bad' }, balmesResult])
+
+    const candidates = await search('Balmes')
+
+    expect(candidates).toHaveLength(1)
   })
 })
