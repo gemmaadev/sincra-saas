@@ -1,5 +1,5 @@
 import { Avatar, TagPill } from '@/shared/components'
-import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import type { Client } from '../types/client.types'
 
 export const clientsTableColumns = [
@@ -19,33 +19,7 @@ export const clientsTableColumns = [
   {
     key: 'channels',
     header: 'Canales',
-    render: (client: Client) => (
-      <div className="flex items-center gap-2">
-        {client.channels.map((channel) => {
-          const brand = CHANNEL_BRANDS.find(
-            (channelBrand) => channelBrand.id === channel.toLowerCase(),
-          )
-
-          if (!brand) {
-            return (
-              <span key={channel} className="text-xs text-ink-muted" title={channel}>
-                {channel}
-              </span>
-            )
-          }
-
-          const Icon = brand.icon
-          return (
-            <Icon
-              key={channel}
-              size={20}
-              className={brand.colorClassName}
-              aria-label={brand.name}
-            />
-          )
-        })}
-      </div>
-    ),
+    render: (client: Client) => <ChannelIcons channels={client.channels} />,
   },
   {
     key: 'tags',
