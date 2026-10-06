@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MantineProvider } from '@mantine/core'
@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import MapPage from './MapPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import type { ClientMapResponse } from '@/features/map/types/map.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
@@ -93,8 +94,7 @@ function renderPage() {
 describe('MapPage', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset()
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600)
+    stubMapSize()
   })
 
   afterEach(() => {
@@ -158,6 +158,26 @@ describe('MapPage', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Editar cliente' })).toBeInTheDocument()
     expect(api.get).toHaveBeenCalledWith('/clients/client-2')
+  })
+
+  // Given the map is shown
+  // When the user clicks a point of the map and then "Nuevo cliente aquí"
+  // Then the create modal should open with the chosen location
+  it('opens the create modal with the location clicked on the map', async () => {
+    mockMapResponse(mapData)
+    const { container } = renderPage()
+    await screen.findByText('Clientes en el mapa')
+
+    fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, {
+      clientX: 400,
+      clientY: 300,
+    })
+    const createHere = await screen.findByRole('button', { name: 'Nuevo cliente aquí' })
+    await waitOutDoubleClickWindow()
+    await userEvent.setup().click(createHere)
+
+    expect(await screen.findByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument()
+    expect(screen.getByText(/Ubicación elegida en el mapa/)).toBeInTheDocument()
   })
 
   // Given the backend returns no clients
