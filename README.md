@@ -38,8 +38,10 @@ This project is under active development. The sections below ("What it solves", 
 - **Onboarding**: business registration wizard (business details → channel preferences → done).
 - **Team**: admin invites a teammate by email (Resend), invitee sets their password and joins with the employee role.
 - **Profile**: view/edit personal info, change password, upload a real avatar (Cloudinary).
+- **Clients**: paginated list with search and channel/tag filters and KPIs, a detail panel (summary, notes, tags), create/edit modals, single and bulk delete with confirmation, and real tag management (assign/remove, "Sugerido por IA" badge for AI-assigned tags). Demo data comes from a seed script.
+- **Client map**: every client on an OpenStreetMap map (Leaflet) with clustering, a preview card with view/edit/delete actions, KPIs, a zone summary that centres the map on a zone, a list of clients without an exact location, and filters by channel and date. Clients can be created by clicking a point of the map, and their address is geocoded on save (Nominatim) or chosen from an address search.
 
-**Not started yet**: clients, orders, calendar, map, statistics, settings, and the AI agents — the pages exist as routed placeholders behind the sidebar, with no real UI or backend behind them yet. See "Planned features" below for what they'll do once built.
+**Not started yet**: orders (in progress), calendar, statistics, settings, team management beyond invitations, and the AI agents — the pages exist as routed placeholders behind the sidebar, with no real UI or backend behind them yet. The client detail's "Pedidos" tab and the orders/revenue cards of the map are placeholders until orders exist. See "Planned features" below for what they'll do once built.
 
 ## What it solves
 
