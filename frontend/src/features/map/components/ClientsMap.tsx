@@ -14,9 +14,11 @@ const TILES_ATTRIBUTION =
 
 interface ClientsMapProps {
   clients: MapClient[]
+  onEditClient: (client: MapClient) => void
+  onDeleteClient: (client: MapClient) => void
 }
 
-export function ClientsMap({ clients }: ClientsMapProps) {
+export function ClientsMap({ clients, onEditClient, onDeleteClient }: ClientsMapProps) {
   const clientPositions = clients.map((client): LatLngTuple => [client.latitude, client.longitude])
   const areaToShow = clientPositions.length > 0 ? clientPositions : undefined
 
@@ -26,11 +28,16 @@ export function ClientsMap({ clients }: ClientsMapProps) {
       zoom={DEFAULT_ZOOM}
       bounds={areaToShow}
       boundsOptions={FIT_ALL_CLIENTS_OPTIONS}
-      className="h-128 w-full rounded-card"
+      className="isolate h-128 w-full rounded-card"
     >
       <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} />
       {clients.map((client) => (
-        <ClientMarker key={client.id} client={client} />
+        <ClientMarker
+          key={client.id}
+          client={client}
+          onEdit={onEditClient}
+          onDelete={onDeleteClient}
+        />
       ))}
     </MapContainer>
   )

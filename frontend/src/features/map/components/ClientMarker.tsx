@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { divIcon } from 'leaflet'
-import { Marker, Popup } from 'react-leaflet'
+import { Marker, Popup, useMap } from 'react-leaflet'
 import { UserRound } from 'lucide-react'
 import { ClientPopupCard } from './ClientPopupCard'
 import type { MapClient } from '../types/map.types'
@@ -19,13 +19,26 @@ const CLIENT_ICON = divIcon({
 
 interface ClientMarkerProps {
   client: MapClient
+  onEdit: (client: MapClient) => void
+  onDelete: (client: MapClient) => void
 }
 
-export function ClientMarker({ client }: ClientMarkerProps) {
+export function ClientMarker({ client, onEdit, onDelete }: ClientMarkerProps) {
+  const map = useMap()
+
+  function runAndClosePopup(action: (client: MapClient) => void) {
+    map.closePopup()
+    action(client)
+  }
+
   return (
     <Marker position={[client.latitude, client.longitude]} icon={CLIENT_ICON} title={client.name}>
       <Popup minWidth={240}>
-        <ClientPopupCard client={client} />
+        <ClientPopupCard
+          client={client}
+          onEdit={() => runAndClosePopup(onEdit)}
+          onDelete={() => runAndClosePopup(onDelete)}
+        />
       </Popup>
     </Marker>
   )

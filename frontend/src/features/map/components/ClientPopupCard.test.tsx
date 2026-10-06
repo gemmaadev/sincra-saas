@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { describe, it, expect } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi } from 'vitest'
 import { ClientPopupCard } from './ClientPopupCard'
 import type { MapClient } from '../types/map.types'
 
@@ -16,11 +17,14 @@ const mockClient: MapClient = {
 }
 
 function renderCard(client: MapClient = mockClient) {
-  return render(
+  const onEdit = vi.fn()
+  const onDelete = vi.fn()
+  render(
     <MemoryRouter>
-      <ClientPopupCard client={client} />
+      <ClientPopupCard client={client} onEdit={onEdit} onDelete={onDelete} />
     </MemoryRouter>,
   )
+  return { onEdit, onDelete, user: userEvent.setup() }
 }
 
 describe('ClientPopupCard', () => {
@@ -85,5 +89,29 @@ describe('ClientPopupCard', () => {
     expect(screen.getByText('Sin zona')).toBeInTheDocument()
     expect(screen.queryByText('Panadería')).not.toBeInTheDocument()
     expect(screen.queryByText('Canales:')).not.toBeInTheDocument()
+  })
+
+  // Given the card is open
+  // When the user clicks the edit button
+  // Then onEdit should be called
+  it('calls onEdit from the edit button', async () => {
+    const { onEdit, onDelete, user } = renderCard()
+
+    await user.click(screen.getByRole('button', { name: 'Editar cliente' }))
+
+    expect(onEdit).toHaveBeenCalledTimes(1)
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  // Given the card is open
+  // When the user clicks the delete button
+  // Then onDelete should be called
+  it('calls onDelete from the delete button', async () => {
+    const { onEdit, onDelete, user } = renderCard()
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar cliente' }))
+
+    expect(onDelete).toHaveBeenCalledTimes(1)
+    expect(onEdit).not.toHaveBeenCalled()
   })
 })
