@@ -104,10 +104,10 @@ export function buildMapClients(
   const mapClients: MapClient[] = []
 
   for (const record of records) {
-    const { latitude, longitude, ...rest } = record
+    const { latitude, longitude, address, ...rest } = record
 
     if (latitude !== null && longitude !== null) {
-      mapClients.push({ ...rest, latitude, longitude, approximate: false })
+      mapClients.push({ ...rest, latitude, longitude, approximate: !address?.trim() })
       continue
     }
 

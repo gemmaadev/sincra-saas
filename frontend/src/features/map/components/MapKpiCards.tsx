@@ -18,7 +18,7 @@ export function MapKpiCards({ kpis }: MapKpiCardsProps) {
         icon={MapPinOff}
         label="Sin ubicación exacta"
         value={String(approximateClients)}
-        infoTooltip="Clientes situados en el centro de su zona porque no se ha podido ubicar su dirección"
+        infoTooltip="Clientes sin dirección o que no se han podido ubicar"
       />
     </div>
   )
