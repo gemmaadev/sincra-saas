@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Tabs, ConfirmDeleteModal } from '@/shared/components'
-import { ApiError } from '@/shared/services'
-import { notifySuccess } from '@/shared/utils/notify'
+import { Tabs } from '@/shared/components'
 import { useClientDetail } from '../hooks/useClientDetail'
-import { useDeleteClient } from '../hooks/useDeleteClient'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import { ClientFormModal } from './ClientFormModal'
+import { DeleteClientModal } from './DeleteClientModal'
 import { SummaryTab } from './SummaryTab'
 import { OrdersTab } from './OrdersTab'
 import { NotesTab } from './NotesTab'
@@ -18,30 +16,8 @@ interface ClientDetailPanelProps {
 
 export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
   const { data: client, isLoading, isError } = useClientDetail(id)
-  const deleteClient = useDeleteClient(id)
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
-
-  function closeDeleteModal() {
-    deleteClient.reset()
-    setIsDeleteModalOpen(false)
-  }
-
-  function handleDelete() {
-    deleteClient.mutate(undefined, {
-      onSuccess: () => {
-        notifySuccess('Cliente eliminado')
-        closeDeleteModal()
-        onDeleted()
-      },
-    })
-  }
-
-  const deleteError = deleteClient.isError
-    ? deleteClient.error instanceof ApiError
-      ? deleteClient.error.message
-      : 'No se ha podido eliminar el cliente. Inténtalo de nuevo.'
-    : undefined
 
   if (isLoading) {
     return <p className="text-ink-muted">Cargando cliente...</p>
@@ -72,14 +48,11 @@ export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
         onClose={() => setIsEditModalOpen(false)}
         client={client}
       />
-      <ConfirmDeleteModal
+      <DeleteClientModal
+        client={client}
         opened={isDeleteModalOpen}
-        onClose={closeDeleteModal}
-        onConfirm={handleDelete}
-        isLoading={deleteClient.isPending}
-        error={deleteError}
-        title="¿Eliminar cliente?"
-        message={`Vas a eliminar a ${client.name}. Se eliminarán también sus notas y etiquetas. Esta acción no se puede deshacer.`}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onDeleted={onDeleted}
       />
     </div>
   )

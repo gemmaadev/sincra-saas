@@ -9,9 +9,15 @@ import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTable
 import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { BulkDeleteClientsModal } from '@/features/clients/components/BulkDeleteClientsModal'
-import { KpiCard } from '@/features/clients/components/KpiCard'
 import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
-import { Table, EmptyState, Pagination, SincraButton, SelectionBar } from '@/shared/components'
+import {
+  Table,
+  EmptyState,
+  Pagination,
+  SincraButton,
+  SelectionBar,
+  KpiCard,
+} from '@/shared/components'
 import { useRowSelection } from '@/shared/hooks'
 
 export default function ClientsPage() {
