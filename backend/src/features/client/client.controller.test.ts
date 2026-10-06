@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { create, list, getById, update, remove, assignTag, removeTag } from './client.controller'
+import {
+  create,
+  list,
+  getById,
+  update,
+  remove,
+  assignTag,
+  removeTag,
+  searchAddress,
+} from './client.controller'
 import * as clientService from './client.service'
 import { AppError } from '../../shared/AppError'
 
@@ -335,5 +344,50 @@ describe('removeTag', () => {
     await removeTag(req, createMockResponse(), next)
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }))
+  })
+})
+
+describe('searchAddress', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid search text
+  // When searching addresses
+  // Then it should call the service with the trimmed text and answer with the candidates
+  it('answers with the candidates of the search', async () => {
+    const candidates = [{ label: 'x', address: 'Carrer Major 1', zone: 'Vic' }]
+    const searchSpy = vi
+      .spyOn(clientService, 'searchClientAddress')
+      .mockResolvedValue(candidates as never)
+    const req = createMockRequest({ businessId: 'biz-1', query: { q: '  Carrer Major 1, Vic ' } })
+    const res = createMockResponse()
+
+    await searchAddress(req, res, vi.fn() as NextFunction)
+
+    expect(searchSpy).toHaveBeenCalledWith('biz-1', 'Carrer Major 1, Vic')
+    expect(res.json).toHaveBeenCalledWith({ candidates })
+  })
+
+  // Given a missing, too short or too long search text
+  // When searching addresses
+  // Then it should fail with 400 INVALID_QUERY and never reach the service
+  it.each([
+    ['missing', {}],
+    ['too short', { q: 'ab' }],
+    ['only spaces', { q: '     ' }],
+    ['too long', { q: 'a'.repeat(201) }],
+    ['not a string', { q: ['a', 'b'] }],
+  ])('rejects a %s query with 400', async (_label, query) => {
+    const searchSpy = vi.spyOn(clientService, 'searchClientAddress')
+    const req = createMockRequest({ businessId: 'biz-1', query })
+    const next = vi.fn() as NextFunction
+
+    await searchAddress(req, createMockResponse(), next)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_QUERY' }),
+    )
+    expect(searchSpy).not.toHaveBeenCalled()
   })
 })

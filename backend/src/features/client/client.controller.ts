@@ -9,6 +9,7 @@ import {
   deleteClient,
   assignTagToClient,
   removeTagFromClient,
+  searchClientAddress,
 } from './client.service'
 import type {
   CreateClientInput,
@@ -42,6 +43,25 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   })
 
   res.status(201).json({ client })
+})
+
+const MIN_ADDRESS_QUERY_LENGTH = 3
+const MAX_ADDRESS_QUERY_LENGTH = 200
+
+export const searchAddress = asyncHandler(async (req: Request, res: Response) => {
+  const query = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+
+  if (query.length < MIN_ADDRESS_QUERY_LENGTH || query.length > MAX_ADDRESS_QUERY_LENGTH) {
+    throw new AppError(
+      `La búsqueda debe tener entre ${MIN_ADDRESS_QUERY_LENGTH} y ${MAX_ADDRESS_QUERY_LENGTH} caracteres`,
+      400,
+      'INVALID_QUERY',
+    )
+  }
+
+  const candidates = await searchClientAddress(req.businessId!, query)
+
+  res.json({ candidates })
 })
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
