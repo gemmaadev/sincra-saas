@@ -2,8 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { SelectBusinessPage } from './SelectBusinessPage'
+import SelectBusinessPage from './SelectBusinessPage'
 import { api } from '@/shared/services'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 const mockNavigate = vi.fn()
 
@@ -50,9 +51,11 @@ describe('SelectBusinessPage', () => {
     vi.mocked(api.get).mockResolvedValue({ businesses: BUSINESSES })
 
     render(
-      <MemoryRouter>
-        <SelectBusinessPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <SelectBusinessPage />
+        </MemoryRouter>,
+      ),
     )
 
     expect(await screen.findByText('Tienda Gemma')).toBeInTheDocument()
@@ -68,9 +71,11 @@ describe('SelectBusinessPage', () => {
     const user = userEvent.setup()
 
     render(
-      <MemoryRouter>
-        <SelectBusinessPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <SelectBusinessPage />
+        </MemoryRouter>,
+      ),
     )
 
     await user.click(await screen.findByText('Tienda Gemma'))
@@ -88,9 +93,11 @@ describe('SelectBusinessPage', () => {
     vi.mocked(api.get).mockRejectedValue(new Error('network error'))
 
     render(
-      <MemoryRouter>
-        <SelectBusinessPage />
-      </MemoryRouter>,
+      withQueryClient(
+        <MemoryRouter>
+          <SelectBusinessPage />
+        </MemoryRouter>,
+      ),
     )
 
     expect(

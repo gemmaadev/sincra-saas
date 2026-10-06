@@ -6,6 +6,7 @@ import { SecurityTab } from './SecurityTab'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
 import { api, ApiError } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {
@@ -22,6 +23,8 @@ vi.mock('@/shared/services', () => {
     ApiError,
   }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockNavigate = vi.fn()
 
@@ -54,6 +57,7 @@ function renderSecurityTab(logout: AuthContextValue['logout'] = vi.fn().mockReso
 
 describe('SecurityTab', () => {
   beforeEach(() => {
+    vi.mocked(notifySuccess).mockReset()
     mockNavigate.mockReset()
     vi.mocked(api.patch).mockReset()
   })
@@ -97,8 +101,8 @@ describe('SecurityTab', () => {
 
   // Given a valid current and new password
   // When the form is submitted
-  // Then it should PATCH /user/password and show a confirmation
-  it('changes the password and shows a confirmation', async () => {
+  // Then it should PATCH /user/password and show a success notification
+  it('changes the password and notifies it', async () => {
     vi.mocked(api.patch).mockResolvedValue({ success: true })
     renderSecurityTab()
 
@@ -114,7 +118,7 @@ describe('SecurityTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Contraseña actualizada')).toBeInTheDocument()
+      expect(notifySuccess).toHaveBeenCalledWith('Contraseña actualizada')
     })
     expect(api.patch).toHaveBeenCalledWith('/user/password', {
       currentPassword: 'actual123',

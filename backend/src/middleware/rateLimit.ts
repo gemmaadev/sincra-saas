@@ -12,3 +12,16 @@ export const authRateLimit = rateLimit({
     },
   },
 })
+
+export const addressSearchRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      message: 'Demasiadas búsquedas. Espera un momento e inténtalo de nuevo.',
+      code: 'TOO_MANY_REQUESTS',
+    },
+  },
+})

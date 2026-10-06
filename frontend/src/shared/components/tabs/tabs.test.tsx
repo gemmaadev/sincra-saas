@@ -43,4 +43,42 @@ describe('Tabs', () => {
     expect(screen.getByRole('tab', { name: 'Resumen' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Historial' })).toHaveAttribute('aria-selected', 'false')
   })
+
+  // Given a tab marked as disabled
+  // When Tabs is rendered
+  // Then that tab button should be disabled
+  it('disables a tab marked as disabled', () => {
+    const tabsWithDisabled = [
+      ...tabs,
+      { key: 'pedidos', label: 'Pedidos', content: <p>Contenido de pedidos</p>, disabled: true },
+    ]
+    render(<Tabs tabs={tabsWithDisabled} />)
+    expect(screen.getByRole('tab', { name: 'Pedidos' })).toBeDisabled()
+  })
+
+  // Given a disabled tab
+  // When the user clicks it
+  // Then its content should not be shown
+  it('does not switch to a disabled tab when clicked', () => {
+    const tabsWithDisabled = [
+      ...tabs,
+      { key: 'pedidos', label: 'Pedidos', content: <p>Contenido de pedidos</p>, disabled: true },
+    ]
+    render(<Tabs tabs={tabsWithDisabled} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Pedidos' }))
+    expect(screen.queryByText('Contenido de pedidos')).not.toBeInTheDocument()
+    expect(screen.getByText('Contenido de resumen')).toBeInTheDocument()
+  })
+
+  // Given the first tab is disabled
+  // When Tabs is rendered with no defaultTab
+  // Then it should default to the first tab that isn't disabled
+  it('defaults to the first non-disabled tab', () => {
+    const tabsWithFirstDisabled = [
+      { key: 'historial', label: 'Historial', content: <p>Contenido de historial</p>, disabled: true },
+      { key: 'resumen', label: 'Resumen', content: <p>Contenido de resumen</p> },
+    ]
+    render(<Tabs tabs={tabsWithFirstDisabled} />)
+    expect(screen.getByText('Contenido de resumen')).toBeInTheDocument()
+  })
 })

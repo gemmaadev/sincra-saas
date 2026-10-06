@@ -5,12 +5,13 @@ import { SincraButton } from '@/shared/components/button'
 import { SincraLogo } from '@/shared/components/logo'
 import { Input } from '@/shared/components/input'
 import { useForgotPassword } from '@/features/auth/hooks/useForgotPassword'
+import { EMAIL_PATTERN } from '@/shared/utils'
 
 interface ForgotPasswordFormData {
   email: string
 }
 
-export function ForgotPasswordPage() {
+export default function ForgotPasswordPage() {
   const navigate = useNavigate()
   const { requestPasswordReset, isSubmitting } = useForgotPassword()
 
@@ -55,7 +56,7 @@ export function ForgotPasswordPage() {
             {...register('email', {
               required: 'El email es obligatorio',
               pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                value: EMAIL_PATTERN,
                 message: 'Introduce un email válido',
               },
             })}

@@ -6,7 +6,8 @@ import { Toggle } from '@/shared/components/toggle'
 import { SectionHeader } from './SectionHeader'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
-import type { NotificationPrefs } from '../hooks/useProfile'
+import type { NotificationPrefs } from '../types/profile.types'
+import { notifySuccess } from '@/shared/utils/notify'
 
 interface PrefDefinition {
   key: keyof NotificationPrefs
@@ -36,19 +37,17 @@ interface NotificationPreferencesFormProps {
 function NotificationPreferencesForm({ notificationPrefs }: NotificationPreferencesFormProps) {
   const updateProfile = useUpdateProfile()
   const [prefs, setPrefs] = useState<NotificationPrefs>(notificationPrefs ?? {})
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   function togglePref(key: keyof NotificationPrefs) {
     setPrefs((current) => ({ ...current, [key]: !current[key] }))
-    setSaved(false)
   }
 
   async function handleSave() {
     setError(null)
     try {
       await updateProfile.mutateAsync({ notificationPrefs: prefs })
-      setSaved(true)
+      notifySuccess('Cambios guardados')
     } catch {
       setError('No se pudieron guardar los cambios. Inténtalo de nuevo.')
     }
@@ -76,7 +75,6 @@ function NotificationPreferencesForm({ notificationPrefs }: NotificationPreferen
         <SincraButton onClick={handleSave} loading={updateProfile.isPending}>
           Guardar cambios
         </SincraButton>
-        {saved && <span className="text-sm text-success">Cambios guardados</span>}
         {error && <span className="text-sm text-error">{error}</span>}
       </div>
     </>

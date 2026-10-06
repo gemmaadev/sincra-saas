@@ -6,14 +6,20 @@ interface SelectOption {
   label: string
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+const selectSizes = {
+  sm: 'py-1',
+  md: 'py-2',
+} as const
+
+interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   id: string
   label: string
   options: SelectOption[]
   placeholder?: string
+  size?: 'sm' | 'md'
 }
 
-export function Select({ id, label, options, placeholder, ...rest }: SelectProps) {
+export function Select({ id, label, options, placeholder, size = 'md', ...rest }: SelectProps) {
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="font-medium text-ink">
@@ -22,7 +28,7 @@ export function Select({ id, label, options, placeholder, ...rest }: SelectProps
       <div className="relative">
         <select
           id={id}
-          className="w-full appearance-none rounded-lg border border-neutral-200 px-3 py-2 pr-9 text-ink"
+          className={`w-full appearance-none rounded-lg border border-neutral-200 px-3 pr-9 text-ink ${selectSizes[size]}`}
           {...rest}
         >
           {placeholder && <option value="">{placeholder}</option>}

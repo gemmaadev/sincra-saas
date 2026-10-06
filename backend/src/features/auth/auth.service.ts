@@ -1,16 +1,21 @@
-import prisma from '../../config/db'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Resend } from 'resend'
 import { hashPassword } from '../../shared/hash'
+import * as userModel from '../user/user.model'
+import * as authModel from './auth.model'
+import type {
+  RegisterInput,
+  OnboardingInput,
+  SocialProfile,
+  GoogleUserInfoResponse,
+  MicrosoftTokenResponse,
+} from './auth.types'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function getUserBusinesses(userId: string) {
-  const memberships = await prisma.businessMember.findMany({
-    where: { userId, status: 'ACTIVE' },
-    include: { business: true },
-  })
+  const memberships = await authModel.findActiveMembershipsWithBusiness(userId)
 
   return memberships.map((membership) => ({
     businessId: membership.business.id,
@@ -21,87 +26,36 @@ export async function getUserBusinesses(userId: string) {
 }
 
 export async function findUserWithBusinesses(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-    include: {
-      memberships: {
-        where: { status: 'ACTIVE' },
-        include: { business: true },
-      },
-    },
-  })
+  return authModel.findUserWithBusinesses(email)
 }
 
 export async function findUserByEmail(email: string) {
-  return prisma.user.findUnique({ where: { email } })
+  return userModel.findUserByEmail(email)
 }
 
 export async function findMembership(userId: string, businessId: string) {
-  return prisma.businessMember.findUnique({
-    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
-  })
-}
-
-interface RegisterInput {
-  name: string
-  email: string
-  password: string
-  businessName: string
-  sector?: string
-  description?: string
-  country?: string
+  return authModel.findActiveMembership(userId, businessId)
 }
 
 export async function registerBusinessOwner(input: RegisterInput) {
   const passwordHash = await hashPassword(input.password)
 
-  return prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name: input.name,
-        email: input.email,
-        passwordHash,
-      },
-    })
-
-    const business = await tx.business.create({
-      data: {
-        name: input.businessName,
-        sector: input.sector,
-        description: input.description,
-        country: input.country ?? 'ES',
-        createdBy: user.id,
-      },
-    })
-
-    const membership = await tx.businessMember.create({
-      data: {
-        businessId: business.id,
-        userId: user.id,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-      },
-    })
-
-    return { user, business, membership }
-  })
+  return authModel.createUserWithBusiness(
+    { name: input.name, email: input.email, passwordHash },
+    {
+      name: input.businessName,
+      sector: input.sector,
+      description: input.description,
+      country: input.country ?? 'ES',
+    },
+  )
 }
 
 export async function findActiveMembershipWithDetails(userId: string, businessId: string) {
-  return prisma.businessMember.findUnique({
-    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
-    include: { user: true, business: true },
-  })
+  return authModel.findActiveMembershipWithDetails(userId, businessId)
 }
 
 // --- Login social (Google / Microsoft) ---
-
-interface GoogleUserInfoResponse {
-  sub: string
-  email?: string
-  email_verified?: boolean
-  name?: string
-}
 
 export async function verifyGoogleAccessToken(accessToken: string) {
   const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -123,10 +77,6 @@ export async function verifyGoogleAccessToken(accessToken: string) {
     name: payload.name ?? payload.email,
     googleId: payload.sub,
   }
-}
-
-interface MicrosoftTokenResponse {
-  id_token: string
 }
 
 export async function exchangeMicrosoftCode(code: string) {
@@ -161,74 +111,31 @@ export async function exchangeMicrosoftCode(code: string) {
   }
 }
 
-interface SocialProfile {
-  email: string
-  name: string
-  googleId?: string
-  microsoftId?: string
-}
-
 export async function findOrCreateSocialUser(profile: SocialProfile) {
-  const existing = await prisma.user.findUnique({
-    where: { email: profile.email },
-    include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
-  })
+  const existing = await authModel.findUserWithBusinesses(profile.email)
 
   if (existing) {
-    const updateData: Record<string, string> = {}
-    if (profile.googleId && !existing.googleId) updateData.googleId = profile.googleId
-    if (profile.microsoftId && !existing.microsoftId) updateData.microsoftId = profile.microsoftId
+    const socialIdsToLink: { googleId?: string; microsoftId?: string } = {}
+    if (profile.googleId && !existing.googleId) socialIdsToLink.googleId = profile.googleId
+    if (profile.microsoftId && !existing.microsoftId) {
+      socialIdsToLink.microsoftId = profile.microsoftId
+    }
 
-    if (Object.keys(updateData).length > 0) {
-      return prisma.user.update({
-        where: { id: existing.id },
-        data: updateData,
-        include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
-      })
+    if (Object.keys(socialIdsToLink).length > 0) {
+      return authModel.updateUserSocialIds(existing.id, socialIdsToLink)
     }
     return existing
   }
 
-  return prisma.user.create({
-    data: {
-      email: profile.email,
-      name: profile.name,
-      googleId: profile.googleId,
-      microsoftId: profile.microsoftId,
-    },
-    include: { memberships: { where: { status: 'ACTIVE' }, include: { business: true } } },
-  })
-}
-
-interface OnboardingInput {
-  businessName: string
-  sector?: string
-  description?: string
-  country?: string
+  return authModel.createSocialUser(profile)
 }
 
 export async function completeOnboardingForUser(userId: string, input: OnboardingInput) {
-  return prisma.$transaction(async (tx) => {
-    const business = await tx.business.create({
-      data: {
-        name: input.businessName,
-        sector: input.sector,
-        description: input.description,
-        country: input.country ?? 'ES',
-        createdBy: userId,
-      },
-    })
-
-    const membership = await tx.businessMember.create({
-      data: {
-        businessId: business.id,
-        userId,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-      },
-    })
-
-    return { business, membership }
+  return authModel.createBusinessForUser(userId, {
+    name: input.businessName,
+    sector: input.sector,
+    description: input.description,
+    country: input.country ?? 'ES',
   })
 }
 
@@ -237,7 +144,7 @@ export async function completeOnboardingForUser(userId: string, input: Onboardin
 const RESET_TOKEN_EXPIRY_MS = 15 * 60 * 1000 // 15 minutes
 
 export async function requestPasswordReset(email: string) {
-  const user = await prisma.user.findUnique({ where: { email } })
+  const user = await userModel.findUserByEmail(email)
 
   // Don't reveal whether the email exists (prevents user enumeration)
   if (!user || !user.passwordHash) {
@@ -245,17 +152,12 @@ export async function requestPasswordReset(email: string) {
   }
 
   // Invalidate any previous unused tokens so only the latest one is redeemable
-  await prisma.passwordResetToken.updateMany({
-    where: { userId: user.id, usedAt: null },
-    data: { usedAt: new Date() },
-  })
+  await authModel.invalidateUnusedResetTokens(user.id)
 
   const token = crypto.randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS)
 
-  await prisma.passwordResetToken.create({
-    data: { token, userId: user.id, expiresAt },
-  })
+  await authModel.insertResetToken(token, user.id, expiresAt)
 
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
 
@@ -273,7 +175,7 @@ export async function requestPasswordReset(email: string) {
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } })
+  const resetToken = await authModel.findResetToken(token)
 
   if (!resetToken) {
     throw new Error('Token inválido')
@@ -289,15 +191,5 @@ export async function resetPassword(token: string, newPassword: string) {
 
   const passwordHash = await hashPassword(newPassword)
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: resetToken.userId },
-      data: { passwordHash },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: resetToken.id },
-      data: { usedAt: new Date() },
-    }),
-  ])
+  await authModel.applyPasswordReset(resetToken.userId, resetToken.id, passwordHash)
 }
-export { hashPassword }

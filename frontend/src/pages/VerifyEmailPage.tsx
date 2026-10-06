@@ -5,7 +5,7 @@ interface VerifyEmailLocationState {
   email?: string
 }
 
-export function VerifyEmailPage() {
+export default function VerifyEmailPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { email } = (location.state as VerifyEmailLocationState) ?? {}

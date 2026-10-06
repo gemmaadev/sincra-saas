@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router'
 import { TokenPasswordForm } from '@/features/auth/components/TokenPasswordForm'
 import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 
-export function ResetPasswordPage() {
+export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const { resetPassword, isSubmitting, error } = useResetPassword()
 

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-import type { Profile } from './useProfile'
+import type { Profile } from '../types/profile.types'
 
 export function useUploadAvatar() {
   const queryClient = useQueryClient()

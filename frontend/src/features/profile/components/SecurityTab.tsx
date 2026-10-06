@@ -10,6 +10,7 @@ import { ApiError } from '@/shared/services'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useChangePassword } from '../hooks/useChangePassword'
 import { SectionHeader } from './SectionHeader'
+import { notifySuccess } from '@/shared/utils/notify'
 
 interface ChangePasswordForm {
   currentPassword: string
@@ -54,7 +55,6 @@ export function SecurityTab() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const changePassword = useChangePassword()
-  const [saved, setSaved] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
   const [sessions, setSessions] = useState(MOCK_SESSIONS)
@@ -75,7 +75,7 @@ export function SecurityTab() {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       })
-      setSaved(true)
+      notifySuccess('Contraseña actualizada')
       reset()
     } catch (error) {
       setPasswordError(
@@ -97,7 +97,7 @@ export function SecurityTab() {
   }
 
   async function handleRevokeSession(sessionId: string) {
-    // No real endpoint yet 
+    // No real endpoint yet
     setRevokingId(sessionId)
     await new Promise((resolve) => setTimeout(resolve, 400))
     setSessions((current) => current.filter((session) => session.id !== sessionId))
@@ -145,7 +145,6 @@ export function SecurityTab() {
             <SincraButton type="submit" loading={isSubmitting}>
               Guardar contraseña
             </SincraButton>
-            {saved && <span className="text-sm text-success">Contraseña actualizada</span>}
             {passwordError && <span className="text-sm text-error">{passwordError}</span>}
           </div>
         </form>

@@ -80,6 +80,7 @@ The wider product this MVP is a slice of goes further — see "Planned features"
 | Database           | [PostgreSQL](https://www.postgresql.org/) (hosted on [Supabase](https://supabase.com/)) |
 | Authentication     | Custom backend — JWT in httpOnly cookie + bcrypt                                        |
 | Real email         | Gmail API and Microsoft Graph (OAuth)                                                   |
+| Geocoding          | [Nominatim](https://nominatim.org/) (OpenStreetMap) — free, no signup                   |
 | AI                 | [Anthropic API](https://docs.claude.com/)                                               |
 | Testing            | [Vitest](https://vitest.dev/) + Testing Library + Supertest                             |
 | Version control    | Git + GitHub (GitFlow)                                                                  |
@@ -109,6 +110,7 @@ See `.env.example` in both `backend/` and `frontend/` for the full list. Here's 
 - **`MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` / `MICROSOFT_REDIRECT_URI`** — [Azure Portal](https://portal.azure.com/) → App registrations → New registration → platform type **Web** (not SPA) → add `MICROSOFT_REDIRECT_URI` (e.g. `https://sincra-backend.onrender.com/auth/microsoft/callback`) as a redirect URI there, exactly matching.
 - **`ANTHROPIC_API_KEY`** — [Anthropic Console](https://console.anthropic.com/) → API Keys.
 - **`RESEND_API_KEY`** — [Resend dashboard](https://resend.com/) → API Keys. Used to send password-reset and team-invitation emails.
+- **`GEOCODING_USER_AGENT`** *(optional)* — no signup or API key: addresses are geocoded with the public [Nominatim](https://nominatim.org/) service, which asks every app to identify itself. Use the app name plus a contact email, e.g. `Sincra/1.0 (contact@example.com)`. Defaults to `Sincra/1.0` if unset.
 - **`CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET`** — [Cloudinary dashboard](https://cloudinary.com/) → Settings → Access Keys. Used for profile avatar uploads.
 
 ### 1. Clone the repository
@@ -130,6 +132,14 @@ Create a `.env` file in `backend/` (see `.env.example` for the full list of vari
 ```bash
 npm run dev
 ```
+
+**Demo data (optional)**: set `SEED_BUSINESS_EMAIL` in `.env` to an account you've already registered, then run:
+
+```bash
+npx prisma db seed
+```
+
+This fills that account's business with ~25 example clients (fake, spread across Catalonia and a few other Spanish cities, including a few intentional near-duplicates to demo the upcoming "possible duplicate client" detection). Safe to re-run — it replaces that business's clients each time instead of piling up duplicates.
 
 ### 3. Frontend
 
@@ -203,6 +213,8 @@ sincra-saas/
 - **Feature-based architecture** on both frontend and backend — each domain owns its own components/hooks/types (frontend) or controllers/services/routes (backend)
 - **Custom auth instead of an external provider** (Firebase, Auth0...) — JWT signed by the backend itself, stored in an httpOnly cookie, with bcrypt (cost factor 12) for password hashing. Chosen to keep full control over roles (admin/employee) and team invitations without depending on a third party's setup. Session cookies are `secure`/`SameSite=None`, since frontend (Vercel) and backend (Render) are different origins in production
 - **Team invitations reuse a single-use, signed JWT** stored on the invited `User` row instead of a dedicated invite table — expiry comes from the token's own signature, and accepting it nulls the stored code so a copy of an already-used link can't be replayed
+
+- **Client addresses are geocoded on save with Nominatim (OpenStreetMap)** — free and keyless, so the map needs no paid geocoding API. When a client is created, or its address/zone is edited without explicit coordinates, the backend looks up `address, zone` (or just the zone) restricted to the business's country, and stores the latitude/longitude. It never blocks the save: if Nominatim is slow (3 s timeout), down or finds nothing, the client is saved anyway and the map falls back to the zone's centroid. Requests are spaced to Nominatim's limit of one per second, and the call lives in a shared service (`backend/src/shared/services/geocoding.service.ts`). When creating or editing a client, the address can also be looked up with an explicit search (`GET /clients/address-search`, no search-as-you-type because Nominatim's usage policy forbids it) and picked from the matches, or the exact point can be chosen by clicking the map
 
 **Decided, not built yet** (applies once the corresponding epic is picked up):
 
