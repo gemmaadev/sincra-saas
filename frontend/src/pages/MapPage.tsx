@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { ClientsMap } from '@/features/map/components/ClientsMap'
+import { MapKpiCards } from '@/features/map/components/MapKpiCards'
+import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
+import { buildMapKpis } from '@/features/map/utils/buildMapKpis'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
 import type { MapClient } from '@/features/map/types/map.types'
@@ -16,11 +19,19 @@ export default function MapPage() {
       {isLoading && <p className="text-ink-muted">Cargando mapa...</p>}
       {isError && <p className="text-error">No se ha podido cargar el mapa.</p>}
       {data && (
-        <ClientsMap
-          clients={data.clients}
-          onEditClient={setClientToEdit}
-          onDeleteClient={setClientToDelete}
-        />
+        <>
+          <MapKpiCards kpis={buildMapKpis(data)} />
+          <div className="relative">
+            <ClientsMap
+              clients={data.clients}
+              onEditClient={setClientToEdit}
+              onDeleteClient={setClientToDelete}
+            />
+            <div className="absolute right-3 top-3 z-10">
+              <MapLayerToggle />
+            </div>
+          </div>
+        </>
       )}
 
       {clientToEdit && (
