@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MantineProvider } from '@mantine/core'
@@ -178,6 +178,41 @@ describe('MapPage', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument()
     expect(screen.getByText(/Ubicación elegida/)).toBeInTheDocument()
+  })
+
+  // Given the map is shown
+  // When the user picks a channel and a date range
+  // Then the map should be requested again with those filters
+  it('requests the map again when the filters change', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Clientes en el mapa')
+    const user = userEvent.setup()
+
+    await user.selectOptions(screen.getByLabelText('Canal'), 'WHATSAPP')
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-01-01' } })
+
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/clients/map?channel=WHATSAPP&from=2026-01-01'),
+    )
+    expect(screen.getByText('Clientes en el mapa')).toBeInTheDocument()
+  })
+
+  // Given filters are active
+  // When the user clicks "Limpiar filtros"
+  // Then the map should be requested without filters again
+  it('clears the filters', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Clientes en el mapa')
+    const user = userEvent.setup()
+    await user.selectOptions(screen.getByLabelText('Canal'), 'GMAIL')
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/clients/map?channel=GMAIL'))
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(screen.getByLabelText('Canal')).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Limpiar filtros' })).not.toBeInTheDocument()
   })
 
   // Given the backend returns no clients
