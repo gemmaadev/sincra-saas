@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { ApproximateClientsCard } from '@/features/map/components/ApproximateClientsCard'
 import { ClientsMap } from '@/features/map/components/ClientsMap'
 import { MapKpiCards } from '@/features/map/components/MapKpiCards'
 import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
+import { ZoneSummaryCard } from '@/features/map/components/ZoneSummaryCard'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
 import { buildMapKpis } from '@/features/map/utils/buildMapKpis'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
@@ -21,14 +23,23 @@ export default function MapPage() {
       {data && (
         <>
           <MapKpiCards kpis={buildMapKpis(data)} />
-          <div className="relative">
-            <ClientsMap
-              clients={data.clients}
-              onEditClient={setClientToEdit}
-              onDeleteClient={setClientToDelete}
-            />
-            <div className="absolute right-3 top-3 z-10">
-              <MapLayerToggle />
+          <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+            <div className="relative">
+              <ClientsMap
+                clients={data.clients}
+                onEditClient={setClientToEdit}
+                onDeleteClient={setClientToDelete}
+              />
+              <div className="absolute right-3 top-3 z-10">
+                <MapLayerToggle />
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <ZoneSummaryCard zones={data.zones} />
+              <ApproximateClientsCard
+                clients={data.clients.filter((client) => client.approximate)}
+                onAddAddress={setClientToEdit}
+              />
             </div>
           </div>
         </>
