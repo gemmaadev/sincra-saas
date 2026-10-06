@@ -391,3 +391,113 @@ describe('searchAddress', () => {
     expect(searchSpy).not.toHaveBeenCalled()
   })
 })
+
+describe('coordinate validation', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const validBody = { name: 'Laura García', channels: ['WHATSAPP'] }
+
+  // Given coordinates inside the valid ranges
+  // When creating a client
+  // Then they should reach the service
+  it('accepts valid coordinates when creating', async () => {
+    const createSpy = vi.spyOn(clientService, 'createClient').mockResolvedValue({} as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: { ...validBody, latitude: 41.7288, longitude: 1.8286 },
+    })
+
+    await create(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'biz-1',
+      expect.objectContaining({ latitude: 41.7288, longitude: 1.8286 }),
+    )
+  })
+
+  // Given coordinates that make no sense (out of range, only one, or not numbers)
+  // When creating a client
+  // Then it should fail with 400 INVALID_COORDINATES and never reach the service
+  it.each([
+    ['a latitude above 90', { latitude: 91, longitude: 2 }],
+    ['a latitude below -90', { latitude: -91, longitude: 2 }],
+    ['a longitude above 180', { latitude: 41, longitude: 181 }],
+    ['a longitude below -180', { latitude: 41, longitude: -181 }],
+    ['only the latitude', { latitude: 41 }],
+    ['only the longitude', { longitude: 2 }],
+    ['text instead of numbers', { latitude: '41.7', longitude: '1.8' }],
+    ['null values', { latitude: null, longitude: null }],
+    ['a value that is not finite', { latitude: Infinity, longitude: 2 }],
+  ])('rejects %s when creating', async (_label, coordinates) => {
+    const createSpy = vi.spyOn(clientService, 'createClient')
+    const req = createMockRequest({ businessId: 'biz-1', body: { ...validBody, ...coordinates } })
+    const next = vi.fn() as NextFunction
+
+    await create(req, createMockResponse(), next)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_COORDINATES' }),
+    )
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // Given a create or update without any coordinates
+  // When it is sent
+  // Then it should be accepted, because the backend geocodes the address itself
+  it('does not require coordinates', async () => {
+    const createSpy = vi.spyOn(clientService, 'createClient').mockResolvedValue({} as never)
+    const updateSpy = vi.spyOn(clientService, 'updateClient').mockResolvedValue({} as never)
+
+    await create(
+      createMockRequest({ businessId: 'biz-1', body: validBody }),
+      createMockResponse(),
+      vi.fn() as NextFunction,
+    )
+    await update(
+      createMockRequest({ businessId: 'biz-1', params: { id: 'client-1' }, body: { zone: 'Vic' } }),
+      createMockResponse(),
+      vi.fn() as NextFunction,
+    )
+
+    expect(createSpy).toHaveBeenCalledTimes(1)
+    expect(updateSpy).toHaveBeenCalledTimes(1)
+  })
+
+  // Given invalid coordinates
+  // When updating a client
+  // Then it should fail with 400 INVALID_COORDINATES and never reach the service
+  it('rejects invalid coordinates when updating', async () => {
+    const updateSpy = vi.spyOn(clientService, 'updateClient')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'client-1' },
+      body: { latitude: 500, longitude: 2 },
+    })
+    const next = vi.fn() as NextFunction
+
+    await update(req, createMockResponse(), next)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_COORDINATES' }),
+    )
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  // Given valid coordinates
+  // When updating a client
+  // Then they should reach the service
+  it('accepts valid coordinates when updating', async () => {
+    const updateSpy = vi.spyOn(clientService, 'updateClient').mockResolvedValue({} as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'client-1' },
+      body: { latitude: 41.7, longitude: 1.8 },
+    })
+
+    await update(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(updateSpy).toHaveBeenCalledWith('biz-1', 'client-1', { latitude: 41.7, longitude: 1.8 })
+  })
+})

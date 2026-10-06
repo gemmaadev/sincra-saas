@@ -18,6 +18,28 @@ import type {
   AssignTagBody,
 } from './client.types'
 
+const MAX_LATITUDE = 90
+const MAX_LONGITUDE = 180
+
+function isCoordinateInRange(value: unknown, limit: number): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= limit
+}
+
+function assertValidCoordinates(latitude: unknown, longitude: unknown) {
+  if (latitude === undefined && longitude === undefined) return
+
+  if (
+    !isCoordinateInRange(latitude, MAX_LATITUDE) ||
+    !isCoordinateInRange(longitude, MAX_LONGITUDE)
+  ) {
+    throw new AppError(
+      'Las coordenadas no son válidas: indica latitud (−90 a 90) y longitud (−180 a 180)',
+      400,
+      'INVALID_COORDINATES',
+    )
+  }
+}
+
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const { name, email, phone, channels, type, address, zone, latitude, longitude } =
     req.body as CreateClientInput
@@ -29,6 +51,8 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   if (!channels || channels.length === 0) {
     throw new AppError('Indica al menos un canal de contacto', 400, 'MISSING_CHANNEL')
   }
+
+  assertValidCoordinates(latitude, longitude)
 
   const client = await createClient(req.businessId!, {
     name,
@@ -88,6 +112,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   if (body.name !== undefined && !body.name.trim()) {
     throw new AppError('El nombre no puede estar vacío', 400, 'INVALID_NAME')
   }
+
+  assertValidCoordinates(body.latitude, body.longitude)
 
   const client = await updateClient(req.businessId!, req.params.id as string, body)
 
