@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { LatLngTuple } from 'leaflet'
 import { ApproximateClientsCard } from '@/features/map/components/ApproximateClientsCard'
 import { ClientsMap } from '@/features/map/components/ClientsMap'
 import { MapKpiCards } from '@/features/map/components/MapKpiCards'
@@ -6,12 +7,14 @@ import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
 import { ZoneSummaryCard } from '@/features/map/components/ZoneSummaryCard'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
 import { buildMapKpis } from '@/features/map/utils/buildMapKpis'
+import { getZonePositions } from '@/features/map/utils/getZonePositions'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
 import type { MapClient } from '@/features/map/types/map.types'
 
 export default function MapPage() {
   const { data, isLoading, isError } = useClientsMap()
+  const [focusedPositions, setFocusedPositions] = useState<LatLngTuple[] | null>(null)
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
 
@@ -27,6 +30,7 @@ export default function MapPage() {
             <div className="relative">
               <ClientsMap
                 clients={data.clients}
+                focusedPositions={focusedPositions}
                 onEditClient={setClientToEdit}
                 onDeleteClient={setClientToDelete}
               />
@@ -35,7 +39,10 @@ export default function MapPage() {
               </div>
             </div>
             <div className="flex flex-col gap-4">
-              <ZoneSummaryCard zones={data.zones} />
+              <ZoneSummaryCard
+                zones={data.zones}
+                onSelectZone={(zone) => setFocusedPositions(getZonePositions(data.clients, zone))}
+              />
               <ApproximateClientsCard
                 clients={data.clients.filter((client) => client.approximate)}
                 onAddAddress={setClientToEdit}
