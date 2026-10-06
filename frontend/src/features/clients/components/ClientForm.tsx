@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react'
 import { MapPin } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Input, Checkbox, SincraButton } from '@/shared/components'
 import { EMAIL_PATTERN, PHONE_PATTERN } from '@/shared/utils'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import { AddressSearch } from './AddressSearch'
 import type {
+  AddressCandidate,
   ChannelFilter,
   ClientDetail,
   ClientFormValues,
@@ -58,8 +60,19 @@ export function ClientForm({
   const {
     register,
     handleSubmit,
+    setValue,
+    control,
     formState: { errors },
   } = useForm<ClientFormValues>({ defaultValues: toFormValues(client, initialLocation) })
+
+  const [latitude, longitude] = useWatch({ control, name: ['latitude', 'longitude'] })
+
+  function applyAddressCandidate(candidate: AddressCandidate) {
+    setValue('address', candidate.address ?? '')
+    setValue('zone', candidate.zone ?? '')
+    setValue('latitude', candidate.latitude)
+    setValue('longitude', candidate.longitude)
+  }
 
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
@@ -133,6 +146,7 @@ export function ClientForm({
       </FormSection>
 
       <FormSection title="Ubicación">
+        <AddressSearch onSelect={applyAddressCandidate} />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Input label="Zona" placeholder="Ej. Barcelona" {...register('zone')} />
           <Input
@@ -141,11 +155,10 @@ export function ClientForm({
             {...register('address')}
           />
         </div>
-        {!client && initialLocation && (
+        {latitude !== undefined && longitude !== undefined && (
           <p className="flex items-center gap-2 text-sm text-ink-muted">
             <MapPin size={15} aria-hidden="true" />
-            Ubicación elegida en el mapa: {initialLocation.latitude.toFixed(5)},{' '}
-            {initialLocation.longitude.toFixed(5)}
+            Ubicación elegida: {latitude.toFixed(5)}, {longitude.toFixed(5)}
           </p>
         )}
       </FormSection>

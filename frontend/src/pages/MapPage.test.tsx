@@ -177,7 +177,7 @@ describe('MapPage', () => {
     await userEvent.setup().click(createHere)
 
     expect(await screen.findByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument()
-    expect(screen.getByText(/Ubicación elegida en el mapa/)).toBeInTheDocument()
+    expect(screen.getByText(/Ubicación elegida/)).toBeInTheDocument()
   })
 
   // Given the backend returns no clients

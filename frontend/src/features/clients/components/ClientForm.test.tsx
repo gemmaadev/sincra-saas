@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
+import { api } from '@/shared/services'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 import { ClientForm } from './ClientForm'
 import type { ClientDetail } from '../types/client.types'
 
@@ -24,8 +26,21 @@ const mockClient: ClientDetail = {
 function renderForm(props: Partial<React.ComponentProps<typeof ClientForm>> = {}) {
   const onSubmit = vi.fn()
   const onCancel = vi.fn()
-  render(<ClientForm onSubmit={onSubmit} onCancel={onCancel} {...props} />)
+  render(withQueryClient(<ClientForm onSubmit={onSubmit} onCancel={onCancel} {...props} />))
   return { onSubmit, onCancel, user: userEvent.setup() }
+}
+
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { get: vi.fn() } }
+})
+
+const balmesCandidate = {
+  label: 'Carrer de Balmes, Manresa, Bages, Catalunya, Espanya',
+  address: 'Carrer de Balmes',
+  zone: 'Manresa',
+  latitude: 41.7346709,
+  longitude: 1.8302486,
 }
 
 describe('ClientForm', () => {
@@ -160,7 +175,7 @@ describe('ClientForm', () => {
   it('shows the location chosen on the map', () => {
     renderForm({ initialLocation: { latitude: 41.72889, longitude: 1.82868 } })
 
-    expect(screen.getByText(/Ubicación elegida en el mapa: 41.72889, 1.82868/)).toBeInTheDocument()
+    expect(screen.getByText(/Ubicación elegida: 41.72889, 1.82868/)).toBeInTheDocument()
   })
 
   // Given a create form opened with a location
@@ -191,7 +206,62 @@ describe('ClientForm', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
-    expect(screen.queryByText(/Ubicación elegida en el mapa/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Ubicación elegida/)).not.toBeInTheDocument()
     expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('latitude')
+  })
+
+  // Given the user searches an address and picks one of the matches
+  // When the match is chosen
+  // Then the address and zone fields should be filled and the chosen location shown
+  it('fills the address, the zone and the location from a search result', async () => {
+    vi.mocked(api.get).mockResolvedValue({ candidates: [balmesCandidate] })
+    const { user } = renderForm()
+
+    await user.type(screen.getByLabelText('Buscar dirección'), 'Carrer de Balmes 71, Manresa')
+    await user.click(screen.getByRole('button', { name: 'Buscar' }))
+    await user.click(await screen.findByRole('button', { name: /Carrer de Balmes, Manresa/ }))
+
+    expect(screen.getByLabelText('Dirección')).toHaveValue('Carrer de Balmes')
+    expect(screen.getByLabelText('Zona')).toHaveValue('Manresa')
+    expect(screen.getByText(/Ubicación elegida: 41.73467, 1.83025/)).toBeInTheDocument()
+  })
+
+  // Given an address was picked from the search
+  // When the user fills the rest and submits
+  // Then the submitted values should carry the address, the zone and the coordinates
+  it('submits the data of the chosen search result', async () => {
+    vi.mocked(api.get).mockResolvedValue({ candidates: [balmesCandidate] })
+    const { onSubmit, user } = renderForm()
+
+    await user.type(screen.getByLabelText('Buscar dirección'), 'Carrer de Balmes')
+    await user.click(screen.getByRole('button', { name: 'Buscar' }))
+    await user.click(await screen.findByRole('button', { name: /Carrer de Balmes, Manresa/ }))
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({
+      address: 'Carrer de Balmes',
+      zone: 'Manresa',
+      latitude: 41.7346709,
+      longitude: 1.8302486,
+    })
+  })
+
+  // Given an existing client is being edited
+  // When the user picks a new address from the search
+  // Then the new coordinates should be submitted, since the user chose a new location
+  it('sends the new coordinates when a different address is chosen while editing', async () => {
+    vi.mocked(api.get).mockResolvedValue({ candidates: [balmesCandidate] })
+    const { onSubmit, user } = renderForm({ client: mockClient })
+
+    await user.type(screen.getByLabelText('Buscar dirección'), 'Carrer de Balmes')
+    await user.click(screen.getByRole('button', { name: 'Buscar' }))
+    await user.click(await screen.findByRole('button', { name: /Carrer de Balmes, Manresa/ }))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ latitude: 41.7346709 })
   })
 })
