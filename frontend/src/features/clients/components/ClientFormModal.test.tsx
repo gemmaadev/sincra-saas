@@ -79,6 +79,25 @@ describe('ClientFormModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // Given the modal is opened with a location chosen on the map
+  // When the user fills the form and creates the client
+  // Then the request should include the coordinates
+  it('creates the client with the chosen location', async () => {
+    vi.mocked(api.post).mockResolvedValue({ client: mockClient })
+    const { user } = renderModal({ initialLocation: { latitude: 41.7288, longitude: 1.8286 } })
+
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/clients',
+        expect.objectContaining({ latitude: 41.7288, longitude: 1.8286 }),
+      ),
+    )
+  })
+
   // Given the modal is opened to create a client
   // When it is rendered
   // Then every field should be shown empty and no channel selected

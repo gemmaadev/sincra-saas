@@ -1,19 +1,26 @@
 import type { ReactNode } from 'react'
+import { MapPin } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Input, Checkbox, SincraButton } from '@/shared/components'
 import { EMAIL_PATTERN, PHONE_PATTERN } from '@/shared/utils'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
-import type { ChannelFilter, ClientDetail, ClientFormValues } from '../types/client.types'
+import type {
+  ChannelFilter,
+  ClientDetail,
+  ClientFormValues,
+  Coordinates,
+} from '../types/client.types'
 
 interface ClientFormProps {
   client?: ClientDetail
+  initialLocation?: Coordinates
   onSubmit: (values: ClientFormValues) => void
   onCancel: () => void
   isSubmitting?: boolean
   submitError?: string
 }
 
-function toFormValues(client?: ClientDetail): ClientFormValues {
+function toFormValues(client?: ClientDetail, initialLocation?: Coordinates): ClientFormValues {
   return {
     name: client?.name ?? '',
     email: client?.email ?? '',
@@ -22,6 +29,7 @@ function toFormValues(client?: ClientDetail): ClientFormValues {
     type: client?.type ?? '',
     zone: client?.zone ?? '',
     address: client?.address ?? '',
+    ...(!client && initialLocation),
   }
 }
 
@@ -41,6 +49,7 @@ function FormSection({ title, children }: FormSectionProps) {
 
 export function ClientForm({
   client,
+  initialLocation,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -50,7 +59,7 @@ export function ClientForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<ClientFormValues>({ defaultValues: toFormValues(client) })
+  } = useForm<ClientFormValues>({ defaultValues: toFormValues(client, initialLocation) })
 
   return (
     <form noValidate onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
@@ -132,6 +141,13 @@ export function ClientForm({
             {...register('address')}
           />
         </div>
+        {!client && initialLocation && (
+          <p className="flex items-center gap-2 text-sm text-ink-muted">
+            <MapPin size={15} aria-hidden="true" />
+            Ubicación elegida en el mapa: {initialLocation.latitude.toFixed(5)},{' '}
+            {initialLocation.longitude.toFixed(5)}
+          </p>
+        )}
       </FormSection>
 
       {submitError && (

@@ -153,4 +153,45 @@ describe('ClientForm', () => {
     expect(submitButton).toBeDisabled()
     expect(submitButton).toHaveAttribute('aria-busy', 'true')
   })
+
+  // Given the form is opened with a location chosen on the map
+  // When it is rendered
+  // Then the chosen location should be shown, read-only
+  it('shows the location chosen on the map', () => {
+    renderForm({ initialLocation: { latitude: 41.72889, longitude: 1.82868 } })
+
+    expect(screen.getByText(/Ubicación elegida en el mapa: 41.72889, 1.82868/)).toBeInTheDocument()
+  })
+
+  // Given a create form opened with a location
+  // When the user fills it and submits
+  // Then the coordinates should be part of the submitted values
+  it('submits the coordinates of the chosen location', async () => {
+    const { onSubmit, user } = renderForm({
+      initialLocation: { latitude: 41.7288, longitude: 1.8286 },
+    })
+
+    await user.type(screen.getByLabelText('Nombre'), 'Laura García')
+    await user.click(screen.getByRole('checkbox', { name: 'Gmail' }))
+    await user.click(screen.getByRole('button', { name: 'Crear cliente' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ latitude: 41.7288, longitude: 1.8286 })
+  })
+
+  // Given an existing client is edited
+  // When a location is also passed
+  // Then it should be ignored, so editing never overwrites the coordinates by accident
+  it('ignores the initial location when editing', async () => {
+    const { onSubmit, user } = renderForm({
+      client: mockClient,
+      initialLocation: { latitude: 41.7288, longitude: 1.8286 },
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(screen.queryByText(/Ubicación elegida en el mapa/)).not.toBeInTheDocument()
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('latitude')
+  })
 })
