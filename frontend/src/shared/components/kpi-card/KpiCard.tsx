@@ -16,7 +16,7 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
         <Icon size={26} aria-hidden="true" />
       </div>
-      <div className="flex flex-col">
+      <div className="flex min-w-0 flex-col">
         <div className="flex items-center gap-1">
           <p className="text-sm text-ink-muted">{label}</p>
           {infoTooltip && (
@@ -26,8 +26,8 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
           )}
         </div>
         <p
-          className={`text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
-          title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : undefined}
+          className={`truncate text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
+          title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : value}
         >
           {value}
         </p>
