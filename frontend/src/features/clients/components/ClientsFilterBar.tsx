@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react'
 import { Input, Select } from '@/shared/components'
 import { useTags } from '@/features/tags/hooks/useTags'
-import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { ChannelFilter } from '../types/client.types'
 
 interface ClientsFilterBarProps {
@@ -23,10 +23,6 @@ export function ClientsFilterBar({
 }: ClientsFilterBarProps) {
   const { data: tags = [] } = useTags()
 
-  const channelOptions = CHANNEL_BRANDS.map((brand) => ({
-    value: brand.id.toUpperCase(),
-    label: brand.name,
-  }))
   const tagOptions = tags.map((tag) => ({ value: tag.id, label: tag.name }))
 
   return (
@@ -42,14 +38,11 @@ export function ClientsFilterBar({
         />
       </div>
       <div className="w-48">
-        <Select
+        <ChannelSelect
           id="clients-filter-channel"
-          label="Canal"
-          placeholder="Todos"
-          options={channelOptions}
           size="sm"
           value={channel}
-          onChange={(event) => onChannelChange(event.target.value as ChannelFilter | '')}
+          onChange={(value) => onChannelChange(value as ChannelFilter | '')}
         />
       </div>
       <div className="w-48">

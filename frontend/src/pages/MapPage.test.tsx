@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MantineProvider } from '@mantine/core'
@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import MapPage from './MapPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import type { ClientMapResponse } from '@/features/map/types/map.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
@@ -93,8 +94,7 @@ function renderPage() {
 describe('MapPage', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset()
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600)
+    stubMapSize()
   })
 
   afterEach(() => {
@@ -158,6 +158,61 @@ describe('MapPage', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Editar cliente' })).toBeInTheDocument()
     expect(api.get).toHaveBeenCalledWith('/clients/client-2')
+  })
+
+  // Given the map is shown
+  // When the user clicks a point of the map and then "Nuevo cliente aquí"
+  // Then the create modal should open with the chosen location
+  it('opens the create modal with the location clicked on the map', async () => {
+    mockMapResponse(mapData)
+    const { container } = renderPage()
+    await screen.findByText('Clientes en el mapa')
+
+    fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, {
+      clientX: 400,
+      clientY: 300,
+    })
+    const createHere = await screen.findByRole('button', { name: 'Nuevo cliente aquí' })
+    await waitOutDoubleClickWindow()
+    await userEvent.setup().click(createHere)
+
+    expect(await screen.findByRole('dialog', { name: 'Nuevo cliente' })).toBeInTheDocument()
+    expect(screen.getByText(/Ubicación elegida/)).toBeInTheDocument()
+  })
+
+  // Given the map is shown
+  // When the user picks a channel and a date range
+  // Then the map should be requested again with those filters
+  it('requests the map again when the filters change', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Clientes en el mapa')
+    const user = userEvent.setup()
+
+    await user.selectOptions(screen.getByLabelText('Canal'), 'WHATSAPP')
+    fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-01-01' } })
+
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith('/clients/map?channel=WHATSAPP&from=2026-01-01'),
+    )
+    expect(screen.getByText('Clientes en el mapa')).toBeInTheDocument()
+  })
+
+  // Given filters are active
+  // When the user clicks "Limpiar filtros"
+  // Then the map should be requested without filters again
+  it('clears the filters', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Clientes en el mapa')
+    const user = userEvent.setup()
+    await user.selectOptions(screen.getByLabelText('Canal'), 'GMAIL')
+    await waitFor(() => expect(api.get).toHaveBeenCalledWith('/clients/map?channel=GMAIL'))
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(screen.getByLabelText('Canal')).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Limpiar filtros' })).not.toBeInTheDocument()
   })
 
   // Given the backend returns no clients

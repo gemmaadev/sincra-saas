@@ -3,10 +3,12 @@ import MarkerClusterGroup from 'react-leaflet-cluster'
 import type { LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
-import './clients-map.css'
+import '../styles/clients-map.css'
 import { ClientMarker } from './ClientMarker'
 import { MapFocus } from './MapFocus'
+import { NewClientPin } from './NewClientPin'
 import { createClusterIcon } from '../utils/createClusterIcon'
+import type { Coordinates } from '@/features/clients/types/client.types'
 import type { MapClient } from '../types/map.types'
 
 const DEFAULT_CENTER: LatLngTuple = [41.6, 1.9]
@@ -20,6 +22,7 @@ interface ClientsMapProps {
   focusedPositions: LatLngTuple[] | null
   onEditClient: (client: MapClient) => void
   onDeleteClient: (client: MapClient) => void
+  onCreateClientAt: (location: Coordinates) => void
 }
 
 export function ClientsMap({
@@ -27,6 +30,7 @@ export function ClientsMap({
   focusedPositions,
   onEditClient,
   onDeleteClient,
+  onCreateClientAt,
 }: ClientsMapProps) {
   const clientPositions = clients.map((client): LatLngTuple => [client.latitude, client.longitude])
   const areaToShow = clientPositions.length > 0 ? clientPositions : undefined
@@ -41,6 +45,7 @@ export function ClientsMap({
     >
       <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} />
       <MapFocus positions={focusedPositions} />
+      <NewClientPin onCreate={onCreateClientAt} />
       <MarkerClusterGroup
         iconCreateFunction={createClusterIcon}
         showCoverageOnHover={false}

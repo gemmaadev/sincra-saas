@@ -20,6 +20,7 @@ export interface ClientMapRecord {
   latitude: number | null
   longitude: number | null
   zone: string | null
+  address: string | null
   channels: Channel[]
   type: string | null
 }

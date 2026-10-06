@@ -15,7 +15,7 @@ import {
 } from './client.model'
 import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
-import { geocodeAddress } from '../../shared/services/geocoding.service'
+import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import type { CreateClientInput, UpdateClientInput, ListClientsFilters } from './client.types'
@@ -82,6 +82,21 @@ export async function createClient(businessId: string, input: CreateClientInput)
       longitude: location?.longitude,
     }),
   )
+}
+
+export async function searchClientAddress(businessId: string, query: string) {
+  const countryCode = await findBusinessCountry(businessId)
+  const candidates = await searchAddresses(query, countryCode ?? undefined)
+
+  if (!candidates) {
+    throw new AppError(
+      'No se ha podido buscar la dirección. Inténtalo de nuevo.',
+      502,
+      'GEOCODING_UNAVAILABLE',
+    )
+  }
+
+  return candidates
 }
 
 export async function listClients(businessId: string, filters: ListClientsFilters) {

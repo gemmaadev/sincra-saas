@@ -77,6 +77,7 @@ describe('findClientsForMap', () => {
           latitude: true,
           longitude: true,
           zone: true,
+          address: true,
           channels: true,
           type: true,
         },

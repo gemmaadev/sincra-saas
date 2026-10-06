@@ -4,7 +4,7 @@ import * as clientModel from './client.model'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import * as tagModel from '../tag/tag.model'
 import * as authModel from '../auth/auth.model'
-import { geocodeAddress } from '../../shared/services/geocoding.service'
+import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
 import {
   listClients,
   createClient,
@@ -12,6 +12,7 @@ import {
   deleteClient,
   assignTagToClient,
   removeTagFromClient,
+  searchClientAddress,
 } from './client.service'
 
 vi.mock('./client.model')
@@ -183,6 +184,56 @@ describe('updateClient / deleteClient', () => {
 
     expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', { name: 'Ana' })
     expect(clientModel.deleteClientById).toHaveBeenCalledWith('client-1')
+  })
+})
+
+describe('searchClientAddress', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
+  })
+
+  // Given a business in Spain and an address query
+  // When the address is searched
+  // Then the candidates should come from the geocoder, restricted to the business country
+  it('searches the addresses in the business country', async () => {
+    const candidates = [
+      {
+        label: 'x',
+        address: 'Carrer de Balmes 71',
+        zone: 'Manresa',
+        latitude: 41.7,
+        longitude: 1.8,
+      },
+    ]
+    vi.mocked(searchAddresses).mockResolvedValue(candidates)
+
+    const result = await searchClientAddress('business-1', 'Carrer de Balmes 71, Manresa')
+
+    expect(authModel.findBusinessCountry).toHaveBeenCalledWith('business-1')
+    expect(searchAddresses).toHaveBeenCalledWith('Carrer de Balmes 71, Manresa', 'ES')
+    expect(result).toEqual(candidates)
+  })
+
+  // Given the search finds nothing
+  // When the address is searched
+  // Then an empty list should be returned
+  it('returns an empty list when there are no matches', async () => {
+    vi.mocked(searchAddresses).mockResolvedValue([])
+
+    expect(await searchClientAddress('business-1', 'Nowhere 1')).toEqual([])
+  })
+
+  // Given the geocoder is unavailable
+  // When the address is searched
+  // Then a 502 GEOCODING_UNAVAILABLE error should be thrown
+  it('throws a 502 when the geocoder is unavailable', async () => {
+    vi.mocked(searchAddresses).mockResolvedValue(null)
+
+    await expect(searchClientAddress('business-1', 'Rambla Nova')).rejects.toMatchObject({
+      statusCode: 502,
+      code: 'GEOCODING_UNAVAILABLE',
+    })
   })
 })
 

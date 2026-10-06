@@ -24,6 +24,7 @@ export async function findClientsForMap(businessId: string, filters: ClientMapFi
       latitude: true,
       longitude: true,
       zone: true,
+      address: true,
       channels: true,
       type: true,
     },

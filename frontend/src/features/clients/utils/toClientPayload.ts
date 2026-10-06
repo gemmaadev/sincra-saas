@@ -14,5 +14,10 @@ export function toClientPayload(values: ClientFormValues): ClientPayload {
     type: emptyToNull(values.type),
     zone: emptyToNull(values.zone),
     address: emptyToNull(values.address),
+    ...(values.latitude !== undefined &&
+      values.longitude !== undefined && {
+        latitude: values.latitude,
+        longitude: values.longitude,
+      }),
   }
 }

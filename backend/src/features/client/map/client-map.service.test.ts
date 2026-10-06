@@ -18,6 +18,7 @@ function record(overrides: Partial<ClientMapRecord> = {}): ClientMapRecord {
     latitude: null,
     longitude: null,
     zone: null,
+    address: null,
     channels: [],
     type: null,
     ...overrides,
@@ -212,16 +213,52 @@ describe('computeZoneCentroids', () => {
 describe('buildMapClients', () => {
   const centroids = new Map([['barcelona', { latitude: 41.4, longitude: 2.2 }]])
 
-  // Given a client with exact coordinates
+  // Given a client with coordinates and an address
   // When the map clients are built
-  // Then it should keep them and not be marked as approximate
-  it('keeps the exact coordinates of a client', () => {
+  // Then it should keep the coordinates and not be marked as approximate
+  it('keeps the coordinates of a client with an address as exact', () => {
     const [mapClient] = buildMapClients(
-      [record({ id: 'a', zone: 'Barcelona', latitude: 41.5, longitude: 2.1 })],
+      [
+        record({
+          id: 'a',
+          zone: 'Barcelona',
+          address: 'Carrer de Balmes 71',
+          latitude: 41.5,
+          longitude: 2.1,
+        }),
+      ],
       centroids,
     )
 
     expect(mapClient).toMatchObject({ id: 'a', latitude: 41.5, longitude: 2.1, approximate: false })
+  })
+
+  // Given a client with coordinates but no address (e.g. geocoded from its zone only)
+  // When the map clients are built
+  // Then it should keep its coordinates but be marked as approximate
+  it.each([
+    ['no address', null],
+    ['an empty address', ''],
+    ['an address with only spaces', '   '],
+  ])('marks a client with coordinates and %s as approximate', (_label, address) => {
+    const [mapClient] = buildMapClients(
+      [record({ id: 'a', zone: 'Barcelona', address, latitude: 41.5, longitude: 2.1 })],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({ id: 'a', latitude: 41.5, longitude: 2.1, approximate: true })
+  })
+
+  // Given a client with an address
+  // When the map clients are built
+  // Then the address itself should not be part of the map response
+  it('does not expose the address in the map response', () => {
+    const [mapClient] = buildMapClients(
+      [record({ address: 'Carrer de Balmes 71', latitude: 41.5, longitude: 2.1 })],
+      centroids,
+    )
+
+    expect(mapClient).not.toHaveProperty('address')
   })
 
   // Given a client without coordinates but in a zone with a centroid
@@ -286,7 +323,14 @@ describe('getClientMap', () => {
   // Then it should combine the points, the zone summary and the channel donut
   it('combines the clients, the zones and the channel origin', async () => {
     vi.mocked(clientMapModel.findClientsForMap).mockResolvedValue([
-      record({ id: 'a', zone: 'Barcelona', latitude: 41, longitude: 2, channels: ['GMAIL'] }),
+      record({
+        id: 'a',
+        zone: 'Barcelona',
+        address: 'Carrer Major 1',
+        latitude: 41,
+        longitude: 2,
+        channels: ['GMAIL'],
+      }),
       record({ id: 'b', zone: 'Barcelona', channels: ['GMAIL', 'WHATSAPP'] }),
       record({ id: 'c', zone: null, channels: [] }),
     ])

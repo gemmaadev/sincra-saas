@@ -13,6 +13,25 @@ const filledValues: ClientFormValues = {
 }
 
 describe('toClientPayload', () => {
+  // Given form values that carry the location chosen on the map
+  // When they are converted to a payload
+  // Then the coordinates should be included
+  it('includes the coordinates when the form has them', () => {
+    const payload = toClientPayload({ ...filledValues, latitude: 41.7288, longitude: 1.8286 })
+
+    expect(payload).toMatchObject({ latitude: 41.7288, longitude: 1.8286 })
+  })
+
+  // Given form values without coordinates
+  // When they are converted to a payload
+  // Then the payload should not even have the coordinate keys
+  it('omits the coordinates when the form has none', () => {
+    const payload = toClientPayload(filledValues)
+
+    expect(payload).not.toHaveProperty('latitude')
+    expect(payload).not.toHaveProperty('longitude')
+  })
+
   // Given form values with surrounding spaces
   // When they are converted to a payload
   // Then the text fields should be trimmed

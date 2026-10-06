@@ -4,15 +4,21 @@ import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import { useSaveClient } from '../hooks/useSaveClient'
 import { ClientForm } from './ClientForm'
-import type { ClientDetail, ClientFormValues } from '../types/client.types'
+import type { ClientDetail, ClientFormValues, Coordinates } from '../types/client.types'
 
 interface ClientFormModalProps {
   opened: boolean
   onClose: () => void
   client?: ClientDetail
+  initialLocation?: Coordinates
 }
 
-export function ClientFormModal({ opened, onClose, client }: ClientFormModalProps) {
+export function ClientFormModal({
+  opened,
+  onClose,
+  client,
+  initialLocation,
+}: ClientFormModalProps) {
   const isEditing = client !== undefined
   const saveClient = useSaveClient(client?.id)
 
@@ -45,6 +51,7 @@ export function ClientFormModal({ opened, onClose, client }: ClientFormModalProp
     >
       <ClientForm
         client={client}
+        initialLocation={initialLocation}
         onSubmit={handleSubmit}
         onCancel={handleClose}
         isSubmitting={saveClient.isPending}

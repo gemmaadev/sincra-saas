@@ -151,3 +151,37 @@ describe('GET /clients/map', () => {
     expect(mapSpy).not.toHaveBeenCalled()
   })
 })
+
+describe('GET /clients/address-search', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const employeeCookie = `token=${signToken({ userId: 'emp-1', businessId: 'biz-1', role: 'EMPLOYEE' })}`
+
+  // Given an authenticated member and a search text
+  // When searching addresses
+  // Then the candidates should be returned and the route must not be shadowed by /clients/:id
+  it('returns the candidates of the search', async () => {
+    const candidates = [{ label: 'x', address: 'Carrer Major 1', zone: 'Vic' }]
+    vi.spyOn(clientService, 'searchClientAddress').mockResolvedValue(candidates as never)
+
+    const res = await request(app)
+      .get('/clients/address-search')
+      .query({ q: 'Carrer Major 1, Vic' })
+      .set('Cookie', employeeCookie)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ candidates })
+    expect(clientService.searchClientAddress).toHaveBeenCalledWith('biz-1', 'Carrer Major 1, Vic')
+  })
+
+  // Given a request without a session
+  // When searching addresses
+  // Then it should answer 401
+  it('answers 401 without a session', async () => {
+    const res = await request(app).get('/clients/address-search').query({ q: 'Carrer Major' })
+
+    expect(res.status).toBe(401)
+  })
+})
