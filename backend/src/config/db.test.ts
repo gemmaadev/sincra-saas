@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { Prisma } from '../generated/prisma/client'
 import prisma from './db'
 import { hashPassword } from '../shared/hash'
 
@@ -164,5 +165,106 @@ describe('Client and Tag models', () => {
     expect(await prisma.client.findUnique({ where: { id: client.id } })).toBeNull()
     expect(await prisma.tag.findUnique({ where: { id: tag.id } })).toBeNull()
     expect(await prisma.clientTag.findUnique({ where: { id: clientTag.id } })).toBeNull()
+  })
+
+  // Given a business with a client and an order with two items and a status change
+  // When the order is read back with its items and history
+  // Then the total should be the sum of its items, and the defaults should apply
+  it('stores an order with its items and status history, with defaults', async () => {
+    const business = await prisma.business.create({ data: { name: 'Negocio de pedidos' } })
+    try {
+      const client = await prisma.client.create({
+        data: {
+          businessId: business.id,
+          name: 'Cliente con pedido',
+          email: `order-${Date.now()}@sincra.test`,
+        },
+      })
+
+      const order = await prisma.order.create({
+        data: {
+          businessId: business.id,
+          clientId: client.id,
+          number: 1001,
+          items: {
+            create: [
+              {
+                product: 'Chaqueta oversize',
+                description: 'Talla M, beige',
+                quantity: 1,
+                unitPrice: '89.90',
+              },
+              { product: 'Pañuelo de seda', quantity: 2, unitPrice: '15.00' },
+            ],
+          },
+          statusHistory: { create: { status: 'PENDING', changedBy: 'test' } },
+        },
+        include: { items: true, statusHistory: true },
+      })
+
+      expect(order.status).toBe('PENDING')
+      expect(order.kind).toBe('PRODUCT')
+      expect(order.aiGenerated).toBe(false)
+      expect(order.items).toHaveLength(2)
+      expect(order.statusHistory).toHaveLength(1)
+
+      const total = order.items.reduce(
+        (sum, item) => sum.plus(item.unitPrice.mul(item.quantity)),
+        new Prisma.Decimal(0),
+      )
+      expect(total.toFixed(2)).toBe('119.90')
+    } finally {
+      await prisma.business.delete({ where: { id: business.id } })
+    }
+  })
+
+  // Given a client that already has an order
+  // When the client is deleted
+  // Then the database should refuse it, so orders are never lost by accident
+  it('refuses to delete a client that has orders', async () => {
+    const business = await prisma.business.create({ data: { name: 'Negocio con pedidos' } })
+    try {
+      const client = await prisma.client.create({
+        data: {
+          businessId: business.id,
+          name: 'Cliente protegido',
+          email: `protected-${Date.now()}@sincra.test`,
+        },
+      })
+      await prisma.order.create({
+        data: { businessId: business.id, clientId: client.id, number: 1 },
+      })
+
+      await expect(prisma.client.delete({ where: { id: client.id } })).rejects.toThrow()
+    } finally {
+      await prisma.business.delete({ where: { id: business.id } })
+    }
+  })
+
+  // Given two orders in the same business
+  // When they are created with the same number
+  // Then the second one should be refused, so order numbers stay unique per business
+  it('keeps order numbers unique per business', async () => {
+    const business = await prisma.business.create({ data: { name: 'Negocio numeración' } })
+    try {
+      const client = await prisma.client.create({
+        data: {
+          businessId: business.id,
+          name: 'Cliente numeración',
+          email: `number-${Date.now()}@sincra.test`,
+        },
+      })
+      await prisma.order.create({
+        data: { businessId: business.id, clientId: client.id, number: 1001 },
+      })
+
+      await expect(
+        prisma.order.create({
+          data: { businessId: business.id, clientId: client.id, number: 1001 },
+        }),
+      ).rejects.toThrow()
+    } finally {
+      await prisma.business.delete({ where: { id: business.id } })
+    }
   })
 })
