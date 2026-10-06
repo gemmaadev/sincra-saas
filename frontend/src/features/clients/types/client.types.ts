@@ -63,6 +63,11 @@ export interface UseClientsParams {
   tagId?: string
 }
 
+export interface Coordinates {
+  latitude: number
+  longitude: number
+}
+
 export interface ClientFormValues {
   name: string
   email: string
@@ -71,6 +76,8 @@ export interface ClientFormValues {
   type: string
   zone: string
   address: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface ClientPayload {
@@ -81,6 +88,8 @@ export interface ClientPayload {
   type: string | null
   zone: string | null
   address: string | null
+  latitude?: number
+  longitude?: number
 }
 
 export interface ClientMutationResponse {
