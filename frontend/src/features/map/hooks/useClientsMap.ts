@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
 import type { ClientMapResponse, MapFilters } from '../types/map.types'
 
 export function useClientsMap(filters: MapFilters = {}) {
   return useQuery({
     queryKey: ['clients', 'map', filters],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const query = new URLSearchParams()
       if (filters.channel) query.set('channel', filters.channel)
