@@ -1,7 +1,5 @@
 import type { ClientMapResponse } from '../types/map.types'
 
-const NO_ZONE_LABEL = 'Sin zona'
-
 export interface MapKpis {
   clientsOnMap: number
   activeZones: number
@@ -10,7 +8,7 @@ export interface MapKpis {
 }
 
 export function buildMapKpis({ clients, zones }: ClientMapResponse): MapKpis {
-  const realZones = zones.filter((zone) => zone.zone !== NO_ZONE_LABEL)
+  const realZones = zones.filter((zone) => zone.zone !== 'Sin zona')
   const [topZone] = realZones
 
   return {
