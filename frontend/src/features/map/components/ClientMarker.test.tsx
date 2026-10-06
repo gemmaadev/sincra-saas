@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MapContainer } from 'react-leaflet'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { ClientMarker } from './ClientMarker'
 import type { MapClient } from '../types/map.types'
 
@@ -15,12 +16,6 @@ const mockClient: MapClient = {
   channels: ['WHATSAPP'],
   type: 'Panadería',
   approximate: false,
-}
-
-const LEAFLET_DOUBLE_CLICK_WINDOW_MS = 250
-
-function waitOutDoubleClickWindow() {
-  return new Promise((resolve) => setTimeout(resolve, LEAFLET_DOUBLE_CLICK_WINDOW_MS))
 }
 
 function renderMarker() {
@@ -38,8 +33,7 @@ function renderMarker() {
 
 describe('ClientMarker', () => {
   beforeEach(() => {
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800)
-    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(600)
+    stubMapSize()
   })
 
   afterEach(() => {
