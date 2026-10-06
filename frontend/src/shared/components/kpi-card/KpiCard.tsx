@@ -27,7 +27,7 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
         </div>
         <p
           className={`truncate text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
-          title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : value}
+          title={pending ? 'Disponible cuando exista el módulo de pedidos/estadísticas' : undefined}
         >
           {value}
         </p>

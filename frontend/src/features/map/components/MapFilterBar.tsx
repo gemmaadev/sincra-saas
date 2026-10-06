@@ -1,11 +1,6 @@
-import { Input, Select, SincraButton } from '@/shared/components'
-import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import { Input, SincraButton } from '@/shared/components'
+import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { ChannelFilter } from '@/features/clients/types/client.types'
-
-const CHANNEL_OPTIONS = CHANNEL_BRANDS.map((brand) => ({
-  value: brand.id.toUpperCase(),
-  label: brand.name,
-}))
 
 interface MapFilterBarProps {
   channel: ChannelFilter | ''
@@ -33,14 +28,11 @@ export function MapFilterBar({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="w-48">
-        <Select
+        <ChannelSelect
           id="map-filter-channel"
-          label="Canal"
-          placeholder="Todos"
-          options={CHANNEL_OPTIONS}
           size="sm"
           value={channel}
-          onChange={(event) => onChannelChange(event.target.value as ChannelFilter | '')}
+          onChange={(value) => onChannelChange(value as ChannelFilter | '')}
         />
       </div>
       <div className="w-44">
