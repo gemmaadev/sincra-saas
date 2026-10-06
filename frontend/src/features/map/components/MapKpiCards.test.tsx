@@ -19,7 +19,7 @@ describe('MapKpiCards', () => {
     renderCards({
       clientsOnMap: 12,
       activeZones: 5,
-      topZone: { name: 'Barcelona', percentage: 40 },
+      topZone: 'Barcelona',
       approximateClients: 2,
     })
 

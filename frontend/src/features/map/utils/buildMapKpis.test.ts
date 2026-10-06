@@ -34,7 +34,7 @@ describe('buildMapKpis', () => {
     expect(buildMapKpis(data)).toEqual({
       clientsOnMap: 4,
       activeZones: 2,
-      topZone: { name: 'Barcelona', percentage: 50 },
+      topZone: 'Barcelona',
       approximateClients: 1,
     })
   })
