@@ -68,6 +68,12 @@ export interface Coordinates {
   longitude: number
 }
 
+export interface AddressCandidate extends Coordinates {
+  label: string
+  address: string | null
+  zone: string | null
+}
+
 export interface ClientFormValues {
   name: string
   email: string
