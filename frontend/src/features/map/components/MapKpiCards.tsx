@@ -13,12 +13,7 @@ export function MapKpiCards({ kpis }: MapKpiCardsProps) {
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       <KpiCard icon={MapPin} label="Clientes en el mapa" value={String(clientsOnMap)} />
       <KpiCard icon={Layers} label="Zonas activas" value={String(activeZones)} />
-      <KpiCard
-        icon={Trophy}
-        label="Zona principal"
-        value={topZone?.name ?? '—'}
-        infoTooltip={topZone ? `${topZone.percentage} % de tus clientes` : undefined}
-      />
+      <KpiCard icon={Trophy} label="Zona principal" value={topZone?.name ?? '—'} />
       <KpiCard
         icon={MapPinOff}
         label="Sin ubicación exacta"

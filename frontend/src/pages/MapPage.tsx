@@ -4,6 +4,7 @@ import { ApproximateClientsCard } from '@/features/map/components/ApproximateCli
 import { ClientsMap } from '@/features/map/components/ClientsMap'
 import { MapKpiCards } from '@/features/map/components/MapKpiCards'
 import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
+import { PendingChartCard } from '@/features/map/components/PendingChartCard'
 import { ZoneSummaryCard } from '@/features/map/components/ZoneSummaryCard'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
 import { buildMapKpis } from '@/features/map/utils/buildMapKpis'
@@ -20,34 +21,51 @@ export default function MapPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-ink">Mapa de clientes y pedidos</h1>
+      <div className="flex flex-col">
+        <h1 className="text-xl font-semibold text-ink">Mapa de clientes y pedidos</h1>
+        <p className="text-ink">
+          Visualiza dónde están tus clientes, qué zonas funcionan mejor y cuáles potenciar.
+        </p>
+      </div>
       {isLoading && <p className="text-ink-muted">Cargando mapa...</p>}
       {isError && <p className="text-error">No se ha podido cargar el mapa.</p>}
       {data && (
         <>
           <MapKpiCards kpis={buildMapKpis(data)} />
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-            <div className="relative">
+            <div className="relative h-144">
               <ClientsMap
                 clients={data.clients}
                 focusedPositions={focusedPositions}
                 onEditClient={setClientToEdit}
                 onDeleteClient={setClientToDelete}
               />
+              {data.clients.length === 0 && (
+                <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm text-ink-muted shadow-md">
+                  Todavía no tienes clientes con ubicación en el mapa.
+                </p>
+              )}
               <div className="absolute right-3 top-3 z-10">
                 <MapLayerToggle />
               </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <ZoneSummaryCard
-                zones={data.zones}
-                onSelectZone={(zone) => setFocusedPositions(getZonePositions(data.clients, zone))}
-              />
+            <div className="flex flex-col gap-4 lg:h-144">
+              <div className="shrink-0">
+                <ZoneSummaryCard
+                  zones={data.zones}
+                  onSelectZone={(zone) => setFocusedPositions(getZonePositions(data.clients, zone))}
+                />
+              </div>
               <ApproximateClientsCard
+                className="min-h-0 flex-1"
                 clients={data.clients.filter((client) => client.approximate)}
                 onAddAddress={setClientToEdit}
               />
             </div>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PendingChartCard title="Ingresos por zona" />
+            <PendingChartCard title="Ticket medio por zona" />
           </div>
         </>
       )}

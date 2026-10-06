@@ -37,7 +37,7 @@ export function ClientsMap({
       zoom={DEFAULT_ZOOM}
       bounds={areaToShow}
       boundsOptions={{ maxZoom: 13, padding: [40, 40] }}
-      className="isolate h-128 w-full rounded-card"
+      className="isolate h-full w-full rounded-card"
     >
       <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} />
       <MapFocus positions={focusedPositions} />

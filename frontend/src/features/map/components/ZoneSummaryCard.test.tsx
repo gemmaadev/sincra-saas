@@ -34,9 +34,9 @@ describe('ZoneSummaryCard', () => {
 
     render(<ZoneSummaryCard zones={zones} onSelectZone={vi.fn()} />)
 
-    expect(screen.getByText('Zona 6')).toBeInTheDocument()
-    expect(screen.queryByText('Zona 7')).not.toBeInTheDocument()
-    expect(screen.getByText('y 2 zonas más')).toBeInTheDocument()
+    expect(screen.getByText('Zona 5')).toBeInTheDocument()
+    expect(screen.queryByText('Zona 6')).not.toBeInTheDocument()
+    expect(screen.getByText('y 3 zonas más')).toBeInTheDocument()
   })
 
   // Given no zones
