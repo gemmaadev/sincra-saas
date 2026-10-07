@@ -238,6 +238,67 @@ describe('updateOrder', () => {
     )
   })
 
+  // Given an order already in a final state (DELIVERED or CANCELLED)
+  // When trying to move it to a different status
+  // Then a 400 ORDER_STATUS_FINAL is thrown and nothing is written
+  it.each([
+    ['DELIVERED', 'PENDING'],
+    ['CANCELLED', 'PREPARING'],
+    ['DELIVERED', 'CANCELLED'],
+  ])('rejects moving an order out of %s into %s', async (currentStatus, nextStatus) => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: currentStatus,
+    } as never)
+
+    await expect(
+      updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'ORDER_STATUS_FINAL' })
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given an order already DELIVERED
+  // When it is resent as DELIVERED again (idempotent update)
+  // Then it should be accepted, since it is not actually a transition
+  it('allows resending the same final status', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'DELIVERED',
+    } as never)
+
+    await updateOrder('business-1', 'user-1', 'order-1', { status: 'DELIVERED' })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: 'DELIVERED' },
+      undefined,
+      undefined,
+    )
+  })
+
+  // Given an order in a non-final state (PENDING, PREPARING, SHIPPED)
+  // When moving it to any other non-final or final status
+  // Then the transition should be accepted, in any order
+  it.each([
+    ['PENDING', 'SHIPPED'],
+    ['SHIPPED', 'PREPARING'],
+    ['PREPARING', 'CANCELLED'],
+  ])('allows moving freely between non-final statuses (%s -> %s)', async (currentStatus, nextStatus) => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: currentStatus,
+    } as never)
+
+    await updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: nextStatus },
+      undefined,
+      { status: nextStatus, changedBy: 'user-1' },
+    )
+  })
+
   // Given a new list of items
   // When the order is updated
   // Then the price should be recomputed from them and passed on to be replaced
