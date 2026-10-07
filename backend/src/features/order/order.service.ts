@@ -8,6 +8,7 @@ import {
   insertOrder,
   findOrdersPage,
   countOrders,
+  countOrdersByStatus,
   findOrderById,
   findOrderWithDetails,
   updateOrderWithItems,
@@ -144,9 +145,32 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
     }),
   }
 
-  const [data, total] = await Promise.all([findOrdersPage(where, skip, limit), countOrders(where)])
+  const [data, total, statusGroups] = await Promise.all([
+    findOrdersPage(where, skip, limit),
+    countOrders(where),
+    countOrdersByStatus(businessId),
+  ])
 
-  return buildPaginatedResponse(data, total, page, limit)
+  return {
+    ...buildPaginatedResponse(data, total, page, limit),
+    statusCounts: buildStatusCounts(statusGroups),
+  }
+}
+
+const ALL_ORDER_STATUSES: OrderStatus[] = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+
+function buildStatusCounts(
+  groups: { status: OrderStatus; _count: number }[],
+): Record<OrderStatus, number> {
+  const counts = Object.fromEntries(
+    ALL_ORDER_STATUSES.map((status) => [status, 0]),
+  ) as Record<OrderStatus, number>
+
+  for (const group of groups) {
+    counts[group.status] = group._count
+  }
+
+  return counts
 }
 
 export async function getOrderById(businessId: string, orderId: string) {

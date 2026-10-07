@@ -25,12 +25,23 @@ const mockOrder = {
   items: [{ product: 'Chaqueta oversize', description: 'Talla M, beige' }],
 }
 
-function mockApiGet(overrides?: { data?: (typeof mockOrder)[]; total?: number }) {
+function mockApiGet(overrides?: {
+  data?: (typeof mockOrder)[]
+  total?: number
+  statusCounts?: Record<string, number>
+}) {
   vi.mocked(api.get).mockImplementation(() => {
     const data = overrides?.data ?? [mockOrder]
     return Promise.resolve({
       data,
       pagination: { page: 1, limit: 10, total: overrides?.total ?? data.length, totalPages: 1 },
+      statusCounts: overrides?.statusCounts ?? {
+        PENDING: 1,
+        PREPARING: 0,
+        SHIPPED: 0,
+        DELIVERED: 0,
+        CANCELLED: 0,
+      },
     })
   })
 }
@@ -79,6 +90,20 @@ describe('OrdersPage', () => {
     mockApiGet({ total: 60 })
     renderOrdersPage()
     await waitFor(() => expect(screen.getByText('60')).toBeInTheDocument())
+  })
+
+  // Given a successful response with known status counts
+  // When OrdersPage is rendered
+  // Then each status KPI should show its own count, not the pending placeholder
+  it('shows the real counts in the status KPIs', async () => {
+    mockApiGet({
+      statusCounts: { PENDING: 5, PREPARING: 28, SHIPPED: 47, DELIVERED: 51, CANCELLED: 2 },
+    })
+    renderOrdersPage()
+    await waitFor(() => expect(screen.getByText('28')).toBeInTheDocument())
+    expect(screen.getByText('47')).toBeInTheDocument()
+    expect(screen.getByText('51')).toBeInTheDocument()
+    expect(screen.getByText('2')).toBeInTheDocument()
   })
 
   // Given no orders returned by the API

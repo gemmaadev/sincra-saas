@@ -35,6 +35,10 @@ export async function countOrders(where: Prisma.OrderWhereInput) {
   return prisma.order.count({ where })
 }
 
+export async function countOrdersByStatus(businessId: string) {
+  return prisma.order.groupBy({ by: ['status'], where: { businessId }, _count: true })
+}
+
 export async function findOrderById(businessId: string, orderId: string) {
   return prisma.order.findUnique({ where: { id: orderId, businessId } })
 }

@@ -136,6 +136,7 @@ describe('listOrders', () => {
     vi.resetAllMocks()
     vi.mocked(orderModel.findOrdersPage).mockResolvedValue([])
     vi.mocked(orderModel.countOrders).mockResolvedValue(0)
+    vi.mocked(orderModel.countOrdersByStatus).mockResolvedValue([])
   })
 
   // Given a status, a channel and a date range
@@ -164,6 +165,35 @@ describe('listOrders', () => {
 
     const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
     expect(where).toEqual({ businessId: 'business-1' })
+  })
+
+  // Given the business has orders in only some statuses
+  // When orders are listed
+  // Then statusCounts should include every status, defaulting the missing ones to 0
+  it('fills statusCounts for every status, defaulting missing ones to 0', async () => {
+    vi.mocked(orderModel.countOrdersByStatus).mockResolvedValue([
+      { status: 'DELIVERED', _count: 12 },
+      { status: 'CANCELLED', _count: 2 },
+    ])
+
+    const result = await listOrders('business-1', {})
+
+    expect(result.statusCounts).toEqual({
+      PENDING: 0,
+      PREPARING: 0,
+      SHIPPED: 0,
+      DELIVERED: 12,
+      CANCELLED: 2,
+    })
+  })
+
+  // Given an active status/channel/date filter on the list
+  // When orders are listed
+  // Then statusCounts should still be scoped to the whole business, not the current filter
+  it('scopes statusCounts to the business, independent of the active filter', async () => {
+    await listOrders('business-1', { status: 'PENDING', channel: 'WHATSAPP' })
+
+    expect(orderModel.countOrdersByStatus).toHaveBeenCalledWith('business-1')
   })
 
   // Given a search term

@@ -4,6 +4,7 @@ import {
   findMaxOrderNumber,
   insertOrder,
   findOrdersPage,
+  countOrdersByStatus,
   updateOrderWithItems,
   deleteOrderById,
 } from './order.model'
@@ -14,6 +15,7 @@ vi.mock('../../config/db', () => ({
       aggregate: vi.fn(),
       create: vi.fn(),
       findMany: vi.fn(),
+      groupBy: vi.fn(),
       update: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       delete: vi.fn(),
@@ -44,6 +46,25 @@ describe('findOrdersPage', () => {
         client: { select: { id: true, name: true } },
         items: { take: 1, select: { product: true, description: true } },
       },
+    })
+  })
+})
+
+describe('countOrdersByStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business
+  // When counting its orders by status
+  // Then it should group by status, scoped to that business, regardless of any list filter
+  it('groups the counts by status, scoped to the business', async () => {
+    await countOrdersByStatus('business-1')
+
+    expect(prisma.order.groupBy).toHaveBeenCalledWith({
+      by: ['status'],
+      where: { businessId: 'business-1' },
+      _count: true,
     })
   })
 })

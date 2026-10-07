@@ -34,6 +34,7 @@ export interface OrdersResponse {
     total: number
     totalPages: number
   }
+  statusCounts: Record<OrderStatus, number>
 }
 
 export interface UseOrdersParams {
