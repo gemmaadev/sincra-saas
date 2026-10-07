@@ -166,6 +166,19 @@ describe('listOrders', () => {
     expect(where).toEqual({ businessId: 'business-1' })
   })
 
+  // Given a search term
+  // When orders are listed
+  // Then it should match either the client's name or the first item's product
+  it('searches by client name or product', async () => {
+    await listOrders('business-1', { search: 'camiseta' })
+
+    const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
+    expect(where.OR).toEqual([
+      { client: { name: { contains: 'camiseta', mode: 'insensitive' } } },
+      { items: { some: { product: { contains: 'camiseta', mode: 'insensitive' } } } },
+    ])
+  })
+
   // Given an unparseable date range
   // When orders are listed
   // Then the invalid dates should be ignored instead of breaking the query
