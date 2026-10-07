@@ -3,6 +3,8 @@ import prisma from '../../config/db'
 import {
   findMaxOrderNumber,
   insertOrder,
+  findOrdersPage,
+  countOrdersByStatus,
   updateOrderWithItems,
   deleteOrderById,
 } from './order.model'
@@ -12,6 +14,8 @@ vi.mock('../../config/db', () => ({
     order: {
       aggregate: vi.fn(),
       create: vi.fn(),
+      findMany: vi.fn(),
+      groupBy: vi.fn(),
       update: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       delete: vi.fn(),
@@ -21,6 +25,49 @@ vi.mock('../../config/db', () => ({
     $transaction: vi.fn(),
   },
 }))
+
+describe('findOrdersPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a where clause, skip and take
+  // When listing a page of orders
+  // Then each row should include the client's name and only the first item (for the table's product column)
+  it('includes the client and only the first item of each order', async () => {
+    await findOrdersPage({ businessId: 'business-1' }, 0, 20)
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith({
+      where: { businessId: 'business-1' },
+      skip: 0,
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        client: { select: { id: true, name: true } },
+        items: { take: 1, select: { product: true, description: true } },
+      },
+    })
+  })
+})
+
+describe('countOrdersByStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business
+  // When counting its orders by status
+  // Then it should group by status, scoped to that business, regardless of any list filter
+  it('groups the counts by status, scoped to the business', async () => {
+    await countOrdersByStatus('business-1')
+
+    expect(prisma.order.groupBy).toHaveBeenCalledWith({
+      by: ['status'],
+      where: { businessId: 'business-1' },
+      _count: true,
+    })
+  })
+})
 
 describe('findMaxOrderNumber', () => {
   beforeEach(() => {

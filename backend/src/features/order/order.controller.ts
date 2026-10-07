@@ -103,9 +103,17 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { page, limit, status, channel, dateFrom, dateTo } = req.query as ListOrdersFilters
+  const { page, limit, status, channel, dateFrom, dateTo, search } = req.query as ListOrdersFilters
 
-  const result = await listOrders(req.businessId!, { page, limit, status, channel, dateFrom, dateTo })
+  const result = await listOrders(req.businessId!, {
+    page,
+    limit,
+    status,
+    channel,
+    dateFrom,
+    dateTo,
+    search,
+  })
 
   res.json(result)
 })

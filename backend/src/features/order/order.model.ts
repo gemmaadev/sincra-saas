@@ -3,6 +3,7 @@ import type { Prisma, OrderStatus } from '../../generated/prisma/client'
 
 const ORDER_LIST_INCLUDE = {
   client: { select: { id: true, name: true } },
+  items: { take: 1, select: { product: true, description: true } },
 } satisfies Prisma.OrderInclude
 
 const ORDER_DETAIL_INCLUDE = {
@@ -32,6 +33,10 @@ export async function findOrdersPage(where: Prisma.OrderWhereInput, skip: number
 
 export async function countOrders(where: Prisma.OrderWhereInput) {
   return prisma.order.count({ where })
+}
+
+export async function countOrdersByStatus(businessId: string) {
+  return prisma.order.groupBy({ by: ['status'], where: { businessId }, _count: true })
 }
 
 export async function findOrderById(businessId: string, orderId: string) {

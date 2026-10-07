@@ -41,4 +41,5 @@ export interface ListOrdersFilters extends PaginationQuery {
   channel?: Channel
   dateFrom?: string
   dateTo?: string
+  search?: string
 }

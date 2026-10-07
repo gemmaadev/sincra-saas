@@ -1,14 +1,14 @@
 import { Input, SincraButton } from '@/shared/components'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
-import type { ChannelFilter } from '@/features/clients/types/client.types'
+import type { Channel } from '@/shared/types'
 
 interface MapFilterBarProps {
-  channel: ChannelFilter | ''
+  channel: Channel | ''
   from: string
   to: string
   isDateRangeInvalid: boolean
   hasActiveFilters: boolean
-  onChannelChange: (value: ChannelFilter | '') => void
+  onChannelChange: (value: Channel | '') => void
   onFromChange: (value: string) => void
   onToChange: (value: string) => void
   onClear: () => void
@@ -32,7 +32,7 @@ export function MapFilterBar({
           id="map-filter-channel"
           size="sm"
           value={channel}
-          onChange={(value) => onChannelChange(value as ChannelFilter | '')}
+          onChange={(value) => onChannelChange(value as Channel | '')}
         />
       </div>
       <div className="w-44">

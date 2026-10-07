@@ -2,13 +2,13 @@ import { Search } from 'lucide-react'
 import { Input, Select } from '@/shared/components'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
-import type { ChannelFilter } from '../types/client.types'
+import type { Channel } from '@/shared/types'
 
 interface ClientsFilterBarProps {
   search: string
   onSearchChange: (value: string) => void
-  channel: ChannelFilter | ''
-  onChannelChange: (value: ChannelFilter | '') => void
+  channel: Channel | ''
+  onChannelChange: (value: Channel | '') => void
   tagId: string
   onTagIdChange: (value: string) => void
 }
@@ -42,7 +42,7 @@ export function ClientsFilterBar({
           id="clients-filter-channel"
           size="sm"
           value={channel}
-          onChange={(value) => onChannelChange(value as ChannelFilter | '')}
+          onChange={(value) => onChannelChange(value as Channel | '')}
         />
       </div>
       <div className="w-48">
