@@ -43,4 +43,5 @@ export interface UseOrdersParams {
   channel?: Channel
   dateFrom?: string
   dateTo?: string
+  search?: string
 }

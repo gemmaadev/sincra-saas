@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react'
 import { Input, Select } from '@/shared/components'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { Channel } from '@/shared/types'
@@ -10,6 +11,8 @@ const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) 
 }))
 
 interface OrdersFilterBarProps {
+  search: string
+  onSearchChange: (value: string) => void
   status: OrderStatus | ''
   onStatusChange: (value: OrderStatus | '') => void
   channel: Channel | ''
@@ -22,6 +25,8 @@ interface OrdersFilterBarProps {
 }
 
 export function OrdersFilterBar({
+  search,
+  onSearchChange,
   status,
   onStatusChange,
   channel,
@@ -34,6 +39,16 @@ export function OrdersFilterBar({
 }: OrdersFilterBarProps) {
   return (
     <div className="flex flex-wrap items-end gap-3">
+      <div className="min-w-60 flex-1">
+        <Input
+          label="Buscar"
+          placeholder="Cliente o producto"
+          icon={<Search size={16} aria-hidden="true" />}
+          size="sm"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+      </div>
       <div className="w-48">
         <Select
           id="orders-filter-status"

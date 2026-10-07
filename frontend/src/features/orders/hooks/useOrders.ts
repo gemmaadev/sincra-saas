@@ -13,6 +13,7 @@ export function useOrders(params: UseOrdersParams = {}) {
       if (params.channel) query.set('channel', params.channel)
       if (params.dateFrom) query.set('dateFrom', params.dateFrom)
       if (params.dateTo) query.set('dateTo', params.dateTo)
+      if (params.search) query.set('search', params.search)
 
       const queryString = query.toString()
       return api.get<OrdersResponse>(`/orders${queryString ? `?${queryString}` : ''}`)

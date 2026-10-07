@@ -8,12 +8,14 @@ import { Table, EmptyState, Pagination, SincraButton, KpiCard } from '@/shared/c
 
 export default function OrdersPage() {
   const {
+    search,
     status,
     channel,
     dateFrom,
     dateTo,
     page,
     setPage,
+    changeSearch,
     changeStatus,
     changeChannel,
     changeDateFrom,
@@ -50,6 +52,8 @@ export default function OrdersPage() {
       </div>
 
       <OrdersFilterBar
+        search={search}
+        onSearchChange={changeSearch}
         status={status}
         onStatusChange={changeStatus}
         channel={channel}
