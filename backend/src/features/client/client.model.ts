@@ -5,6 +5,23 @@ const ACTIVE_CLIENT_TAGS_INCLUDE = {
   clientTags: { where: { removedAt: null }, include: { tag: true } },
 } satisfies Prisma.ClientInclude
 
+const CLIENT_DETAIL_INCLUDE = {
+  ...ACTIVE_CLIENT_TAGS_INCLUDE,
+  orders: {
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      number: true,
+      status: true,
+      kind: true,
+      channel: true,
+      price: true,
+      expectedDate: true,
+      createdAt: true,
+    },
+  },
+} satisfies Prisma.ClientInclude
+
 export async function insertClient(data: Prisma.ClientUncheckedCreateInput) {
   return prisma.client.create({ data })
 }
@@ -27,10 +44,10 @@ export async function findClientById(businessId: string, clientId: string) {
   return prisma.client.findUnique({ where: { id: clientId, businessId } })
 }
 
-export async function findClientWithTags(businessId: string, clientId: string) {
+export async function findClientWithDetails(businessId: string, clientId: string) {
   return prisma.client.findUnique({
     where: { id: clientId, businessId },
-    include: ACTIVE_CLIENT_TAGS_INCLUDE,
+    include: CLIENT_DETAIL_INCLUDE,
   })
 }
 
