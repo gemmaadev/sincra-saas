@@ -136,6 +136,12 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
     ...(filters.status && { status: filters.status }),
     ...(filters.channel && { channel: filters.channel }),
     ...(createdAtRange && { createdAt: createdAtRange }),
+    ...(filters.search && {
+      OR: [
+        { client: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { items: { some: { product: { contains: filters.search, mode: 'insensitive' } } } },
+      ],
+    }),
   }
 
   const [data, total] = await Promise.all([findOrdersPage(where, skip, limit), countOrders(where)])
