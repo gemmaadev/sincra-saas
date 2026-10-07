@@ -1,4 +1,5 @@
 import { Prisma } from '../../generated/prisma/client'
+import type { OrderStatus } from '../../generated/prisma/client'
 import { parsePagination, buildPaginatedResponse } from '../../shared/utils/pagination'
 import { AppError } from '../../shared/AppError'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
@@ -146,6 +147,20 @@ export async function getOrderById(businessId: string, orderId: string) {
   return findOrderWithDetails(businessId, orderId)
 }
 
+const FINAL_STATUSES = new Set<OrderStatus>(['DELIVERED', 'CANCELLED'])
+
+function assertValidStatusTransition(currentStatus: OrderStatus, nextStatus: OrderStatus) {
+  if (nextStatus === currentStatus) return
+
+  if (FINAL_STATUSES.has(currentStatus)) {
+    throw new AppError(
+      `El pedido ya está en un estado final (${currentStatus}) y no se puede cambiar`,
+      400,
+      'ORDER_STATUS_FINAL',
+    )
+  }
+}
+
 export async function updateOrder(
   businessId: string,
   userId: string | undefined,
@@ -153,6 +168,10 @@ export async function updateOrder(
   input: UpdateOrderInput,
 ) {
   const existing = await assertOrderExists(businessId, orderId)
+
+  if (input.status !== undefined) {
+    assertValidStatusTransition(existing.status, input.status)
+  }
 
   const items = input.items ? toItemsData(input.items) : undefined
 
