@@ -1,6 +1,5 @@
 import type { Tag } from '@/features/tags/types/tag.types'
-
-export type ChannelFilter = 'GMAIL' | 'OUTLOOK' | 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
+import type { Channel } from '@/shared/types'
 
 export interface ClientTag {
   id: string
@@ -14,7 +13,7 @@ export interface Client {
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   zone: string | null
   clientTags: ClientTag[]
@@ -27,7 +26,7 @@ export interface ClientDetail {
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   address: string | null
   zone: string | null
@@ -58,7 +57,7 @@ export interface UseClientsParams {
   page?: number
   limit?: number
   search?: string
-  channel?: ChannelFilter
+  channel?: Channel
   type?: string
   tagId?: string
 }
@@ -78,7 +77,7 @@ export interface ClientFormValues {
   name: string
   email: string
   phone: string
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string
   zone: string
   address: string
@@ -90,7 +89,7 @@ export interface ClientPayload {
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   zone: string | null
   address: string | null

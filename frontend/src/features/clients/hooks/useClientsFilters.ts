@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useDebouncedValue } from '@/shared/hooks'
-import type { ChannelFilter, UseClientsParams } from '../types/client.types'
+import type { Channel } from '@/shared/types'
+import type { UseClientsParams } from '../types/client.types'
 
 const CLIENTS_PAGE_SIZE = 10
 
 export function useClientsFilters() {
   const [search, setSearch] = useState<string>('')
-  const [channel, setChannel] = useState<ChannelFilter | ''>('')
+  const [channel, setChannel] = useState<Channel | ''>('')
   const [tagId, setTagId] = useState<string>('')
   const [page, setPage] = useState<number>(1)
   const debouncedSearch = useDebouncedValue(search)
@@ -16,7 +17,7 @@ export function useClientsFilters() {
     setPage(1)
   }
 
-  function changeChannel(value: ChannelFilter | '') {
+  function changeChannel(value: Channel | '') {
     setChannel(value)
     setPage(1)
   }

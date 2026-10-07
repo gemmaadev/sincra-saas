@@ -1,7 +1,7 @@
-import type { ChannelFilter } from '@/features/clients/types/client.types'
+import type { Channel } from '@/shared/types'
 
 export interface MapFilters {
-  channel?: ChannelFilter
+  channel?: Channel
   type?: string
   from?: string
   to?: string
@@ -13,7 +13,7 @@ export interface MapClient {
   latitude: number
   longitude: number
   zone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   approximate: boolean
 }
@@ -25,7 +25,7 @@ export interface ZoneSummary {
 }
 
 export interface ChannelShare {
-  channel: ChannelFilter
+  channel: Channel
   count: number
   percentage: number
 }
