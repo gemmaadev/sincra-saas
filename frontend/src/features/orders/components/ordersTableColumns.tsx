@@ -1,24 +1,8 @@
 import { Badge } from '@/shared/components'
-import type { BadgeColor } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
-import type { Order, OrderStatus } from '../types/order.types'
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING: 'Pendiente',
-  PREPARING: 'En preparación',
-  SHIPPED: 'Enviado',
-  DELIVERED: 'Entregado',
-  CANCELLED: 'Cancelado',
-}
-
-const STATUS_COLORS: Record<OrderStatus, BadgeColor> = {
-  PENDING: 'neutral',
-  PREPARING: 'warning',
-  SHIPPED: 'primary',
-  DELIVERED: 'success',
-  CANCELLED: 'error',
-}
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../orderStatus.constants'
+import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [
   {
@@ -55,7 +39,7 @@ export const ordersTableColumns = [
     key: 'status',
     header: 'Estado',
     render: (order: Order) => (
-      <Badge color={STATUS_COLORS[order.status]}>{STATUS_LABELS[order.status]}</Badge>
+      <Badge color={ORDER_STATUS_COLORS[order.status]}>{ORDER_STATUS_LABELS[order.status]}</Badge>
     ),
   },
   {
