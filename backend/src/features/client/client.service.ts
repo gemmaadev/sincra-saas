@@ -5,6 +5,7 @@ import {
   insertClient,
   findClientsPage,
   countClients,
+  countRecurringClients,
   findClientById,
   findClientWithDetails,
   updateClientById,
@@ -99,6 +100,12 @@ export async function searchClientAddress(businessId: string, query: string) {
   return candidates
 }
 
+function mapClientRow(client: Awaited<ReturnType<typeof findClientsPage>>[number]) {
+  const { orders, _count, ...rest } = client
+
+  return { ...rest, orderCount: _count.orders, lastOrderAt: orders[0]?.createdAt ?? null }
+}
+
 export async function listClients(businessId: string, filters: ListClientsFilters) {
   const { page, limit, skip } = parsePagination(filters)
 
@@ -121,13 +128,21 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const [data, total, newClientsCount] = await Promise.all([
-    findClientsPage(where, skip, limit),
-    countClients(where),
-    countClients({ ...where, createdAt: { gte: thirtyDaysAgo } }),
-  ])
+  const [data, total, newClientsCount, recurringClientsCount, potentialClientsCount] =
+    await Promise.all([
+      findClientsPage(where, skip, limit),
+      countClients(where),
+      countClients({ ...where, createdAt: { gte: thirtyDaysAgo } }),
+      countRecurringClients(where),
+      countClients({ ...where, orders: { none: {} } }),
+    ])
 
-  return { ...buildPaginatedResponse(data, total, page, limit), newClientsCount }
+  return {
+    ...buildPaginatedResponse(data.map(mapClientRow), total, page, limit),
+    newClientsCount,
+    recurringClientsCount,
+    potentialClientsCount,
+  }
 }
 
 // TODO: once the Communication model exists (if Epic 2 is ever picked back up), include it here too.

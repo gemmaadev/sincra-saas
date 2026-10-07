@@ -25,6 +25,7 @@ describe('listClients', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(clientModel.findClientsPage).mockResolvedValue([])
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(0)
   })
 
   // Given a business with 2 clients, 1 of them created in the last 30 days
@@ -40,6 +41,69 @@ describe('listClients', () => {
     const newClientsWhere = vi.mocked(clientModel.countClients).mock.calls[1][0]
     expect(newClientsWhere.businessId).toBe('business-1')
     expect(newClientsWhere.createdAt).toEqual({ gte: expect.any(Date) })
+  })
+
+  // Given a business with some repeat buyers and some clients with no orders at all
+  // When listClients is called
+  // Then recurringClientsCount and potentialClientsCount come from their own counts
+  it('counts recurring and potential clients separately from the total', async () => {
+    vi.mocked(clientModel.countClients)
+      .mockResolvedValueOnce(10) // total
+      .mockResolvedValueOnce(2) // newClientsCount
+      .mockResolvedValueOnce(4) // potentialClientsCount
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(3)
+
+    const result = await listClients('business-1', {})
+
+    expect(result.recurringClientsCount).toBe(3)
+    expect(result.potentialClientsCount).toBe(4)
+    const potentialWhere = vi.mocked(clientModel.countClients).mock.calls[2][0]
+    expect(potentialWhere.orders).toEqual({ none: {} })
+  })
+
+  // Given a client row with its order count and most recent order from Prisma's raw include shape
+  // When listClients maps it for the response
+  // Then it should expose clean orderCount/lastOrderAt fields instead of Prisma's _count/orders
+  it('maps the order count and most recent order date for each client row', async () => {
+    vi.mocked(clientModel.findClientsPage).mockResolvedValue([
+      {
+        id: 'client-1',
+        name: 'Laura García',
+        _count: { orders: 5 },
+        orders: [{ createdAt: new Date('2026-10-07') }],
+      },
+      {
+        id: 'client-2',
+        name: 'Carlos Ruiz',
+        _count: { orders: 0 },
+        orders: [],
+      },
+    ] as never)
+
+    const result = await listClients('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      id: 'client-1',
+      orderCount: 5,
+      lastOrderAt: new Date('2026-10-07'),
+    })
+    expect(result.data[0]).not.toHaveProperty('_count')
+    expect(result.data[0]).not.toHaveProperty('orders')
+    expect(result.data[1]).toMatchObject({ id: 'client-2', orderCount: 0, lastOrderAt: null })
+  })
+
+  // Given an active channel filter on the list
+  // When listClients is called
+  // Then recurringClientsCount should be scoped to that same filter, not the whole business
+  it('scopes recurringClientsCount to the active filters', async () => {
+    vi.mocked(clientModel.countClients).mockResolvedValue(0)
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(0)
+
+    await listClients('business-1', { channel: 'WHATSAPP' })
+
+    expect(clientModel.countRecurringClients).toHaveBeenCalledWith(
+      expect.objectContaining({ businessId: 'business-1', channels: { has: 'WHATSAPP' } }),
+    )
   })
 
   // Given a search term and a channel filter

@@ -17,6 +17,8 @@ export interface Client {
   type: string | null
   zone: string | null
   clientTags: ClientTag[]
+  orderCount: number
+  lastOrderAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -47,6 +49,8 @@ export interface ClientsResponse {
     totalPages: number
   }
   newClientsCount: number
+  recurringClientsCount: number
+  potentialClientsCount: number
 }
 
 export interface ClientDetailResponse {
