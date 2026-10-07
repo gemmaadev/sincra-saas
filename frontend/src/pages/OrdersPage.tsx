@@ -1,3 +1,89 @@
+import { Package, Clock, Truck, CheckCircle, XCircle, Plus } from 'lucide-react'
+import { useOrders } from '@/features/orders/hooks/useOrders'
+import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
+import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
+import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
+import { ordersTableColumns } from '@/features/orders/components/ordersTableColumns'
+import { Table, EmptyState, Pagination, SincraButton, KpiCard } from '@/shared/components'
+
 export default function OrdersPage() {
-  return <h1 className="text-xl font-semibold text-ink">Pedidos</h1>
+  const {
+    status,
+    channel,
+    dateFrom,
+    dateTo,
+    page,
+    setPage,
+    changeStatus,
+    changeChannel,
+    changeDateFrom,
+    changeDateTo,
+    isDateRangeInvalid,
+    queryParams,
+  } = useOrdersFilters()
+
+  const { data, isLoading, isError } = useOrders(queryParams)
+  const orders = data?.data ?? []
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col">
+          <h1 className="text-xl font-semibold text-ink">Pedidos</h1>
+          <p className="text-ink">
+            Gestiona todos tus pedidos en un único lugar. Filtra por estado, canal o fecha para
+            encontrar lo que necesites.
+          </p>
+        </div>
+        <SincraButton className="shrink-0" disabled title="Disponible próximamente">
+          <Plus size={16} aria-hidden="true" />
+          Nuevo pedido
+        </SincraButton>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <KpiCard icon={Package} label="Total de pedidos" value={String(data?.pagination.total ?? 0)} />
+        <KpiCard icon={Clock} label="En preparación" value="—" pending />
+        <KpiCard icon={Truck} label="Enviados" value="—" pending />
+        <KpiCard icon={CheckCircle} label="Entregados" value="—" pending />
+        <KpiCard icon={XCircle} label="Cancelados" value="—" pending />
+      </div>
+
+      <OrdersFilterBar
+        status={status}
+        onStatusChange={changeStatus}
+        channel={channel}
+        onChannelChange={changeChannel}
+        dateFrom={dateFrom}
+        onDateFromChange={changeDateFrom}
+        dateTo={dateTo}
+        onDateToChange={changeDateTo}
+        isDateRangeInvalid={isDateRangeInvalid}
+      />
+
+      {isLoading && (
+        <div className="overflow-x-auto">
+          <OrdersTableSkeleton />
+        </div>
+      )}
+      {isError && <p className="text-error">No se han podido cargar los pedidos.</p>}
+      {!isLoading && !isError && (
+        <div className="flex flex-col gap-3">
+          <div className="overflow-x-auto">
+            <Table
+              columns={ordersTableColumns}
+              data={orders}
+              getRowKey={(order) => order.id}
+              emptyState={<EmptyState title="Todavía no tienes pedidos" />}
+            />
+          </div>
+          <Pagination
+            page={page}
+            totalPages={data?.pagination.totalPages ?? 1}
+            onPageChange={setPage}
+          />
+        </div>
+      )}
+    </div>
+  )
 }
