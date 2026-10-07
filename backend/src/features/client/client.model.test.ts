@@ -1,12 +1,51 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import prisma from '../../config/db'
-import { findActiveClientTag, insertClientTag, markClientTagRemoved } from './client.model'
+import {
+  findActiveClientTag,
+  insertClientTag,
+  markClientTagRemoved,
+  findClientWithDetails,
+} from './client.model'
 
 vi.mock('../../config/db', () => ({
   default: {
     clientTag: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    client: { findUnique: vi.fn() },
   },
 }))
+
+describe('findClientWithDetails', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a client id
+  // When fetching its detail
+  // Then it should include its active tags and its orders, newest first
+  it('includes the active tags and the orders, newest first', async () => {
+    await findClientWithDetails('business-1', 'client-1')
+
+    expect(prisma.client.findUnique).toHaveBeenCalledWith({
+      where: { id: 'client-1', businessId: 'business-1' },
+      include: {
+        clientTags: { where: { removedAt: null }, include: { tag: true } },
+        orders: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            number: true,
+            status: true,
+            kind: true,
+            channel: true,
+            price: true,
+            expectedDate: true,
+            createdAt: true,
+          },
+        },
+      },
+    })
+  })
+})
 
 describe('client tag model', () => {
   beforeEach(() => {

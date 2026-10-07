@@ -6,7 +6,7 @@ import {
   findClientsPage,
   countClients,
   findClientById,
-  findClientWithTags,
+  findClientWithDetails,
   updateClientById,
   deleteClientById,
   findActiveClientTag,
@@ -130,9 +130,9 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   return { ...buildPaginatedResponse(data, total, page, limit), newClientsCount }
 }
 
-// TODO: once the Order (and later Communication) models exist, include them here too.
+// TODO: once the Communication model exists (if Epic 2 is ever picked back up), include it here too.
 export async function getClientById(businessId: string, clientId: string) {
-  return findClientWithTags(businessId, clientId)
+  return findClientWithDetails(businessId, clientId)
 }
 
 function hasTextChanged(newValue: string | null | undefined, currentValue: string | null): boolean {
