@@ -114,7 +114,9 @@ describe('MapPage', () => {
     mockMapResponse(mapData)
     renderPage()
 
-    expect(await screen.findByText('Clientes en el mapa')).toBeInTheDocument()
+    await screen.findByText('Resumen por zonas')
+
+    expect(screen.getByText('Clientes en el mapa')).toBeInTheDocument()
     expect(screen.getByText('Zonas activas')).toBeInTheDocument()
     expect(screen.getByText('Zona principal')).toBeInTheDocument()
     expect(screen.getByText('Resumen por zonas')).toBeInTheDocument()
@@ -130,7 +132,7 @@ describe('MapPage', () => {
     mockMapResponse(mapData)
     const { container } = renderPage()
 
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
 
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'OpenStreetMap' })).toBeInTheDocument()
@@ -171,7 +173,7 @@ describe('MapPage', () => {
   it('opens the create modal with the location clicked on the map', async () => {
     mockMapResponse(mapData)
     const { container } = renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
 
     fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, {
       clientX: 400,
@@ -191,7 +193,7 @@ describe('MapPage', () => {
   it('requests the map again when the filters change', async () => {
     mockMapResponse(mapData)
     renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
     const user = userEvent.setup()
 
     await user.selectOptions(screen.getByLabelText('Canal'), 'WHATSAPP')
@@ -209,7 +211,7 @@ describe('MapPage', () => {
   it('clears the filters', async () => {
     mockMapResponse(mapData)
     renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
     const user = userEvent.setup()
     await user.selectOptions(screen.getByLabelText('Canal'), 'GMAIL')
     await waitFor(() => expect(api.get).toHaveBeenCalledWith('/clients/map?channel=GMAIL'))

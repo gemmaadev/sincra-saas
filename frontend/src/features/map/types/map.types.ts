@@ -40,3 +40,16 @@ export interface ClientMapResponse {
   zones: ZoneSummary[]
   channelOrigin: ChannelShare[]
 }
+
+export interface OrderMapZoneSummary {
+  zone: string
+  count: number
+  revenue: string
+  percentage: number
+}
+
+export interface OrderMapResponse {
+  total: number
+  deliveredRevenue: string
+  zones: OrderMapZoneSummary[]
+}

@@ -2,29 +2,32 @@ import { useState } from 'react'
 import { ApproximateClientsCard } from '@/features/map/components/ApproximateClientsCard'
 import { ClientsMap } from '@/features/map/components/ClientsMap'
 import { MapFilterBar } from '@/features/map/components/MapFilterBar'
-import { MapKpiCards } from '@/features/map/components/MapKpiCards'
 import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
 import { PendingChartCard } from '@/features/map/components/PendingChartCard'
 import { ZoneSummaryCard } from '@/features/map/components/ZoneSummaryCard'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
+import { useOrdersMap } from '@/features/map/hooks/useOrdersMap'
 import { useMapFilters } from '@/features/map/hooks/useMapFilters'
 import { useMapFocus } from '@/features/map/hooks/useMapFocus'
-import { buildMapKpis } from '@/features/map/utils/buildMapKpis'
+import { buildClientMapKpis, toClientKpiCards } from '@/features/map/utils/buildClientMapKpis'
+import { buildOrderMapKpis, toOrderKpiCards } from '@/features/map/utils/buildOrderMapKpis'
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
+import { KpiCardsRow } from '@/shared/components'
 import type { Coordinates } from '@/features/clients/types/client.types'
 import type { MapClient, MapLayer } from '@/features/map/types/map.types'
 
 export default function MapPage() {
   const mapFilters = useMapFilters()
+  const [layer, setLayer] = useState<MapLayer>('clients')
   const { data, isLoading, isError, isPlaceholderData } = useClientsMap(mapFilters.filters)
+  const { data: ordersMapData } = useOrdersMap(mapFilters.filters, layer === 'orders')
   const { focusedPositions, focusZone } = useMapFocus(
     data?.clients,
     JSON.stringify(mapFilters.filters),
     isPlaceholderData,
   )
-  const [layer, setLayer] = useState<MapLayer>('clients')
   const [newClientLocation, setNewClientLocation] = useState<Coordinates | null>(null)
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
@@ -37,7 +40,13 @@ export default function MapPage() {
           Visualiza dónde están tus clientes, qué zonas funcionan mejor y cuáles potenciar.
         </p>
       </div>
-      {data && <MapKpiCards kpis={buildMapKpis(data)} />}
+      <KpiCardsRow
+        cards={
+          layer === 'clients'
+            ? toClientKpiCards(data ? buildClientMapKpis(data) : null)
+            : toOrderKpiCards(ordersMapData ? buildOrderMapKpis(ordersMapData) : null)
+        }
+      />
       <MapFilterBar
         channel={mapFilters.channel}
         from={mapFilters.from}
