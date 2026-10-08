@@ -1,7 +1,7 @@
 import { Badge } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../orderStatus.constants'
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/shared/utils'
 import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [
