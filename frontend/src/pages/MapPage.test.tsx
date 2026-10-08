@@ -26,6 +26,8 @@ const mapData: ClientMapResponse = {
       channels: ['WHATSAPP'],
       type: 'Panadería',
       approximate: false,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
     {
       id: 'client-2',
@@ -36,6 +38,8 @@ const mapData: ClientMapResponse = {
       channels: ['GMAIL'],
       type: null,
       approximate: true,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
     {
       id: 'client-3',
@@ -46,6 +50,8 @@ const mapData: ClientMapResponse = {
       channels: [],
       type: null,
       approximate: false,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
   ],
   zones: [

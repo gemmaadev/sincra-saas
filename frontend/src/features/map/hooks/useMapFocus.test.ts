@@ -13,6 +13,8 @@ function mapClient(id: string, zone: string, latitude: number): MapClient {
     channels: [],
     type: null,
     approximate: false,
+    orderCount: 0,
+    deliveredRevenue: '0',
   }
 }
 

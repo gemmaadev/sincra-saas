@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Prisma } from '../../../generated/prisma/client'
 import * as clientMapModel from './client-map.model'
 import type { ClientMapRecord } from './client-map.types'
 import {
@@ -21,6 +22,8 @@ function record(overrides: Partial<ClientMapRecord> = {}): ClientMapRecord {
     address: null,
     channels: [],
     type: null,
+    _count: { orders: 0 },
+    orders: [],
     ...overrides,
   }
 }
@@ -297,6 +300,37 @@ describe('buildMapClients', () => {
     )
 
     expect(mapClient.approximate).toBe(true)
+  })
+
+  // Given a client with 2 delivered orders and 1 cancelled order
+  // When the map clients are built
+  // Then orderCount should count every order, but deliveredRevenue only the delivered ones
+  it('counts every order but only sums the revenue of delivered ones', () => {
+    const [mapClient] = buildMapClients(
+      [
+        record({
+          latitude: 41.5,
+          longitude: 2.1,
+          _count: { orders: 3 },
+          orders: [{ price: new Prisma.Decimal('50') }, { price: new Prisma.Decimal('30') }],
+        }),
+      ],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({ orderCount: 3, deliveredRevenue: '80' })
+  })
+
+  // Given a client with no orders at all
+  // When the map clients are built
+  // Then orderCount should be 0 and deliveredRevenue "0", not null
+  it('defaults orderCount and deliveredRevenue to 0 when there are no orders', () => {
+    const [mapClient] = buildMapClients(
+      [record({ latitude: 41.5, longitude: 2.1, _count: { orders: 0 }, orders: [] })],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({ orderCount: 0, deliveredRevenue: '0' })
   })
 
   // Given clients in a given order

@@ -12,6 +12,8 @@ function mapClient(id: string, approximate = false): MapClient {
     channels: [],
     type: null,
     approximate,
+    orderCount: 0,
+    deliveredRevenue: '0',
   }
 }
 

@@ -18,6 +18,8 @@ export interface MapClient {
   channels: Channel[]
   type: string | null
   approximate: boolean
+  orderCount: number
+  deliveredRevenue: string
 }
 
 export interface ZoneSummary {

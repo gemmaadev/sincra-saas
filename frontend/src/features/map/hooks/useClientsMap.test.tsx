@@ -21,6 +21,8 @@ const mockResponse: ClientMapResponse = {
       channels: ['GMAIL'],
       type: null,
       approximate: false,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
   ],
   zones: [{ zone: 'Barcelona', count: 1, percentage: 100 }],

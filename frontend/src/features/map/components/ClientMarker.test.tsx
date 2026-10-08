@@ -16,6 +16,8 @@ const mockClient: MapClient = {
   channels: ['WHATSAPP'],
   type: 'Panadería',
   approximate: false,
+  orderCount: 0,
+  deliveredRevenue: '0',
 }
 
 function renderMarker() {
