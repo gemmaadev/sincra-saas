@@ -16,7 +16,7 @@ import {
   Pagination,
   SincraButton,
   SelectionBar,
-  KpiCard,
+  KpiCardsRow,
 } from '@/shared/components'
 import { useRowSelection } from '@/shared/hooks'
 
@@ -79,31 +79,37 @@ export default function ClientsPage() {
           Nuevo cliente
         </SincraButton>
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard
-          icon={Users}
-          label="Total de clientes"
-          value={String(data?.pagination.total ?? 0)}
-        />
-        <KpiCard
-          icon={UserPlus}
-          label="Clientes nuevos"
-          value={String(data?.newClientsCount ?? 0)}
-          infoTooltip="Añadidos en los últimos 30 días"
-        />
-        <KpiCard
-          icon={Repeat}
-          label="Clientes recurrentes"
-          value={String(data?.recurringClientsCount ?? 0)}
-          infoTooltip="Clientes con 2 o más pedidos"
-        />
-        <KpiCard
-          icon={Target}
-          label="Clientes potenciales"
-          value={String(data?.potentialClientsCount ?? 0)}
-          infoTooltip="Clientes que todavía no han hecho ningún pedido"
-        />
-      </div>
+      <KpiCardsRow
+        cards={[
+          {
+            icon: Users,
+            label: 'Total de clientes',
+            value: String(data?.pagination.total ?? 0),
+            pending: !data,
+          },
+          {
+            icon: UserPlus,
+            label: 'Clientes nuevos',
+            value: String(data?.newClientsCount ?? 0),
+            infoTooltip: 'Añadidos en los últimos 30 días',
+            pending: !data,
+          },
+          {
+            icon: Repeat,
+            label: 'Clientes recurrentes',
+            value: String(data?.recurringClientsCount ?? 0),
+            infoTooltip: 'Clientes con 2 o más pedidos',
+            pending: !data,
+          },
+          {
+            icon: Target,
+            label: 'Clientes potenciales',
+            value: String(data?.potentialClientsCount ?? 0),
+            infoTooltip: 'Clientes que todavía no han hecho ningún pedido',
+            pending: !data,
+          },
+        ]}
+      />
 
       <ClientsFilterBar
         search={search}

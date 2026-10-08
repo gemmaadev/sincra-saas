@@ -4,7 +4,7 @@ import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
 import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
 import { ordersTableColumns } from '@/features/orders/utils/ordersTableColumns'
-import { Table, EmptyState, Pagination, SincraButton, KpiCard } from '@/shared/components'
+import { Table, EmptyState, Pagination, SincraButton, KpiCardsRow } from '@/shared/components'
 
 export default function OrdersPage() {
   const {
@@ -43,25 +43,40 @@ export default function OrdersPage() {
         </SincraButton>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <KpiCard icon={Package} label="Total de pedidos" value={String(data?.pagination.total ?? 0)} />
-        <KpiCard
-          icon={Clock}
-          label="En preparación"
-          value={String(data?.statusCounts?.PREPARING ?? 0)}
-        />
-        <KpiCard icon={Truck} label="Enviados" value={String(data?.statusCounts?.SHIPPED ?? 0)} />
-        <KpiCard
-          icon={CheckCircle}
-          label="Entregados"
-          value={String(data?.statusCounts?.DELIVERED ?? 0)}
-        />
-        <KpiCard
-          icon={XCircle}
-          label="Cancelados"
-          value={String(data?.statusCounts?.CANCELLED ?? 0)}
-        />
-      </div>
+      <KpiCardsRow
+        cards={[
+          {
+            icon: Package,
+            label: 'Total de pedidos',
+            value: String(data?.pagination.total ?? 0),
+            pending: !data,
+          },
+          {
+            icon: Clock,
+            label: 'En preparación',
+            value: String(data?.statusCounts?.PREPARING ?? 0),
+            pending: !data,
+          },
+          {
+            icon: Truck,
+            label: 'Enviados',
+            value: String(data?.statusCounts?.SHIPPED ?? 0),
+            pending: !data,
+          },
+          {
+            icon: CheckCircle,
+            label: 'Entregados',
+            value: String(data?.statusCounts?.DELIVERED ?? 0),
+            pending: !data,
+          },
+          {
+            icon: XCircle,
+            label: 'Cancelados',
+            value: String(data?.statusCounts?.CANCELLED ?? 0),
+            pending: !data,
+          },
+        ]}
+      />
 
       <OrdersFilterBar
         search={search}
