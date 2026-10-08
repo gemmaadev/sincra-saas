@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ClientsPage from './ClientsPage'
 import { api } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import type { Client, ClientDetail } from '@/features/clients/types/client.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -14,7 +15,9 @@ vi.mock('@/shared/services', async (importOriginal) => {
 
 vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
-const mockClient = {
+// Reused both as a list row (Client) and as the /clients/:id detail response
+// (ClientDetail) in the mocks below, so it carries every field either needs.
+const mockClient: Client & ClientDetail = {
   id: 'client-1',
   name: 'Laura García',
   email: 'laura@ejemplo.test',
@@ -22,7 +25,12 @@ const mockClient = {
   channels: ['GMAIL'],
   type: null,
   zone: null,
+  address: null,
+  latitude: null,
+  longitude: null,
+  lastContact: null,
   clientTags: [],
+  orders: [],
   orderCount: 0,
   lastOrderAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -315,7 +323,7 @@ describe('ClientsPage', () => {
 
   // Given a client with no orders at all
   // When ClientsPage is rendered
-  // Then the "Última actividad" cell should show a placeholder, not a date
+  // Then the "Última compra" cell should show a placeholder, not a date
   it('shows a placeholder for last activity when the client has no orders', async () => {
     mockApiGet({ data: [{ ...mockClient, orderCount: 0, lastOrderAt: null }] })
     renderClientsPage()

@@ -1,4 +1,5 @@
 import type { Tag } from '@/features/tags/types/tag.types'
+import type { OrderStatus, OrderKind } from '@/features/orders/types/order.types'
 import type { Channel } from '@/shared/types'
 
 export interface ClientTag {
@@ -6,6 +7,17 @@ export interface ClientTag {
   tagId: string
   aiGenerated: boolean
   tag: Tag
+}
+
+export interface ClientOrderSummary {
+  id: string
+  number: number
+  status: OrderStatus
+  kind: OrderKind
+  channel: Channel | null
+  price: string | null
+  expectedDate: string | null
+  createdAt: string
 }
 
 export interface Client {
@@ -36,6 +48,7 @@ export interface ClientDetail {
   longitude: number | null
   lastContact: string | null
   clientTags: ClientTag[]
+  orders: ClientOrderSummary[]
   createdAt: string
   updatedAt: string
 }
