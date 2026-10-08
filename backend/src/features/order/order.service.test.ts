@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as orderModel from './order.model'
 import * as clientModel from '../client/client.model'
+import * as authModel from '../auth/auth.model'
+import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import { createOrder, listOrders, updateOrder, deleteOrder } from './order.service'
 
 vi.mock('./order.model')
 vi.mock('../client/client.model')
+vi.mock('../auth/auth.model')
+vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
 
 describe('createOrder', () => {
@@ -13,6 +17,7 @@ describe('createOrder', () => {
     vi.resetAllMocks()
     vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
     vi.mocked(orderModel.findMaxOrderNumber).mockResolvedValue(0)
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
   })
 
   // Given a client that does not belong to the business
@@ -128,6 +133,90 @@ describe('createOrder', () => {
         items: [{ product: 'Camiseta', unitPrice: 15 }],
       }),
     ).rejects.toBe(databaseError)
+  })
+})
+
+describe('createOrder geocoding', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(orderModel.findMaxOrderNumber).mockResolvedValue(0)
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
+  })
+
+  // Given an order with its own address and zone, in a Spanish business
+  // When createOrder is called
+  // Then the address is geocoded with the business country and the coordinates are saved
+  it('saves the geocoded coordinates when none are given', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.5467, longitude: 2.1044 })
+
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [{ product: 'Camiseta', unitPrice: 15 }],
+      address: 'Carrer de Sant Pau 33',
+      zone: 'Sabadell',
+    })
+
+    expect(authModel.findBusinessCountry).toHaveBeenCalledWith('business-1')
+    expect(geocodeAddress).toHaveBeenCalledWith({
+      address: 'Carrer de Sant Pau 33',
+      zone: 'Sabadell',
+      countryCode: 'ES',
+    })
+    expect(orderModel.insertOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 41.5467, longitude: 2.1044 }),
+    )
+  })
+
+  // Given the order already comes with coordinates
+  // When createOrder is called
+  // Then they are kept and nothing is geocoded
+  it('keeps the given coordinates without geocoding', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [{ product: 'Camiseta', unitPrice: 15 }],
+      address: 'Carrer de Sant Pau 33',
+      latitude: 41.1,
+      longitude: 2.2,
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(orderModel.insertOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 41.1, longitude: 2.2 }),
+    )
+  })
+
+  // Given an order without its own address or zone
+  // When createOrder is called
+  // Then there is nothing to geocode, leaving it to fall back to the client's location
+  it('does not geocode an order without address or zone', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [{ product: 'Camiseta', unitPrice: 15 }],
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(authModel.findBusinessCountry).not.toHaveBeenCalled()
+    expect(orderModel.insertOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: undefined, longitude: undefined }),
+    )
+  })
+
+  // Given the geocoder finds nothing
+  // When createOrder is called
+  // Then the order is still created, without coordinates
+  it('creates the order without coordinates when geocoding fails', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue(null)
+
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [{ product: 'Camiseta', unitPrice: 15 }],
+      zone: 'Sabadell',
+    })
+
+    expect(orderModel.insertOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: undefined, longitude: undefined }),
+    )
   })
 })
 
@@ -393,6 +482,114 @@ describe('updateOrder', () => {
     const [, data, items] = vi.mocked(orderModel.updateOrderWithItems).mock.calls[0]
     expect(String((data as never as { price: unknown }).price)).toBe('30')
     expect(items).toEqual([{ product: 'Camiseta', description: undefined, quantity: 3, unitPrice: 10 }])
+  })
+})
+
+describe('updateOrder geocoding', () => {
+  const existingOrder = { id: 'order-1', status: 'PENDING', address: 'Carrer Major 1', zone: 'Sabadell' }
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(orderModel.findOrderById).mockResolvedValue(existingOrder as never)
+    vi.mocked(orderModel.updateOrderWithItems).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(authModel.findBusinessCountry).mockResolvedValue('ES')
+  })
+
+  // Given an order in Sabadell
+  // When its zone changes to Barcelona
+  // Then the new location is geocoded (keeping the old address) and the coordinates are updated
+  it('recalculates the coordinates when the zone changes', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.38, longitude: 2.17 })
+
+    await updateOrder('business-1', 'user-1', 'order-1', { zone: 'Barcelona' })
+
+    expect(geocodeAddress).toHaveBeenCalledWith({
+      address: 'Carrer Major 1',
+      zone: 'Barcelona',
+      countryCode: 'ES',
+    })
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { zone: 'Barcelona', latitude: 41.38, longitude: 2.17 },
+      undefined,
+      undefined,
+    )
+  })
+
+  // Given an order
+  // When its address changes
+  // Then the new address is geocoded with the current zone
+  it('recalculates the coordinates when the address changes', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue({ latitude: 41.5, longitude: 2.1 })
+
+    await updateOrder('business-1', 'user-1', 'order-1', { address: 'Carrer Nou 5' })
+
+    expect(geocodeAddress).toHaveBeenCalledWith(
+      expect.objectContaining({ address: 'Carrer Nou 5', zone: 'Sabadell' }),
+    )
+  })
+
+  // Given an order
+  // When the update sends the same address and zone, or neither
+  // Then nothing is geocoded and no coordinates are written
+  it('does not geocode when the address and zone are unchanged', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      notes: 'Entregar por la tarde',
+      address: 'Carrer Major 1',
+      zone: 'Sabadell',
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { notes: 'Entregar por la tarde', address: 'Carrer Major 1', zone: 'Sabadell' },
+      undefined,
+      undefined,
+    )
+  })
+
+  // Given the update brings its own coordinates (e.g. picked on the map)
+  // When the zone changes too
+  // Then the given coordinates are kept and nothing is geocoded
+  it('keeps the given coordinates without geocoding', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      zone: 'Barcelona',
+      latitude: 41.1,
+      longitude: 2.2,
+    })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { zone: 'Barcelona', latitude: 41.1, longitude: 2.2 },
+      undefined,
+      undefined,
+    )
+  })
+
+  // Given the geocoder finds nothing
+  // When the zone changes
+  // Then the change is saved and the old coordinates are left untouched
+  it('saves the change without touching the coordinates when geocoding fails', async () => {
+    vi.mocked(geocodeAddress).mockResolvedValue(null)
+
+    await updateOrder('business-1', 'user-1', 'order-1', { zone: 'Barcelona' })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { zone: 'Barcelona' },
+      undefined,
+      undefined,
+    )
+  })
+
+  // Given an order with an address and a zone
+  // When both are cleared
+  // Then there is nothing to geocode
+  it('does not geocode when both address and zone are cleared', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', { address: null, zone: null })
+
+    expect(geocodeAddress).not.toHaveBeenCalled()
   })
 })
 
