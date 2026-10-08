@@ -1,25 +1,39 @@
+import type { MapLayer } from '../types/map.types'
+
 const baseClasses = 'px-4 py-1.5 text-sm font-medium transition-colors'
 
-export function MapLayerToggle() {
+const LAYERS: { value: MapLayer; label: string }[] = [
+  { value: 'clients', label: 'Clientes' },
+  { value: 'orders', label: 'Pedidos' },
+]
+
+interface MapLayerToggleProps {
+  layer: MapLayer
+  onLayerChange: (layer: MapLayer) => void
+}
+
+export function MapLayerToggle({ layer, onLayerChange }: MapLayerToggleProps) {
   return (
     <div
       role="group"
       aria-label="Capa del mapa"
       className="inline-flex overflow-hidden rounded-lg border border-neutral-100 bg-white shadow-md"
     >
-      <button type="button" aria-pressed="true" className={`${baseClasses} bg-primary text-white`}>
-        Clientes
-      </button>
-      {['Pedidos', 'Ambos'].map((layerName) => (
-        <button
-          key={layerName}
-          type="button"
-          disabled
-          className={`${baseClasses} cursor-not-allowed text-neutral-400`}
-        >
-          {layerName}
-        </button>
-      ))}
+      {LAYERS.map(({ value, label }) => {
+        const isActive = value === layer
+
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onLayerChange(value)}
+            className={`${baseClasses} ${isActive ? 'bg-primary text-white' : 'text-ink-muted hover:bg-neutral-50'}`}
+          >
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }

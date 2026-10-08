@@ -14,7 +14,7 @@ import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
 import type { Coordinates } from '@/features/clients/types/client.types'
-import type { MapClient } from '@/features/map/types/map.types'
+import type { MapClient, MapLayer } from '@/features/map/types/map.types'
 
 export default function MapPage() {
   const mapFilters = useMapFilters()
@@ -24,6 +24,7 @@ export default function MapPage() {
     JSON.stringify(mapFilters.filters),
     isPlaceholderData,
   )
+  const [layer, setLayer] = useState<MapLayer>('clients')
   const [newClientLocation, setNewClientLocation] = useState<Coordinates | null>(null)
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
@@ -67,7 +68,7 @@ export default function MapPage() {
                 </p>
               )}
               <div className="absolute right-3 top-3 z-10">
-                <MapLayerToggle />
+                <MapLayerToggle layer={layer} onLayerChange={setLayer} />
               </div>
             </div>
             <div className="flex flex-col gap-4 lg:h-144">

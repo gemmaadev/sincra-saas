@@ -119,8 +119,8 @@ describe('MapPage', () => {
 
   // Given the backend returns clients
   // When the page is rendered
-  // Then the map should be drawn with its tiles credit and the orders layers disabled
-  it('renders the map with its credit and the disabled orders layers', async () => {
+  // Then the map should be drawn with its tiles credit and the clients layer active
+  it('renders the map with its credit and the clients layer active', async () => {
     mockMapResponse(mapData)
     const { container } = renderPage()
 
@@ -129,7 +129,6 @@ describe('MapPage', () => {
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'OpenStreetMap' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clientes' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Pedidos' })).toBeDisabled()
   })
 
   // Given one client has no exact location

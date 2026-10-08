@@ -1,5 +1,7 @@
 import type { Channel } from '@/shared/types'
 
+export type MapLayer = 'clients' | 'orders'
+
 export interface MapFilters {
   channel?: Channel
   type?: string
