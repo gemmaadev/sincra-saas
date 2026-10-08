@@ -9,7 +9,7 @@ import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTable
 import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { BulkDeleteClientsModal } from '@/features/clients/components/BulkDeleteClientsModal'
-import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
+import { clientsTableColumns } from '@/features/clients/utils/clientsTableColumns'
 import {
   Table,
   EmptyState,

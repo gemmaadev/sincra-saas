@@ -3,7 +3,7 @@ import { useOrders } from '@/features/orders/hooks/useOrders'
 import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
 import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
-import { ordersTableColumns } from '@/features/orders/components/ordersTableColumns'
+import { ordersTableColumns } from '@/features/orders/utils/ordersTableColumns'
 import { Table, EmptyState, Pagination, SincraButton, KpiCard } from '@/shared/components'
 
 export default function OrdersPage() {

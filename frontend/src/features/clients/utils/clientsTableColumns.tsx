@@ -41,7 +41,7 @@ export const clientsTableColumns = [
   },
   {
     key: 'lastActivity',
-    header: 'Última actividad',
+    header: 'Última compra',
     render: (client: Client) =>
       client.lastOrderAt ? (
         <span className="text-sm text-ink">{formatDate(new Date(client.lastOrderAt))}</span>

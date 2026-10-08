@@ -1,7 +1,11 @@
 import { Badge } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/shared/utils'
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  ORDER_STATUS_ICONS,
+} from '../orderStatus.constants'
 import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [
@@ -39,7 +43,9 @@ export const ordersTableColumns = [
     key: 'status',
     header: 'Estado',
     render: (order: Order) => (
-      <Badge color={ORDER_STATUS_COLORS[order.status]}>{ORDER_STATUS_LABELS[order.status]}</Badge>
+      <Badge color={ORDER_STATUS_COLORS[order.status]} icon={ORDER_STATUS_ICONS[order.status]}>
+        {ORDER_STATUS_LABELS[order.status]}
+      </Badge>
     ),
   },
   {

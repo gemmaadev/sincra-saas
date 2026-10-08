@@ -12,7 +12,7 @@ describe('ClientsTableSkeleton', () => {
     expect(screen.getByText('Canales')).toBeInTheDocument()
     expect(screen.getByText('Etiquetas')).toBeInTheDocument()
     expect(screen.getByText('Pedidos')).toBeInTheDocument()
-    expect(screen.getByText('Última actividad')).toBeInTheDocument()
+    expect(screen.getByText('Última compra')).toBeInTheDocument()
   })
 
   // Given the clients table is loading
