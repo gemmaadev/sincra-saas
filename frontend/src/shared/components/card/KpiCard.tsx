@@ -1,6 +1,5 @@
-import { Tooltip } from '@mantine/core'
-import { Info, type LucideIcon } from 'lucide-react'
-import { Card } from '@/shared/components'
+import type { LucideIcon } from 'lucide-react'
+import { Card, InfoTooltip } from '@/shared/components'
 
 interface KpiCardProps {
   icon: LucideIcon
@@ -19,11 +18,7 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
       <div className="flex min-w-0 flex-col">
         <div className="flex items-center gap-1">
           <p className="text-sm text-ink-muted">{label}</p>
-          {infoTooltip && (
-            <Tooltip label={infoTooltip} withArrow position="top">
-              <Info size={13} className="text-ink-muted" aria-hidden="true" />
-            </Tooltip>
-          )}
+          {infoTooltip && <InfoTooltip label={infoTooltip} />}
         </div>
         <p
           className={`truncate text-2xl font-semibold ${pending ? 'text-ink-muted' : 'text-ink'}`}
