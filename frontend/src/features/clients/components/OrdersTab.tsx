@@ -25,7 +25,10 @@ export function OrdersTab({ client }: OrdersTabProps) {
           className="flex items-center justify-between gap-2 rounded-lg border border-neutral-100 p-3"
         >
           <div className="flex flex-col gap-1">
-            <span className="font-medium text-ink">#{order.number}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-ink">#{order.number}</span>
+              {order.description && <span className="text-sm text-ink">{order.description}</span>}
+            </div>
             <span className="text-xs text-ink-muted">{formatDate(new Date(order.createdAt))}</span>
           </div>
           <div className="flex items-center gap-3">

@@ -18,6 +18,7 @@ export interface ClientOrderSummary {
   price: string | null
   expectedDate: string | null
   createdAt: string
+  description: string | null
 }
 
 export interface Client {

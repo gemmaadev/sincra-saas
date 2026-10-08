@@ -73,6 +73,7 @@ describe('SummaryTab', () => {
           price: '89.90',
           expectedDate: null,
           createdAt: '2026-10-01T00:00:00.000Z',
+          description: 'Chaqueta oversize',
         },
         {
           id: 'order-2',
@@ -83,6 +84,7 @@ describe('SummaryTab', () => {
           price: '10.10',
           expectedDate: null,
           createdAt: '2026-10-02T00:00:00.000Z',
+          description: 'Gorra personalizada',
         },
         {
           id: 'order-3',
@@ -93,11 +95,13 @@ describe('SummaryTab', () => {
           price: '500',
           expectedDate: null,
           createdAt: '2026-10-03T00:00:00.000Z',
+          description: 'Mochila urbana',
         },
       ],
     })
     expect(screen.getByText('Total de pedidos').nextSibling).toHaveTextContent('3')
     expect(screen.getByText('89,90 €')).toBeInTheDocument()
+    expect(screen.getByText('Chaqueta oversize')).toBeInTheDocument()
   })
 
   // Given a client with an address and zone
@@ -130,6 +134,7 @@ describe('SummaryTab', () => {
       price: '10',
       expectedDate: null,
       createdAt: '2026-10-01T00:00:00.000Z',
+      description: `Pedido ${number}`,
     }))
     renderSummaryTab({ ...mockClient, orders })
 

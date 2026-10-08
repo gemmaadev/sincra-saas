@@ -24,6 +24,8 @@ const CLIENT_DETAIL_INCLUDE = {
       price: true,
       expectedDate: true,
       createdAt: true,
+      description: true,
+      items: { select: { product: true, quantity: true } },
     },
   },
 } satisfies Prisma.ClientInclude

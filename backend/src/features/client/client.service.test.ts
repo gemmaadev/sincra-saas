@@ -7,6 +7,7 @@ import * as authModel from '../auth/auth.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
 import {
   listClients,
+  getClientById,
   createClient,
   updateClient,
   deleteClient,
@@ -118,6 +119,50 @@ describe('listClients', () => {
     expect(where.businessId).toBe('business-1')
     expect(where.channels).toEqual({ has: 'EMAIL' })
     expect(where.OR).toHaveLength(3)
+  })
+})
+
+describe('getClientById', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  // Given a client whose orders mix one with its own description and one without
+  // When the client detail is fetched
+  // Then each order should expose a resolved description (its own, or a summary of its items)
+  // and the raw items should not leak into the response
+  it('resolves a description for each order and drops the raw items', async () => {
+    vi.mocked(clientModel.findClientWithDetails).mockResolvedValue({
+      id: 'client-1',
+      orders: [
+        { id: 'order-1', description: 'Pedido de temporada', items: [{ product: 'Camiseta', quantity: 1 }] },
+        {
+          id: 'order-2',
+          description: null,
+          items: [
+            { product: 'Chaqueta oversize', quantity: 2 },
+            { product: 'Bolso de piel', quantity: 1 },
+          ],
+        },
+      ],
+    } as never)
+
+    const result = await getClientById('business-1', 'client-1')
+
+    expect(result?.orders[0]).toMatchObject({ description: 'Pedido de temporada' })
+    expect(result?.orders[1]).toMatchObject({
+      description: 'Chaqueta oversize x2, Bolso de piel',
+    })
+    expect(result?.orders[0]).not.toHaveProperty('items')
+  })
+
+  // Given a client id that does not exist
+  // When the client detail is fetched
+  // Then null should be returned as-is, without trying to map its (nonexistent) orders
+  it('returns null when the client does not exist', async () => {
+    vi.mocked(clientModel.findClientWithDetails).mockResolvedValue(null)
+
+    expect(await getClientById('business-1', 'missing')).toBeNull()
   })
 })
 

@@ -14,6 +14,7 @@ import {
   insertClientTag,
   markClientTagRemoved,
 } from './client.model'
+import { resolveOrderDescription } from '../order/order.service'
 import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
@@ -145,9 +146,20 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   }
 }
 
+function mapOrderSummary(
+  order: NonNullable<Awaited<ReturnType<typeof findClientWithDetails>>>['orders'][number],
+) {
+  const { items, ...rest } = order
+  return { ...rest, description: resolveOrderDescription(order) }
+}
+
 // TODO: once the Communication model exists (if Epic 2 is ever picked back up), include it here too.
 export async function getClientById(businessId: string, clientId: string) {
-  return findClientWithDetails(businessId, clientId)
+  const client = await findClientWithDetails(businessId, clientId)
+
+  if (!client) return null
+
+  return { ...client, orders: client.orders.map(mapOrderSummary) }
 }
 
 function hasTextChanged(newValue: string | null | undefined, currentValue: string | null): boolean {

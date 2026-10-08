@@ -54,7 +54,12 @@ export function SummaryTab({ client }: SummaryTabProps) {
           <ul className="flex flex-col gap-2">
             {recentOrders.map((order) => (
               <li key={order.id} className="flex items-center justify-between gap-2">
-                <span className="text-sm text-ink">#{order.number}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-ink">#{order.number}</span>
+                  {order.description && (
+                    <span className="text-sm text-ink-muted">{order.description}</span>
+                  )}
+                </div>
                 <Badge
                   color={ORDER_STATUS_COLORS[order.status]}
                   icon={ORDER_STATUS_ICONS[order.status]}

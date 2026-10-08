@@ -218,6 +218,46 @@ describe('listOrders', () => {
     const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
     expect(where.createdAt).toBeUndefined()
   })
+
+  // Given an order that has its own description
+  // When orders are listed
+  // Then that description should be used as-is, and the raw items dropped from the response
+  it('uses the order description when it has one', async () => {
+    vi.mocked(orderModel.findOrdersPage).mockResolvedValue([
+      {
+        id: 'order-1',
+        description: 'Pedido de temporada',
+        items: [{ product: 'Camiseta', quantity: 2 }],
+      },
+    ] as never)
+
+    const result = await listOrders('business-1', {})
+
+    expect(result.data[0]).toMatchObject({ description: 'Pedido de temporada' })
+    expect(result.data[0]).not.toHaveProperty('items')
+  })
+
+  // Given an order with no description but several items
+  // When orders are listed
+  // Then a summary should be built from the items instead, showing quantity only when it's more than 1
+  it('falls back to a summary of the items when there is no description', async () => {
+    vi.mocked(orderModel.findOrdersPage).mockResolvedValue([
+      {
+        id: 'order-1',
+        description: null,
+        items: [
+          { product: 'Chaqueta oversize', quantity: 2 },
+          { product: 'Bolso de piel', quantity: 1 },
+        ],
+      },
+    ] as never)
+
+    const result = await listOrders('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      description: 'Chaqueta oversize x2, Bolso de piel',
+    })
+  })
 })
 
 describe('updateOrder', () => {

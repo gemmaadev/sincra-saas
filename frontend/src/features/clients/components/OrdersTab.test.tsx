@@ -32,8 +32,8 @@ describe('OrdersTab', () => {
 
   // Given a client with orders
   // When OrdersTab is rendered
-  // Then each order's number, status and price should be shown
-  it('shows the number, status and price of each order', () => {
+  // Then each order's number, description, status and price should be shown
+  it('shows the number, description, status and price of each order', () => {
     render(
       <OrdersTab
         client={{
@@ -48,6 +48,7 @@ describe('OrdersTab', () => {
               price: '89.90',
               expectedDate: null,
               createdAt: '2026-10-07T10:16:33.000Z',
+              description: 'Chaqueta oversize x2, Bolso de piel',
             },
           ],
         }}
@@ -55,6 +56,7 @@ describe('OrdersTab', () => {
     )
 
     expect(screen.getByText('#42')).toBeInTheDocument()
+    expect(screen.getByText('Chaqueta oversize x2, Bolso de piel')).toBeInTheDocument()
     expect(screen.getByText('Entregado')).toBeInTheDocument()
     expect(screen.getByText('89,90 €')).toBeInTheDocument()
   })

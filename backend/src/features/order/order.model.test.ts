@@ -33,8 +33,9 @@ describe('findOrdersPage', () => {
 
   // Given a where clause, skip and take
   // When listing a page of orders
-  // Then each row should include the client's name and only the first item (for the table's product column)
-  it('includes the client and only the first item of each order', async () => {
+  // Then each row should include the client's name and every item's product/quantity
+  // (used to build a fallback summary when the order has no description of its own)
+  it('includes the client and every item of each order', async () => {
     await findOrdersPage({ businessId: 'business-1' }, 0, 20)
 
     expect(prisma.order.findMany).toHaveBeenCalledWith({
@@ -44,7 +45,7 @@ describe('findOrdersPage', () => {
       orderBy: { createdAt: 'desc' },
       include: {
         client: { select: { id: true, name: true } },
-        items: { take: 1, select: { product: true, description: true } },
+        items: { select: { product: true, quantity: true } },
       },
     })
   })

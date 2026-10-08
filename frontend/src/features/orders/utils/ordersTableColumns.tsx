@@ -22,22 +22,12 @@ export const ordersTableColumns = [
   {
     key: 'product',
     header: 'Producto / Servicio',
-    render: (order: Order) => {
-      const item = order.items[0]
-
-      if (!item) {
-        return <span className="text-sm text-ink-muted">—</span>
-      }
-
-      return (
-        <div className="flex flex-col">
-          <span className="text-ink">{item.product}</span>
-          {item.description && (
-            <span className="text-sm text-ink-muted">{item.description}</span>
-          )}
-        </div>
-      )
-    },
+    render: (order: Order) =>
+      order.description ? (
+        <span className="text-ink">{order.description}</span>
+      ) : (
+        <span className="text-sm text-ink-muted">—</span>
+      ),
   },
   {
     key: 'status',

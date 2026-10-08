@@ -3,11 +3,6 @@ import type { Channel } from '@/shared/types'
 export type OrderStatus = 'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 export type OrderKind = 'PRODUCT' | 'SERVICE'
 
-export interface OrderItemSummary {
-  product: string
-  description: string | null
-}
-
 export interface OrderClientSummary {
   id: string
   name: string
@@ -23,7 +18,7 @@ export interface Order {
   expectedDate: string | null
   createdAt: string
   client: OrderClientSummary
-  items: OrderItemSummary[]
+  description: string | null
 }
 
 export interface OrdersResponse {

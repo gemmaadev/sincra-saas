@@ -102,6 +102,8 @@ describe('findClientWithDetails', () => {
             price: true,
             expectedDate: true,
             createdAt: true,
+            description: true,
+            items: { select: { product: true, quantity: true } },
           },
         },
       },

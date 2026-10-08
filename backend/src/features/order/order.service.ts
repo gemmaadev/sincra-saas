@@ -35,6 +35,28 @@ function toItemsData(items: OrderItemInput[]) {
   }))
 }
 
+interface OrderItemsSummaryInput {
+  description: string | null
+  items: { product: string; quantity: number }[]
+}
+
+// An order's own description, when set, is a general summary of the whole order.
+// Without one, fall back to a summary built from its items (e.g. "Chaqueta oversize x2, Bolso de piel").
+export function resolveOrderDescription(order: OrderItemsSummaryInput): string | null {
+  if (order.description) return order.description
+
+  if (order.items.length === 0) return null
+
+  return order.items
+    .map((item) => (item.quantity > 1 ? `${item.product} x${item.quantity}` : item.product))
+    .join(', ')
+}
+
+function mapOrderRow<Row extends OrderItemsSummaryInput>(order: Row) {
+  const { items, ...rest } = order
+  return { ...rest, description: resolveOrderDescription(order) }
+}
+
 async function assertClientExists(businessId: string, clientId: string) {
   const client = await findClientById(businessId, clientId)
 
@@ -152,7 +174,7 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
   ])
 
   return {
-    ...buildPaginatedResponse(data, total, page, limit),
+    ...buildPaginatedResponse(data.map(mapOrderRow), total, page, limit),
     statusCounts: buildStatusCounts(statusGroups),
   }
 }
