@@ -7,12 +7,17 @@ import MapPage from './MapPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
-import type { ClientMapResponse } from '@/features/map/types/map.types'
+import type { ClientMapResponse, OrderMapResponse } from '@/features/map/types/map.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
 })
+
+// jsdom has no real <canvas> context; see ZoneBarChart.test.tsx for why this is mocked.
+vi.mock('echarts-for-react', () => ({
+  default: () => <div data-testid="echarts-mock" />,
+}))
 
 const mapData: ClientMapResponse = {
   total: 3,
@@ -78,9 +83,12 @@ const clientDetail = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
-function mockMapResponse(response: ClientMapResponse) {
+const emptyOrdersMap: OrderMapResponse = { total: 0, deliveredRevenue: '0', zones: [] }
+
+function mockMapResponse(response: ClientMapResponse, ordersResponse: OrderMapResponse = emptyOrdersMap) {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path.startsWith('/clients/map')) return Promise.resolve(response)
+    if (path.startsWith('/orders/map')) return Promise.resolve(ordersResponse)
     return Promise.resolve({ client: clientDetail })
   })
 }
@@ -109,8 +117,8 @@ describe('MapPage', () => {
 
   // Given the backend returns clients in two zones, one of them without exact location
   // When the page is rendered
-  // Then it should show the KPIs, the zone summary, the approximate clients and the pending charts
-  it('shows the map KPIs, the side panel and the pending charts', async () => {
+  // Then it should show the KPIs, the zone summary and the approximate clients
+  it('shows the map KPIs and the side panel', async () => {
     mockMapResponse(mapData)
     renderPage()
 
@@ -121,8 +129,24 @@ describe('MapPage', () => {
     expect(screen.getByText('Zona principal')).toBeInTheDocument()
     expect(screen.getByText('Resumen por zonas')).toBeInTheDocument()
     expect(screen.getByText('2 clientes - 67 %')).toBeInTheDocument()
-    expect(screen.getByText('Ingresos por zona')).toBeInTheDocument()
+  })
+
+  // Given the backend returns orders aggregated by zone
+  // When the page is rendered
+  // Then it should show the revenue and average ticket charts, regardless of the active layer
+  it('shows the zone revenue charts for both layers', async () => {
+    mockMapResponse(mapData, {
+      total: 3,
+      deliveredRevenue: '120',
+      zones: [{ zone: 'Bilbao', count: 2, revenue: '120', percentage: 100 }],
+    })
+    renderPage()
+
+    expect(await screen.findByText('Ingresos por zona')).toBeInTheDocument()
     expect(screen.getByText('Ticket medio por zona')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Todavía no hay pedidos entregados en ninguna zona.'),
+    ).not.toBeInTheDocument()
   })
 
   // Given the backend returns clients

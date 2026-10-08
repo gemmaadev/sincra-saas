@@ -3,7 +3,7 @@ import { ApproximateClientsCard } from '@/features/map/components/ApproximateCli
 import { ClientsMap } from '@/features/map/components/ClientsMap'
 import { MapFilterBar } from '@/features/map/components/MapFilterBar'
 import { MapLayerToggle } from '@/features/map/components/MapLayerToggle'
-import { PendingChartCard } from '@/features/map/components/PendingChartCard'
+import { ZoneBarChart } from '@/features/map/components/ZoneBarChart'
 import { ZoneSummaryCard } from '@/features/map/components/ZoneSummaryCard'
 import { useClientsMap } from '@/features/map/hooks/useClientsMap'
 import { useOrdersMap } from '@/features/map/hooks/useOrdersMap'
@@ -11,6 +11,7 @@ import { useMapFilters } from '@/features/map/hooks/useMapFilters'
 import { useMapFocus } from '@/features/map/hooks/useMapFocus'
 import { buildClientMapKpis, toClientKpiCards } from '@/features/map/utils/buildClientMapKpis'
 import { buildOrderMapKpis, toOrderKpiCards } from '@/features/map/utils/buildOrderMapKpis'
+import { buildRevenueByZone, buildAverageTicketByZone } from '@/features/map/utils/buildZoneChartData'
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
@@ -22,7 +23,7 @@ export default function MapPage() {
   const mapFilters = useMapFilters()
   const [layer, setLayer] = useState<MapLayer>('clients')
   const { data, isLoading, isError, isPlaceholderData } = useClientsMap(mapFilters.filters)
-  const { data: ordersMapData } = useOrdersMap(mapFilters.filters, layer === 'orders')
+  const { data: ordersMapData } = useOrdersMap(mapFilters.filters)
   const { focusedPositions, focusZone } = useMapFocus(
     data?.clients,
     JSON.stringify(mapFilters.filters),
@@ -91,10 +92,15 @@ export default function MapPage() {
               />
             </div>
           </div>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <PendingChartCard title="Ingresos por zona" />
-            <PendingChartCard title="Ticket medio por zona" />
-          </div>
+          {ordersMapData && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ZoneBarChart title="Ingresos por zona" data={buildRevenueByZone(ordersMapData.zones)} />
+              <ZoneBarChart
+                title="Ticket medio por zona"
+                data={buildAverageTicketByZone(ordersMapData.zones)}
+              />
+            </div>
+          )}
         </>
       )}
 
