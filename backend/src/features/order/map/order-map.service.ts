@@ -1,3 +1,4 @@
+import { Prisma } from '../../../generated/prisma/client'
 import { findOrdersForMap } from './order-map.model'
 import type { OrderMapFilters, OrderMapRecord, OrderMapResponse, OrderMapZoneSummary } from './order-map.types'
 
@@ -9,10 +10,16 @@ function resolveZone(record: OrderMapRecord): string | null {
   return record.zone?.trim() || record.client.zone?.trim() || null
 }
 
-export function buildOrderZoneSummary(records: OrderMapRecord[]): OrderMapZoneSummary[] {
-  const zones = new Map<string, OrderMapZoneSummary>()
+function sumRevenue(records: OrderMapRecord[]): Prisma.Decimal {
+  return records.reduce((total, record) => total.plus(record.price ?? 0), new Prisma.Decimal(0))
+}
 
-  for (const record of records) {
+// Only delivered orders count as real revenue — a pending/shipped order could still be
+// cancelled before it completes, and a cancelled one was never actually paid.
+export function buildOrderZoneSummary(deliveredRecords: OrderMapRecord[]): OrderMapZoneSummary[] {
+  const zones = new Map<string, { records: OrderMapRecord[] }>()
+
+  for (const record of deliveredRecords) {
     const zone = resolveZone(record)
     if (!zone) continue
 
@@ -20,15 +27,21 @@ export function buildOrderZoneSummary(records: OrderMapRecord[]): OrderMapZoneSu
     const existing = zones.get(key)
 
     if (existing) {
-      existing.count += 1
+      existing.records.push(record)
     } else {
-      zones.set(key, { zone, count: 1, percentage: 0 })
+      zones.set(key, { records: [record] })
     }
   }
 
-  return [...zones.values()]
-    .map((summary) => ({ ...summary, percentage: toPercentage(summary.count, records.length) }))
-    .sort((first, second) => second.count - first.count || first.zone.localeCompare(second.zone))
+  return [...zones.entries()]
+    .map(([, { records }]) => ({
+      zone: resolveZone(records[0]) as string,
+      count: records.length,
+      revenue: sumRevenue(records),
+      percentage: toPercentage(records.length, deliveredRecords.length),
+    }))
+    .sort((first, second) => second.revenue.comparedTo(first.revenue) || first.zone.localeCompare(second.zone))
+    .map((summary) => ({ ...summary, revenue: summary.revenue.toString() }))
 }
 
 export async function getOrderMap(
@@ -36,10 +49,11 @@ export async function getOrderMap(
   filters: OrderMapFilters,
 ): Promise<OrderMapResponse> {
   const records = await findOrdersForMap(businessId, filters)
+  const deliveredRecords = records.filter((record) => record.status === 'DELIVERED')
 
   return {
     total: records.length,
-    zones: buildOrderZoneSummary(records),
-    ordersWithoutZone: records.filter((record) => !resolveZone(record)).length,
+    deliveredRevenue: sumRevenue(deliveredRecords).toString(),
+    zones: buildOrderZoneSummary(deliveredRecords),
   }
 }

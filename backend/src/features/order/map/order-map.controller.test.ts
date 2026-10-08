@@ -13,7 +13,7 @@ function createMockResponse() {
   return res
 }
 
-const emptyMap = { total: 0, zones: [], ordersWithoutZone: 0 }
+const emptyMap = { total: 0, deliveredRevenue: '0', zones: [] }
 
 async function callGetMap(query: Record<string, unknown>) {
   const req = createMockRequest({ businessId: 'biz-1', query })

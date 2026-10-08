@@ -50,14 +50,16 @@ describe('findOrdersForMap', () => {
 
   // Given any filters
   // When the map orders are requested
-  // Then only each order's own zone and its client's zone should be selected, for the fallback
-  it('selects the order zone and the client zone, for the fallback', async () => {
+  // Then it should select the status, price, the order's own zone and its client's zone (for the fallback)
+  it('selects the status, price and both zones for the fallback', async () => {
     await findOrdersForMap('business-1', {})
 
     expect(vi.mocked(prisma.order.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         select: {
           id: true,
+          status: true,
+          price: true,
           zone: true,
           client: { select: { zone: true } },
         },

@@ -1,58 +1,116 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Prisma } from '../../../generated/prisma/client'
 import * as orderMapModel from './order-map.model'
 import { getOrderMap } from './order-map.service'
+import type { OrderMapRecord } from './order-map.types'
 
 vi.mock('./order-map.model')
+
+function record(overrides: Partial<OrderMapRecord> = {}): OrderMapRecord {
+  return {
+    id: 'order-1',
+    status: 'DELIVERED' as const,
+    price: new Prisma.Decimal('50'),
+    zone: 'Barcelona',
+    client: { zone: null },
+    ...overrides,
+  }
+}
 
 describe('getOrderMap', () => {
   beforeEach(() => {
     vi.resetAllMocks()
   })
 
-  // Given two orders in Barcelona and one in Girona
+  // Given a delivered order, a pending one and a cancelled one
   // When the order map is built
-  // Then the zones should be counted and sorted from most to least orders
-  it('groups orders by their own zone, most orders first', async () => {
+  // Then "total" should count all of them, but "deliveredRevenue" only the delivered one
+  it('counts every order in total, but only sums the revenue of delivered ones', async () => {
     vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
-      { id: 'order-1', zone: 'Barcelona', client: { zone: null } },
-      { id: 'order-2', zone: 'Barcelona', client: { zone: null } },
-      { id: 'order-3', zone: 'Girona', client: { zone: null } },
+      record({ id: 'order-1', status: 'DELIVERED', price: new Prisma.Decimal('50') }),
+      record({ id: 'order-2', status: 'PENDING', price: new Prisma.Decimal('30') }),
+      record({ id: 'order-3', status: 'CANCELLED', price: new Prisma.Decimal('500') }),
     ] as never)
 
     const result = await getOrderMap('business-1', {})
 
     expect(result.total).toBe(3)
-    expect(result.zones).toEqual([
-      { zone: 'Barcelona', count: 2, percentage: 66.7 },
-      { zone: 'Girona', count: 1, percentage: 33.3 },
-    ])
-    expect(result.ordersWithoutZone).toBe(0)
+    expect(result.deliveredRevenue).toBe('50')
   })
 
-  // Given an order with no zone of its own, but whose client has one
+  // Given two delivered orders in Barcelona and one in Girona
   // When the order map is built
-  // Then that order should be counted under the client's zone
-  it('falls back to the client zone when the order has none of its own', async () => {
+  // Then the zones should group only the delivered orders, with their revenue
+  it('groups delivered orders by zone with their revenue', async () => {
     vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
-      { id: 'order-1', zone: null, client: { zone: 'Manresa' } },
+      record({ id: 'order-1', zone: 'Barcelona', price: new Prisma.Decimal('40') }),
+      record({ id: 'order-2', zone: 'Barcelona', price: new Prisma.Decimal('60') }),
+      record({ id: 'order-3', zone: 'Girona', price: new Prisma.Decimal('20') }),
     ] as never)
 
     const result = await getOrderMap('business-1', {})
 
-    expect(result.zones).toEqual([{ zone: 'Manresa', count: 1, percentage: 100 }])
+    expect(result.zones).toEqual([
+      { zone: 'Barcelona', count: 2, revenue: '100', percentage: 66.7 },
+      { zone: 'Girona', count: 1, revenue: '20', percentage: 33.3 },
+    ])
   })
 
-  // Given an order with no zone and a client with no zone either
+  // Given a zone with many small orders and another with a single, bigger one
   // When the order map is built
-  // Then that order should be excluded from the zones and counted as without a zone
-  it('counts an order without any resolvable zone as "without zone", not in the list', async () => {
+  // Then the zones should be ordered by revenue, not by how many orders they have
+  it('orders the zones by revenue, not by order count', async () => {
     vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
-      { id: 'order-1', zone: null, client: { zone: null } },
+      record({ id: 'order-1', zone: 'Vic', price: new Prisma.Decimal('10') }),
+      record({ id: 'order-2', zone: 'Vic', price: new Prisma.Decimal('10') }),
+      record({ id: 'order-3', zone: 'Vic', price: new Prisma.Decimal('10') }),
+      record({ id: 'order-4', zone: 'Bilbao', price: new Prisma.Decimal('1000') }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.zones.map((zone) => zone.zone)).toEqual(['Bilbao', 'Vic'])
+  })
+
+  // Given a delivered order with no zone of its own, but whose client has one
+  // When the order map is built
+  // Then that order should be counted under the client's zone
+  it('falls back to the client zone when the order has none of its own', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ zone: null, client: { zone: 'Manresa' } }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.zones).toEqual([{ zone: 'Manresa', count: 1, revenue: '50', percentage: 100 }])
+  })
+
+  // Given a delivered order with no resolvable zone at all
+  // When the order map is built
+  // Then it should be excluded from the zones but still counted in total and revenue
+  it('excludes an order without any resolvable zone from the zones list', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ zone: null, client: { zone: null } }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.total).toBe(1)
+    expect(result.deliveredRevenue).toBe('50')
+    expect(result.zones).toEqual([])
+  })
+
+  // Given a pending and a cancelled order, neither of them delivered
+  // When the order map is built
+  // Then the zones list should be empty, even though both have a zone
+  it('leaves the zones empty when no order is delivered yet', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ status: 'PENDING', zone: 'Barcelona' }),
+      record({ status: 'CANCELLED', zone: 'Barcelona' }),
     ] as never)
 
     const result = await getOrderMap('business-1', {})
 
     expect(result.zones).toEqual([])
-    expect(result.ordersWithoutZone).toBe(1)
   })
 })
