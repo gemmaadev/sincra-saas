@@ -19,10 +19,14 @@ export async function findOrdersForMap(businessId: string, filters: OrderMapFilt
     where: buildMapWhere(businessId, filters),
     select: {
       id: true,
+      number: true,
       status: true,
+      channel: true,
       price: true,
       zone: true,
-      client: { select: { zone: true } },
+      latitude: true,
+      longitude: true,
+      client: { select: { name: true, zone: true, latitude: true, longitude: true } },
     },
   })
 }

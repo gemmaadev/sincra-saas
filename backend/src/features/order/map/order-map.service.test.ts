@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Prisma } from '../../../generated/prisma/client'
 import * as orderMapModel from './order-map.model'
-import { getOrderMap } from './order-map.service'
+import { buildMapOrders, getOrderMap } from './order-map.service'
 import type { OrderMapRecord } from './order-map.types'
 
 vi.mock('./order-map.model')
@@ -9,13 +9,86 @@ vi.mock('./order-map.model')
 function record(overrides: Partial<OrderMapRecord> = {}): OrderMapRecord {
   return {
     id: 'order-1',
+    number: 1,
     status: 'DELIVERED' as const,
+    channel: 'WHATSAPP',
     price: new Prisma.Decimal('50'),
     zone: 'Barcelona',
-    client: { zone: null },
+    latitude: null,
+    longitude: null,
+    client: { name: 'Ana', zone: null, latitude: null, longitude: null },
     ...overrides,
   }
 }
+
+describe('buildMapOrders', () => {
+  // Given an order with its own coordinates
+  // When the map orders are built
+  // Then it should be placed at them, marked as not approximate
+  it('places an order at its own coordinates', () => {
+    const orders = buildMapOrders([record({ latitude: 41.1, longitude: 2.2 })])
+
+    expect(orders).toEqual([
+      expect.objectContaining({ latitude: 41.1, longitude: 2.2, approximate: false }),
+    ])
+  })
+
+  // Given an order without its own coordinates, whose client has them
+  // When the map orders are built
+  // Then it should fall back to the client's location, marked as approximate
+  it('falls back to the client location when the order has none of its own', () => {
+    const orders = buildMapOrders([
+      record({ latitude: null, longitude: null, client: { name: 'Ana', zone: null, latitude: 41.3, longitude: 2.1 } }),
+    ])
+
+    expect(orders).toEqual([
+      expect.objectContaining({ latitude: 41.3, longitude: 2.1, approximate: true }),
+    ])
+  })
+
+  // Given an order with neither its own coordinates nor its client's
+  // When the map orders are built
+  // Then it should be left out, since it has no location to place it at
+  it('excludes an order with no resolvable location at all', () => {
+    const orders = buildMapOrders([record({ latitude: null, longitude: null })])
+
+    expect(orders).toEqual([])
+  })
+
+  // Given an order
+  // When the map orders are built
+  // Then it should carry its number, status, channel, price and client name for the marker/popup
+  it('carries the order and client fields needed for the marker', () => {
+    const orders = buildMapOrders([
+      record({
+        id: 'order-1',
+        number: 7,
+        status: 'SHIPPED',
+        channel: 'INSTAGRAM',
+        price: new Prisma.Decimal('99.90'),
+        zone: 'Barcelona',
+        latitude: 41.1,
+        longitude: 2.2,
+        client: { name: 'Laura Martínez', zone: null, latitude: null, longitude: null },
+      }),
+    ])
+
+    expect(orders).toEqual([
+      {
+        id: 'order-1',
+        number: 7,
+        status: 'SHIPPED',
+        channel: 'INSTAGRAM',
+        price: '99.9',
+        zone: 'Barcelona',
+        clientName: 'Laura Martínez',
+        latitude: 41.1,
+        longitude: 2.2,
+        approximate: false,
+      },
+    ])
+  })
+})
 
 describe('getOrderMap', () => {
   beforeEach(() => {
@@ -112,5 +185,21 @@ describe('getOrderMap', () => {
     const result = await getOrderMap('business-1', {})
 
     expect(result.zones).toEqual([])
+  })
+
+  // Given an order with its own coordinates and one with none at all
+  // When the order map is built
+  // Then "orders" should include the located one and exclude the unlocatable one
+  it('includes the located orders and excludes the unlocatable ones', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ id: 'order-1', latitude: 41.1, longitude: 2.2 }),
+      record({ id: 'order-2', latitude: null, longitude: null }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.orders).toEqual([
+      expect.objectContaining({ id: 'order-1', latitude: 41.1, longitude: 2.2 }),
+    ])
   })
 })

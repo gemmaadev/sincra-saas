@@ -50,18 +50,23 @@ describe('findOrdersForMap', () => {
 
   // Given any filters
   // When the map orders are requested
-  // Then it should select the status, price, the order's own zone and its client's zone (for the fallback)
-  it('selects the status, price and both zones for the fallback', async () => {
+  // Then it should select the fields needed to render markers and zone/revenue summaries,
+  // including the order's own location and its client's (for the location fallback)
+  it('selects the order and client fields needed for the map', async () => {
     await findOrdersForMap('business-1', {})
 
     expect(vi.mocked(prisma.order.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         select: {
           id: true,
+          number: true,
           status: true,
+          channel: true,
           price: true,
           zone: true,
-          client: { select: { zone: true } },
+          latitude: true,
+          longitude: true,
+          client: { select: { name: true, zone: true, latitude: true, longitude: true } },
         },
       }),
     )
