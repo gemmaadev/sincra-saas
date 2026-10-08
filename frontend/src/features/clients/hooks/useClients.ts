@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
 import type { ClientsResponse, UseClientsParams } from '../types/client.types'
 
 export function useClients(params: UseClientsParams = {}) {
   return useQuery({
     queryKey: ['clients', params],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const query = new URLSearchParams()
       if (params.page) query.set('page', String(params.page))
