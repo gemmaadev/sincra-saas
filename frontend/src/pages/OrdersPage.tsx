@@ -1,12 +1,23 @@
+import { useMatch, useNavigate } from 'react-router'
 import { Package, Clock, Truck, CheckCircle, XCircle, Plus } from 'lucide-react'
 import { useOrders } from '@/features/orders/hooks/useOrders'
 import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
 import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
+import { OrderDetailPanel } from '@/features/orders/components/OrderDetailPanel'
 import { ordersTableColumns } from '@/features/orders/utils/ordersTableColumns'
-import { Table, EmptyState, Pagination, SincraButton, KpiCardsRow } from '@/shared/components'
+import {
+  Table,
+  EmptyState,
+  Pagination,
+  SincraButton,
+  KpiCardsRow,
+  DetailDrawer,
+} from '@/shared/components'
 
 export default function OrdersPage() {
+  const navigate = useNavigate()
+  const detailMatch = useMatch('/orders/:id')
   const {
     search,
     status,
@@ -105,6 +116,7 @@ export default function OrdersPage() {
               columns={ordersTableColumns}
               data={orders}
               getRowKey={(order) => order.id}
+              onRowClick={(order) => navigate(`/orders/${order.id}`)}
               emptyState={<EmptyState title="Todavía no tienes pedidos" />}
             />
           </div>
@@ -115,6 +127,10 @@ export default function OrdersPage() {
           />
         </div>
       )}
+
+      <DetailDrawer opened={!!detailMatch} onClose={() => navigate('/orders')}>
+        {detailMatch && <OrderDetailPanel id={detailMatch.params.id!} />}
+      </DetailDrawer>
     </div>
   )
 }

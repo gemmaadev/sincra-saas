@@ -25,12 +25,27 @@ const mockOrder = {
   description: 'Chaqueta oversize',
 }
 
+const mockOrderDetail = {
+  ...mockOrder,
+  address: null,
+  zone: null,
+  notes: null,
+  client: { ...mockOrder.client, email: null, phone: null, channels: [] },
+  items: [],
+  statusHistory: [],
+  updatedAt: '2026-01-01T00:00:00.000Z',
+}
+
 function mockApiGet(overrides?: {
   data?: (typeof mockOrder)[]
   total?: number
   statusCounts?: Record<string, number>
 }) {
-  vi.mocked(api.get).mockImplementation(() => {
+  vi.mocked(api.get).mockImplementation((path: string) => {
+    if (path.startsWith('/orders/')) {
+      return Promise.resolve({ order: mockOrderDetail })
+    }
+
     const data = overrides?.data ?? [mockOrder]
     return Promise.resolve({
       data,
@@ -122,6 +137,16 @@ describe('OrdersPage', () => {
     vi.mocked(api.get).mockRejectedValue(new Error('Network error'))
     renderOrdersPage()
     expect(await screen.findByText('No se han podido cargar los pedidos.')).toBeInTheDocument()
+  })
+
+  // Given the orders table is rendered
+  // When the user clicks an order row
+  // Then the detail drawer should open with that order's data
+  it('opens the detail drawer when a row is clicked', async () => {
+    renderOrdersPage()
+    await userEvent.setup().click(await screen.findByText('Laura García'))
+
+    expect(await screen.findByText('Pedido #1')).toBeInTheDocument()
   })
 
   // Given the orders table is rendered
