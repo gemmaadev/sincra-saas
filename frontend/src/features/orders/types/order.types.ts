@@ -41,6 +41,7 @@ export interface OrderDetailClient {
   name: string
   email: string | null
   phone: string | null
+  channels: Channel[]
 }
 
 export interface OrderDetail {
