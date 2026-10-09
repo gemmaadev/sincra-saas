@@ -4,7 +4,7 @@ import * as clientModel from '../client/client.model'
 import * as authModel from '../auth/auth.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
-import { createOrder, listOrders, updateOrder, deleteOrder } from './order.service'
+import { createOrder, listOrders, getOrderById, updateOrder, deleteOrder } from './order.service'
 
 vi.mock('./order.model')
 vi.mock('../client/client.model')
@@ -346,6 +346,72 @@ describe('listOrders', () => {
     expect(result.data[0]).toMatchObject({
       description: 'Chaqueta oversize x2, Bolso de piel',
     })
+  })
+})
+
+describe('getOrderById', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  // Given no order matches that id in the business
+  // When it is requested
+  // Then it should return null
+  it('returns null when the order is not found', async () => {
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue(null)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toBeNull()
+  })
+
+  // Given an order with its own description
+  // When it is requested
+  // Then that description should be used as-is
+  it('keeps the order description when it has one', async () => {
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue({
+      id: 'order-1',
+      description: 'Pedido de temporada',
+      items: [{ product: 'Camiseta', quantity: 2 }],
+    } as never)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toMatchObject({ description: 'Pedido de temporada' })
+  })
+
+  // Given an order with no description but several items
+  // When it is requested
+  // Then a summary should be built from the items, same as the list endpoint
+  it('falls back to a summary of the items when there is no description', async () => {
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue({
+      id: 'order-1',
+      description: null,
+      items: [
+        { product: 'Chaqueta oversize', quantity: 2 },
+        { product: 'Bolso de piel', quantity: 1 },
+      ],
+    } as never)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toMatchObject({ description: 'Chaqueta oversize x2, Bolso de piel' })
+  })
+
+  // Given an order with items
+  // When it is requested
+  // Then the items should still be returned, unlike the list endpoint which drops them
+  it('keeps the items on the response', async () => {
+    const items = [{ product: 'Camiseta', quantity: 1 }]
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue({
+      id: 'order-1',
+      description: 'Pedido de temporada',
+      items,
+    } as never)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toMatchObject({ items })
   })
 })
 

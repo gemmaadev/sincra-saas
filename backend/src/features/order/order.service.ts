@@ -247,7 +247,10 @@ function buildStatusCounts(
 }
 
 export async function getOrderById(businessId: string, orderId: string) {
-  return findOrderWithDetails(businessId, orderId)
+  const order = await findOrderWithDetails(businessId, orderId)
+  if (!order) return null
+
+  return { ...order, description: resolveOrderDescription(order) }
 }
 
 const FINAL_STATUSES = new Set<OrderStatus>(['DELIVERED', 'CANCELLED'])
