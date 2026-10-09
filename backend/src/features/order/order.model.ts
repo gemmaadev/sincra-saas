@@ -7,7 +7,7 @@ const ORDER_LIST_INCLUDE = {
 } satisfies Prisma.OrderInclude
 
 const ORDER_DETAIL_INCLUDE = {
-  client: { select: { id: true, name: true, email: true, phone: true } },
+  client: { select: { id: true, name: true, email: true, phone: true, channels: true } },
   items: true,
   statusHistory: { orderBy: { changedAt: 'asc' } },
 } satisfies Prisma.OrderInclude

@@ -114,7 +114,7 @@ describe('insertOrder', () => {
     expect(prisma.order.create).toHaveBeenCalledWith({
       data,
       include: {
-        client: { select: { id: true, name: true, email: true, phone: true } },
+        client: { select: { id: true, name: true, email: true, phone: true, channels: true } },
         items: true,
         statusHistory: { orderBy: { changedAt: 'asc' } },
       },
