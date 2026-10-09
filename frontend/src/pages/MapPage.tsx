@@ -33,6 +33,13 @@ export default function MapPage() {
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
 
+  const isMapEmpty =
+    layer === 'clients' ? data?.clients.length === 0 : (ordersMapData?.orders.length ?? 0) === 0
+  const emptyMapMessage =
+    layer === 'clients'
+      ? 'Todavía no tienes clientes con ubicación en el mapa.'
+      : 'Todavía no tienes pedidos con ubicación en el mapa.'
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col">
@@ -66,15 +73,17 @@ export default function MapPage() {
           <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
             <div className="relative h-144">
               <ClientsMap
+                layer={layer}
                 clients={data.clients}
+                orders={ordersMapData?.orders ?? []}
                 focusedPositions={focusedPositions}
                 onEditClient={setClientToEdit}
                 onDeleteClient={setClientToDelete}
                 onCreateClientAt={setNewClientLocation}
               />
-              {data.clients.length === 0 && (
+              {isMapEmpty && (
                 <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm text-ink-muted shadow-md">
-                  Todavía no tienes clientes con ubicación en el mapa.
+                  {emptyMapMessage}
                 </p>
               )}
               <div className="absolute right-3 top-3 z-10">

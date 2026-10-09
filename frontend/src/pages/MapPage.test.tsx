@@ -260,6 +260,55 @@ describe('MapPage', () => {
     expect(screen.getByText('Todos tus clientes tienen ubicación exacta.')).toBeInTheDocument()
   })
 
+  // Given an order located on the map
+  // When the user switches to the Pedidos layer
+  // Then its marker should replace the client markers
+  it('shows order markers instead of client markers on the Pedidos layer', async () => {
+    mockMapResponse(mapData, {
+      total: 1,
+      deliveredRevenue: '50',
+      zones: [],
+      orders: [
+        {
+          id: 'order-1',
+          number: 7,
+          status: 'SHIPPED',
+          channel: 'WHATSAPP',
+          price: '50',
+          zone: 'Manresa',
+          clientName: 'Laura Martínez',
+          latitude: 41.7,
+          longitude: 1.8,
+          approximate: false,
+        },
+      ],
+    })
+    renderPage()
+    await screen.findByText('Resumen por zonas')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Pedidos' }))
+
+    expect(await screen.findByTitle('Pedido #7')).toBeInTheDocument()
+    expect(screen.queryByTitle('Laura Martínez')).not.toBeInTheDocument()
+  })
+
+  // Given the backend returns no orders located on the map
+  // When the user switches to the Pedidos layer
+  // Then it should explain that there are no located orders
+  it('shows an empty message for the Pedidos layer when there are no orders', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Resumen por zonas')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Pedidos' }))
+
+    expect(
+      await screen.findByText('Todavía no tienes pedidos con ubicación en el mapa.'),
+    ).toBeInTheDocument()
+  })
+
   // Given the backend fails
   // When the page is rendered
   // Then an error message should be shown
