@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { NotesTab } from './NotesTab'
+import { ClientNotesTab } from './ClientNotesTab'
 import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 
@@ -21,38 +21,38 @@ const mockNote = {
   createdAt: '2026-01-01T00:00:00.000Z',
 }
 
-function renderNotesTab() {
+function renderClientNotesTab() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <MantineProvider>
       <QueryClientProvider client={queryClient}>
-        <NotesTab clientId="client-1" />
+        <ClientNotesTab clientId="client-1" />
       </QueryClientProvider>
     </MantineProvider>,
   )
 }
 
-describe('NotesTab', () => {
+describe('ClientNotesTab', () => {
   beforeEach(() => {
     vi.mocked(notifySuccess).mockReset()
     vi.mocked(api.delete).mockReset()
   })
 
   // Given a client with no notes
-  // When NotesTab is rendered
+  // When ClientNotesTab is rendered
   // Then an empty-state message should be shown
   it('shows an empty state when there are no notes', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [] })
-    renderNotesTab()
+    renderClientNotesTab()
     expect(await screen.findByText('Todavía no hay notas para este cliente.')).toBeInTheDocument()
   })
 
   // Given a client with notes
-  // When NotesTab is rendered
+  // When ClientNotesTab is rendered
   // Then each note's content should be shown
   it('shows the client notes when present', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
-    renderNotesTab()
+    renderClientNotesTab()
     expect(await screen.findByText('Prefiere WhatsApp')).toBeInTheDocument()
   })
 
@@ -61,7 +61,7 @@ describe('NotesTab', () => {
   // Then "Añadir nota" should be disabled
   it('disables "Añadir nota" when the textarea is empty', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [] })
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Todavía no hay notas para este cliente.')
     expect(screen.getByText('Añadir nota')).toBeDisabled()
   })
@@ -72,7 +72,7 @@ describe('NotesTab', () => {
   it('creates a note when "Añadir nota" is clicked', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [] })
     vi.mocked(api.post).mockResolvedValue({ note: mockNote })
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Todavía no hay notas para este cliente.')
 
     fireEvent.change(screen.getByPlaceholderText('Escribe una nota sobre este cliente...'), {
@@ -92,7 +92,7 @@ describe('NotesTab', () => {
   // Then a confirmation should open and nothing should be deleted yet
   it('asks for confirmation before deleting a note', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Prefiere WhatsApp')
 
     fireEvent.click(screen.getByLabelText('Eliminar nota'))
@@ -107,7 +107,7 @@ describe('NotesTab', () => {
   it('deletes the note when the user confirms', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
     vi.mocked(api.delete).mockResolvedValue(undefined)
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Prefiere WhatsApp')
 
     fireEvent.click(screen.getByLabelText('Eliminar nota'))
@@ -123,7 +123,7 @@ describe('NotesTab', () => {
   // Then the note should not be deleted
   it('keeps the note when the user cancels', async () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Prefiere WhatsApp')
 
     fireEvent.click(screen.getByLabelText('Eliminar nota'))
@@ -144,7 +144,7 @@ describe('NotesTab', () => {
     vi.mocked(api.delete).mockRejectedValue(
       new ApiError('Nota no encontrada', 404, 'NOTE_NOT_FOUND'),
     )
-    renderNotesTab()
+    renderClientNotesTab()
     await screen.findByText('Prefiere WhatsApp')
 
     fireEvent.click(screen.getByLabelText('Eliminar nota'))

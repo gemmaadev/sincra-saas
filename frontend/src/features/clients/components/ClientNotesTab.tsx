@@ -9,11 +9,11 @@ import { useCreateNote } from '../hooks/useCreateNote'
 import { useDeleteNote } from '../hooks/useDeleteNote'
 import type { Note } from '../types/note.types'
 
-interface NotesTabProps {
+interface ClientNotesTabProps {
   clientId: string
 }
 
-export function NotesTab({ clientId }: NotesTabProps) {
+export function ClientNotesTab({ clientId }: ClientNotesTabProps) {
   const [content, setContent] = useState('')
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null)
   const { data: notes = [], isLoading, isError } = useClientNotes(clientId)

@@ -8,11 +8,11 @@ import {
 } from '@/features/orders/orderStatus.constants'
 import type { ClientDetail } from '../types/client.types'
 
-interface OrdersTabProps {
+interface ClientOrdersTabProps {
   client: ClientDetail
 }
 
-export function OrdersTab({ client }: OrdersTabProps) {
+export function ClientOrdersTab({ client }: ClientOrdersTabProps) {
   if (client.orders.length === 0) {
     return <p className="text-sm text-ink-muted">Todavía no hay pedidos para este cliente.</p>
   }

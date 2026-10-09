@@ -10,11 +10,11 @@ import { useAssignClientTag } from '../hooks/useAssignClientTag'
 import { useRemoveClientTag } from '../hooks/useRemoveClientTag'
 import type { ClientDetail } from '../types/client.types'
 
-interface TagsTabProps {
+interface ClientTagsTabProps {
   client: ClientDetail
 }
 
-export function TagsTab({ client }: TagsTabProps) {
+export function ClientTagsTab({ client }: ClientTagsTabProps) {
   const { data: tags = [] } = useTags()
   const createTag = useCreateTag()
   const assignTag = useAssignClientTag(client.id)

@@ -9,11 +9,11 @@ import type { ClientDetail } from '../types/client.types'
 
 const RECENT_ORDERS_LIMIT = 3
 
-interface SummaryTabProps {
+interface ClientSummaryTabProps {
   client: ClientDetail
 }
 
-export function SummaryTab({ client }: SummaryTabProps) {
+export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
   const location = [client.address, client.zone].filter(Boolean).join(', ')
   // Only delivered orders are guaranteed revenue — a pending/shipped order could still
   // be cancelled before it completes, and a cancelled one was never actually paid.
