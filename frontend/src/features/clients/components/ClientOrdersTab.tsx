@@ -27,9 +27,12 @@ export function ClientOrdersTab({ client }: ClientOrdersTabProps) {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="font-medium text-ink">#{order.number}</span>
-              {order.description && <span className="text-sm text-ink">{order.description}</span>}
+
+              <span className="text-xs text-ink-muted">
+                {formatDate(new Date(order.createdAt))}
+              </span>
             </div>
-            <span className="text-xs text-ink-muted">{formatDate(new Date(order.createdAt))}</span>
+            {order.description && <span className="text-sm text-ink">{order.description}</span>}
           </div>
           <div className="flex items-center gap-3">
             {order.channel && <ChannelIcons channels={[order.channel]} />}
