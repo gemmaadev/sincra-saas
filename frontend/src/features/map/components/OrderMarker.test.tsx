@@ -1,0 +1,68 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MapContainer } from 'react-leaflet'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { stubMapSize } from '@/shared/test/leaflet'
+import { OrderMarker } from './OrderMarker'
+import type { MapOrder } from '../types/map.types'
+
+const mockOrder: MapOrder = {
+  id: 'order-1',
+  number: 7,
+  status: 'SHIPPED',
+  channel: 'WHATSAPP',
+  price: '50',
+  zone: 'Manresa',
+  clientName: 'Laura Martínez',
+  latitude: 41.7,
+  longitude: 1.8,
+  approximate: false,
+}
+
+function renderMarker(order: MapOrder = mockOrder) {
+  render(
+    <MapContainer center={[41.7, 1.8]} zoom={10}>
+      <OrderMarker order={order} />
+    </MapContainer>,
+  )
+  return { user: userEvent.setup() }
+}
+
+describe('OrderMarker', () => {
+  beforeEach(() => {
+    stubMapSize()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given an order with a location
+  // When the marker is rendered inside a map
+  // Then a marker named after the order number should be drawn
+  it('draws a marker named after the order number', () => {
+    renderMarker()
+
+    expect(screen.getByTitle('Pedido #7')).toBeInTheDocument()
+  })
+
+  // Given an order numbered 7
+  // When the marker is rendered
+  // Then it should show "#7" instead of the client's initials
+  it('shows the order number on the marker', () => {
+    renderMarker()
+
+    expect(screen.getByText('#7')).toBeInTheDocument()
+  })
+
+  // Given a drawn marker
+  // When the user clicks it
+  // Then the popup with the order details should open
+  it('opens the popup card when the marker is clicked', async () => {
+    const { user } = renderMarker()
+
+    await user.click(screen.getByTitle('Pedido #7'))
+
+    expect(await screen.findByText('Laura Martínez')).toBeInTheDocument()
+  })
+})

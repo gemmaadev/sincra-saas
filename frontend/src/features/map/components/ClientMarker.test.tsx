@@ -16,6 +16,8 @@ const mockClient: MapClient = {
   channels: ['WHATSAPP'],
   type: 'Panadería',
   approximate: false,
+  orderCount: 0,
+  deliveredRevenue: '0',
 }
 
 function renderMarker() {
@@ -47,6 +49,15 @@ describe('ClientMarker', () => {
     renderMarker()
 
     expect(screen.getByTitle('Laura Martínez')).toBeInTheDocument()
+  })
+
+  // Given a client named "Laura Martínez"
+  // When the marker is rendered
+  // Then it should show her initials instead of a generic icon
+  it('shows the client initials on the marker', () => {
+    renderMarker()
+
+    expect(screen.getByText('LM')).toBeInTheDocument()
   })
 
   // Given a drawn marker

@@ -30,7 +30,7 @@ const COLUMNS: SkeletonColumn[] = [
     header: 'Pedidos',
     renderCell: () => <Skeleton className="h-3.5 w-6" />,
   },
-  { key: 'lastActivity', header: 'Última actividad' },
+  { key: 'lastActivity', header: 'Última compra' },
 ]
 
 export function ClientsTableSkeleton() {

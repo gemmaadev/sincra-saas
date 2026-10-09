@@ -12,6 +12,8 @@ function mapClient(id: string, zone: string | null, latitude: number): MapClient
     channels: [],
     type: null,
     approximate: false,
+    orderCount: 0,
+    deliveredRevenue: '0',
   }
 }
 

@@ -7,12 +7,17 @@ import MapPage from './MapPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
-import type { ClientMapResponse } from '@/features/map/types/map.types'
+import type { ClientMapResponse, OrderMapResponse } from '@/features/map/types/map.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
 })
+
+// jsdom has no real <canvas> context; see ZoneBarChart.test.tsx for why this is mocked.
+vi.mock('echarts-for-react', () => ({
+  default: () => <div data-testid="echarts-mock" />,
+}))
 
 const mapData: ClientMapResponse = {
   total: 3,
@@ -26,6 +31,8 @@ const mapData: ClientMapResponse = {
       channels: ['WHATSAPP'],
       type: 'Panadería',
       approximate: false,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
     {
       id: 'client-2',
@@ -36,6 +43,8 @@ const mapData: ClientMapResponse = {
       channels: ['GMAIL'],
       type: null,
       approximate: true,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
     {
       id: 'client-3',
@@ -46,6 +55,8 @@ const mapData: ClientMapResponse = {
       channels: [],
       type: null,
       approximate: false,
+      orderCount: 0,
+      deliveredRevenue: '0',
     },
   ],
   zones: [
@@ -72,9 +83,12 @@ const clientDetail = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
-function mockMapResponse(response: ClientMapResponse) {
+const emptyOrdersMap: OrderMapResponse = { total: 0, deliveredRevenue: '0', zones: [], orders: [] }
+
+function mockMapResponse(response: ClientMapResponse, ordersResponse: OrderMapResponse = emptyOrdersMap) {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path.startsWith('/clients/map')) return Promise.resolve(response)
+    if (path.startsWith('/orders/map')) return Promise.resolve(ordersResponse)
     return Promise.resolve({ client: clientDetail })
   })
 }
@@ -103,33 +117,51 @@ describe('MapPage', () => {
 
   // Given the backend returns clients in two zones, one of them without exact location
   // When the page is rendered
-  // Then it should show the KPIs, the zone summary, the approximate clients and the pending charts
-  it('shows the map KPIs, the side panel and the pending charts', async () => {
+  // Then it should show the KPIs, the zone summary and the approximate clients
+  it('shows the map KPIs and the side panel', async () => {
     mockMapResponse(mapData)
     renderPage()
 
-    expect(await screen.findByText('Clientes en el mapa')).toBeInTheDocument()
+    await screen.findByText('Resumen por zonas')
+
+    expect(screen.getByText('Clientes en el mapa')).toBeInTheDocument()
     expect(screen.getByText('Zonas activas')).toBeInTheDocument()
     expect(screen.getByText('Zona principal')).toBeInTheDocument()
     expect(screen.getByText('Resumen por zonas')).toBeInTheDocument()
     expect(screen.getByText('2 clientes - 67 %')).toBeInTheDocument()
-    expect(screen.getByText('Ingresos por zona')).toBeInTheDocument()
+  })
+
+  // Given the backend returns orders aggregated by zone
+  // When the page is rendered
+  // Then it should show the revenue and average ticket charts, regardless of the active layer
+  it('shows the zone revenue charts for both layers', async () => {
+    mockMapResponse(mapData, {
+      total: 3,
+      deliveredRevenue: '120',
+      zones: [{ zone: 'Bilbao', count: 2, revenue: '120', percentage: 100 }],
+      orders: [],
+    })
+    renderPage()
+
+    expect(await screen.findByText('Ingresos por zona')).toBeInTheDocument()
     expect(screen.getByText('Ticket medio por zona')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Todavía no hay pedidos entregados en ninguna zona.'),
+    ).not.toBeInTheDocument()
   })
 
   // Given the backend returns clients
   // When the page is rendered
-  // Then the map should be drawn with its tiles credit and the orders layers disabled
-  it('renders the map with its credit and the disabled orders layers', async () => {
+  // Then the map should be drawn with its tiles credit and the clients layer active
+  it('renders the map with its credit and the clients layer active', async () => {
     mockMapResponse(mapData)
     const { container } = renderPage()
 
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
 
     expect(container.querySelector('.leaflet-container')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'OpenStreetMap' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clientes' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Pedidos' })).toBeDisabled()
   })
 
   // Given one client has no exact location
@@ -166,7 +198,7 @@ describe('MapPage', () => {
   it('opens the create modal with the location clicked on the map', async () => {
     mockMapResponse(mapData)
     const { container } = renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
 
     fireEvent.click(container.querySelector('.leaflet-container') as HTMLElement, {
       clientX: 400,
@@ -186,7 +218,7 @@ describe('MapPage', () => {
   it('requests the map again when the filters change', async () => {
     mockMapResponse(mapData)
     renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
     const user = userEvent.setup()
 
     await user.selectOptions(screen.getByLabelText('Canal'), 'WHATSAPP')
@@ -204,7 +236,7 @@ describe('MapPage', () => {
   it('clears the filters', async () => {
     mockMapResponse(mapData)
     renderPage()
-    await screen.findByText('Clientes en el mapa')
+    await screen.findByText('Resumen por zonas')
     const user = userEvent.setup()
     await user.selectOptions(screen.getByLabelText('Canal'), 'GMAIL')
     await waitFor(() => expect(api.get).toHaveBeenCalledWith('/clients/map?channel=GMAIL'))
@@ -226,6 +258,55 @@ describe('MapPage', () => {
       await screen.findByText('Todavía no tienes clientes con ubicación en el mapa.'),
     ).toBeInTheDocument()
     expect(screen.getByText('Todos tus clientes tienen ubicación exacta.')).toBeInTheDocument()
+  })
+
+  // Given an order located on the map
+  // When the user switches to the Pedidos layer
+  // Then its marker should replace the client markers
+  it('shows order markers instead of client markers on the Pedidos layer', async () => {
+    mockMapResponse(mapData, {
+      total: 1,
+      deliveredRevenue: '50',
+      zones: [],
+      orders: [
+        {
+          id: 'order-1',
+          number: 7,
+          status: 'SHIPPED',
+          channel: 'WHATSAPP',
+          price: '50',
+          zone: 'Manresa',
+          clientName: 'Laura Martínez',
+          latitude: 41.7,
+          longitude: 1.8,
+          approximate: false,
+        },
+      ],
+    })
+    renderPage()
+    await screen.findByText('Resumen por zonas')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Pedidos' }))
+
+    expect(await screen.findByTitle('Pedido #7')).toBeInTheDocument()
+    expect(screen.queryByTitle('Laura Martínez')).not.toBeInTheDocument()
+  })
+
+  // Given the backend returns no orders located on the map
+  // When the user switches to the Pedidos layer
+  // Then it should explain that there are no located orders
+  it('shows an empty message for the Pedidos layer when there are no orders', async () => {
+    mockMapResponse(mapData)
+    renderPage()
+    await screen.findByText('Resumen por zonas')
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Pedidos' }))
+
+    expect(
+      await screen.findByText('Todavía no tienes pedidos con ubicación en el mapa.'),
+    ).toBeInTheDocument()
   })
 
   // Given the backend fails

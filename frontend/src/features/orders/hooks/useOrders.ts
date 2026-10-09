@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
 import type { OrdersResponse, UseOrdersParams } from '../types/order.types'
 
 export function useOrders(params: UseOrdersParams = {}) {
   return useQuery({
     queryKey: ['orders', params],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const query = new URLSearchParams()
       if (params.page) query.set('page', String(params.page))

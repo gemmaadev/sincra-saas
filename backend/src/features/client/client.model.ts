@@ -5,6 +5,12 @@ const ACTIVE_CLIENT_TAGS_INCLUDE = {
   clientTags: { where: { removedAt: null }, include: { tag: true } },
 } satisfies Prisma.ClientInclude
 
+const CLIENT_LIST_INCLUDE = {
+  ...ACTIVE_CLIENT_TAGS_INCLUDE,
+  _count: { select: { orders: true } },
+  orders: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+} satisfies Prisma.ClientInclude
+
 const CLIENT_DETAIL_INCLUDE = {
   ...ACTIVE_CLIENT_TAGS_INCLUDE,
   orders: {
@@ -18,6 +24,8 @@ const CLIENT_DETAIL_INCLUDE = {
       price: true,
       expectedDate: true,
       createdAt: true,
+      description: true,
+      items: { select: { product: true, quantity: true } },
     },
   },
 } satisfies Prisma.ClientInclude
@@ -32,12 +40,22 @@ export async function findClientsPage(where: Prisma.ClientWhereInput, skip: numb
     skip,
     take,
     orderBy: { createdAt: 'desc' },
-    include: ACTIVE_CLIENT_TAGS_INCLUDE,
+    include: CLIENT_LIST_INCLUDE,
   })
 }
 
 export async function countClients(where: Prisma.ClientWhereInput) {
   return prisma.client.count({ where })
+}
+
+export async function countRecurringClients(clientWhere: Prisma.ClientWhereInput) {
+  const groups = await prisma.order.groupBy({
+    by: ['clientId'],
+    where: { client: clientWhere },
+    having: { clientId: { _count: { gte: 2 } } },
+  })
+
+  return groups.length
 }
 
 export async function findClientById(businessId: string, clientId: string) {

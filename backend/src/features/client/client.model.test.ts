@@ -5,14 +5,76 @@ import {
   insertClientTag,
   markClientTagRemoved,
   findClientWithDetails,
+  findClientsPage,
+  countRecurringClients,
 } from './client.model'
 
 vi.mock('../../config/db', () => ({
   default: {
     clientTag: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    client: { findUnique: vi.fn() },
+    client: { findUnique: vi.fn(), findMany: vi.fn() },
+    order: { groupBy: vi.fn() },
   },
 }))
+
+describe('findClientsPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a where clause, skip and take
+  // When listing a page of clients
+  // Then each row should include its order count and the date of its most recent order
+  it('includes the order count and the most recent order date', async () => {
+    await findClientsPage({ businessId: 'business-1' }, 0, 20)
+
+    expect(prisma.client.findMany).toHaveBeenCalledWith({
+      where: { businessId: 'business-1' },
+      skip: 0,
+      take: 20,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        clientTags: { where: { removedAt: null }, include: { tag: true } },
+        _count: { select: { orders: true } },
+        orders: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+      },
+    })
+  })
+})
+
+describe('countRecurringClients', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a client-level filter (business, and possibly channel/tag/search)
+  // When counting recurring clients
+  // Then it should group the client's orders and only keep clients with 2 or more
+  it('groups orders by client and filters to 2 or more, honoring the client filter', async () => {
+    vi.mocked(prisma.order.groupBy).mockResolvedValue([
+      { clientId: 'client-1' },
+      { clientId: 'client-2' },
+    ] as never)
+
+    const result = await countRecurringClients({ businessId: 'business-1', type: 'empresa' })
+
+    expect(prisma.order.groupBy).toHaveBeenCalledWith({
+      by: ['clientId'],
+      where: { client: { businessId: 'business-1', type: 'empresa' } },
+      having: { clientId: { _count: { gte: 2 } } },
+    })
+    expect(result).toBe(2)
+  })
+
+  // Given no client has 2 or more orders
+  // When counting recurring clients
+  // Then it should return 0
+  it('returns 0 when no client qualifies', async () => {
+    vi.mocked(prisma.order.groupBy).mockResolvedValue([] as never)
+
+    expect(await countRecurringClients({ businessId: 'business-1' })).toBe(0)
+  })
+})
 
 describe('findClientWithDetails', () => {
   beforeEach(() => {
@@ -40,6 +102,8 @@ describe('findClientWithDetails', () => {
             price: true,
             expectedDate: true,
             createdAt: true,
+            description: true,
+            items: { select: { product: true, quantity: true } },
           },
         },
       },

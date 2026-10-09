@@ -1,4 +1,4 @@
-import type { Channel } from '../../../generated/prisma/client'
+import type { Channel, Prisma } from '../../../generated/prisma/client'
 
 export interface ClientMapFilters {
   channel?: Channel
@@ -23,6 +23,8 @@ export interface ClientMapRecord {
   address: string | null
   channels: Channel[]
   type: string | null
+  _count: { orders: number }
+  orders: { price: Prisma.Decimal | null }[]
 }
 
 export interface Coordinates {
@@ -41,6 +43,8 @@ export interface MapClient {
   channels: Channel[]
   type: string | null
   approximate: boolean
+  orderCount: number
+  deliveredRevenue: string
 }
 
 export interface ZoneSummary {

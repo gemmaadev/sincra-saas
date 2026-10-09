@@ -1,5 +1,6 @@
 import { Avatar, TagPill } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
+import { formatDate } from '@/shared/utils'
 import type { Client } from '../types/client.types'
 
 export const clientsTableColumns = [
@@ -36,25 +37,18 @@ export const clientsTableColumns = [
   {
     key: 'orders',
     header: 'Pedidos',
-    render: () => (
-      <span
-        className="text-sm text-ink-muted"
-        title="Disponible cuando exista el módulo de pedidos"
-      >
-        —
-      </span>
-    ),
+    render: (client: Client) => <span className="text-ink">{client.orderCount}</span>,
   },
   {
     key: 'lastActivity',
-    header: 'Última actividad',
-    render: () => (
-      <span
-        className="text-sm text-ink-muted"
-        title="Entrada automática desde pedidos/comunicaciones"
-      >
-        —
-      </span>
-    ),
+    header: 'Última compra',
+    render: (client: Client) =>
+      client.lastOrderAt ? (
+        <span className="text-sm text-ink">{formatDate(new Date(client.lastOrderAt))}</span>
+      ) : (
+        <span className="text-sm text-ink-muted" title="Este cliente todavía no tiene pedidos">
+          —
+        </span>
+      ),
   },
 ]

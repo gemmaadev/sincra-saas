@@ -1,4 +1,5 @@
 import type { Tag } from '@/features/tags/types/tag.types'
+import type { OrderStatus, OrderKind } from '@/features/orders/types/order.types'
 import type { Channel } from '@/shared/types'
 
 export interface ClientTag {
@@ -6,6 +7,18 @@ export interface ClientTag {
   tagId: string
   aiGenerated: boolean
   tag: Tag
+}
+
+export interface ClientOrderSummary {
+  id: string
+  number: number
+  status: OrderStatus
+  kind: OrderKind
+  channel: Channel | null
+  price: string | null
+  expectedDate: string | null
+  createdAt: string
+  description: string | null
 }
 
 export interface Client {
@@ -17,6 +30,8 @@ export interface Client {
   type: string | null
   zone: string | null
   clientTags: ClientTag[]
+  orderCount: number
+  lastOrderAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -34,6 +49,7 @@ export interface ClientDetail {
   longitude: number | null
   lastContact: string | null
   clientTags: ClientTag[]
+  orders: ClientOrderSummary[]
   createdAt: string
   updatedAt: string
 }
@@ -47,6 +63,8 @@ export interface ClientsResponse {
     totalPages: number
   }
   newClientsCount: number
+  recurringClientsCount: number
+  potentialClientsCount: number
 }
 
 export interface ClientDetailResponse {

@@ -38,7 +38,7 @@ export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
         tabs={[
           { key: 'resumen', label: 'Resumen', content: <SummaryTab client={client} /> },
           { key: 'historial', label: 'Historial', content: null, disabled: true },
-          { key: 'pedidos', label: 'Pedidos', content: <OrdersTab /> },
+          { key: 'pedidos', label: 'Pedidos', content: <OrdersTab client={client} /> },
           { key: 'notas', label: 'Notas', content: <NotesTab clientId={client.id} /> },
           { key: 'etiquetas', label: 'Etiquetas', content: <TagsTab client={client} /> },
         ]}

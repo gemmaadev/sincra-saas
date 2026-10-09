@@ -80,6 +80,8 @@ describe('findClientsForMap', () => {
           address: true,
           channels: true,
           type: true,
+          _count: { select: { orders: true } },
+          orders: { where: { status: 'DELIVERED' }, select: { price: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),

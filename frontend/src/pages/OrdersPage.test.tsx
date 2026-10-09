@@ -22,7 +22,7 @@ const mockOrder = {
   expectedDate: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   client: { id: 'client-1', name: 'Laura García' },
-  items: [{ product: 'Chaqueta oversize', description: 'Talla M, beige' }],
+  description: 'Chaqueta oversize',
 }
 
 function mockApiGet(overrides?: {

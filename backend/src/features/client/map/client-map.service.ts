@@ -1,3 +1,4 @@
+import { Prisma } from '../../../generated/prisma/client'
 import type { Channel } from '../../../generated/prisma/client'
 import { findClientsForMap, findZoneCoordinates } from './client-map.model'
 import type {
@@ -97,6 +98,12 @@ export function computeZoneCentroids(points: ZonePoint[]): Map<string, Coordinat
   return centroids
 }
 
+function sumDeliveredRevenue(orders: { price: Prisma.Decimal | null }[]): string {
+  return orders
+    .reduce((total, order) => total.plus(order.price ?? 0), new Prisma.Decimal(0))
+    .toString()
+}
+
 export function buildMapClients(
   records: ClientMapRecord[],
   centroids: Map<string, Coordinates>,
@@ -104,17 +111,26 @@ export function buildMapClients(
   const mapClients: MapClient[] = []
 
   for (const record of records) {
-    const { latitude, longitude, address, ...rest } = record
+    const { latitude, longitude, address, _count, orders, ...rest } = record
+    const orderCount = _count.orders
+    const deliveredRevenue = sumDeliveredRevenue(orders)
 
     if (latitude !== null && longitude !== null) {
-      mapClients.push({ ...rest, latitude, longitude, approximate: !address?.trim() })
+      mapClients.push({
+        ...rest,
+        latitude,
+        longitude,
+        approximate: !address?.trim(),
+        orderCount,
+        deliveredRevenue,
+      })
       continue
     }
 
     const zoneKey = getZoneKey(record.zone)
     const centroid = zoneKey ? centroids.get(zoneKey) : undefined
     if (centroid) {
-      mapClients.push({ ...rest, ...centroid, approximate: true })
+      mapClients.push({ ...rest, ...centroid, approximate: true, orderCount, deliveredRevenue })
     }
   }
 

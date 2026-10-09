@@ -3,7 +3,7 @@ import type { Prisma, OrderStatus } from '../../generated/prisma/client'
 
 const ORDER_LIST_INCLUDE = {
   client: { select: { id: true, name: true } },
-  items: { take: 1, select: { product: true, description: true } },
+  items: { select: { product: true, quantity: true } },
 } satisfies Prisma.OrderInclude
 
 const ORDER_DETAIL_INCLUDE = {

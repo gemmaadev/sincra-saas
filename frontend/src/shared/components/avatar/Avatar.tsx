@@ -1,14 +1,6 @@
+import { getInitials } from '@/shared/utils'
 import { avatarSizes } from './avatar.variants'
 import type { AvatarProps } from './avatar.types'
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
 
 export function Avatar({ src, name, size = 'md', online = false }: AvatarProps) {
   return (

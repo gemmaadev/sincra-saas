@@ -1,7 +1,11 @@
 import { Badge } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../orderStatus.constants'
+import {
+  ORDER_STATUS_LABELS,
+  ORDER_STATUS_COLORS,
+  ORDER_STATUS_ICONS,
+} from '../orderStatus.constants'
 import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [
@@ -18,28 +22,20 @@ export const ordersTableColumns = [
   {
     key: 'product',
     header: 'Producto / Servicio',
-    render: (order: Order) => {
-      const item = order.items[0]
-
-      if (!item) {
-        return <span className="text-sm text-ink-muted">—</span>
-      }
-
-      return (
-        <div className="flex flex-col">
-          <span className="text-ink">{item.product}</span>
-          {item.description && (
-            <span className="text-sm text-ink-muted">{item.description}</span>
-          )}
-        </div>
-      )
-    },
+    render: (order: Order) =>
+      order.description ? (
+        <span className="text-ink">{order.description}</span>
+      ) : (
+        <span className="text-sm text-ink-muted">—</span>
+      ),
   },
   {
     key: 'status',
     header: 'Estado',
     render: (order: Order) => (
-      <Badge color={ORDER_STATUS_COLORS[order.status]}>{ORDER_STATUS_LABELS[order.status]}</Badge>
+      <Badge color={ORDER_STATUS_COLORS[order.status]} icon={ORDER_STATUS_ICONS[order.status]}>
+        {ORDER_STATUS_LABELS[order.status]}
+      </Badge>
     ),
   },
   {

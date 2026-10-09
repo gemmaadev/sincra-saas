@@ -15,6 +15,9 @@ import {
   deleteOrderById,
 } from './order.model'
 import { findClientById } from '../client/client.model'
+import { findBusinessCountry } from '../auth/auth.model'
+import { geocodeAddress } from '../../shared/services/geocoding.service'
+import type { GeocodedLocation } from '../../shared/services/geocoding.service'
 import type { CreateOrderInput, UpdateOrderInput, ListOrdersFilters, OrderItemInput } from './order.types'
 
 const MAX_NUMBER_ATTEMPTS = 3
@@ -35,6 +38,28 @@ function toItemsData(items: OrderItemInput[]) {
   }))
 }
 
+interface OrderItemsSummaryInput {
+  description: string | null
+  items: { product: string; quantity: number }[]
+}
+
+// An order's own description, when set, is a general summary of the whole order.
+// Without one, fall back to a summary built from its items (e.g. "Chaqueta oversize x2, Bolso de piel").
+export function resolveOrderDescription(order: OrderItemsSummaryInput): string | null {
+  if (order.description) return order.description
+
+  if (order.items.length === 0) return null
+
+  return order.items
+    .map((item) => (item.quantity > 1 ? `${item.product} x${item.quantity}` : item.product))
+    .join(', ')
+}
+
+function mapOrderRow<Row extends OrderItemsSummaryInput>(order: Row) {
+  const { items, ...rest } = order
+  return { ...rest, description: resolveOrderDescription(order) }
+}
+
 async function assertClientExists(businessId: string, clientId: string) {
   const client = await findClientById(businessId, clientId)
 
@@ -53,6 +78,53 @@ async function assertOrderExists(businessId: string, orderId: string) {
   }
 
   return order
+}
+
+async function geocodeOrderLocation(
+  businessId: string,
+  address?: string | null,
+  zone?: string | null,
+): Promise<GeocodedLocation | null> {
+  if (!address?.trim() && !zone?.trim()) return null
+
+  const countryCode = await findBusinessCountry(businessId)
+
+  return geocodeAddress({ address, zone, countryCode: countryCode ?? undefined })
+}
+
+// An order only gets its own coordinates when it has its own address/zone, explicit or geocoded.
+// Without either, it has none of its own — order-map.service falls back to the client's location.
+async function locateOrder(
+  businessId: string,
+  input: { address?: string | null; zone?: string | null; latitude?: number; longitude?: number },
+): Promise<GeocodedLocation | null> {
+  if (input.latitude !== undefined && input.longitude !== undefined) {
+    return { latitude: input.latitude, longitude: input.longitude }
+  }
+
+  return geocodeOrderLocation(businessId, input.address, input.zone)
+}
+
+function hasTextChanged(newValue: string | null | undefined, currentValue: string | null): boolean {
+  return newValue !== undefined && (newValue?.trim() || null) !== (currentValue?.trim() || null)
+}
+
+async function relocateOrder(
+  businessId: string,
+  existing: { address: string | null; zone: string | null },
+  input: UpdateOrderInput,
+): Promise<GeocodedLocation | null> {
+  if (input.latitude !== undefined && input.longitude !== undefined) return null
+
+  const addressChanged = hasTextChanged(input.address, existing.address)
+  const zoneChanged = hasTextChanged(input.zone, existing.zone)
+  if (!addressChanged && !zoneChanged) return null
+
+  return geocodeOrderLocation(
+    businessId,
+    input.address === undefined ? existing.address : input.address,
+    input.zone === undefined ? existing.zone : input.zone,
+  )
 }
 
 async function insertOrderWithNumber(
@@ -88,6 +160,7 @@ export async function createOrder(
   await assertClientExists(businessId, input.clientId)
 
   const price = computeItemsTotal(input.items)
+  const location = await locateOrder(businessId, input)
 
   return insertOrderWithNumber(businessId, (number) => ({
     businessId,
@@ -98,8 +171,8 @@ export async function createOrder(
     price,
     address: input.address,
     zone: input.zone,
-    latitude: input.latitude,
-    longitude: input.longitude,
+    latitude: location?.latitude,
+    longitude: location?.longitude,
     expectedDate: input.expectedDate,
     description: input.description,
     notes: input.notes,
@@ -152,7 +225,7 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
   ])
 
   return {
-    ...buildPaginatedResponse(data, total, page, limit),
+    ...buildPaginatedResponse(data.map(mapOrderRow), total, page, limit),
     statusCounts: buildStatusCounts(statusGroups),
   }
 }
@@ -204,6 +277,7 @@ export async function updateOrder(
   }
 
   const items = input.items ? toItemsData(input.items) : undefined
+  const location = await relocateOrder(businessId, existing, input)
 
   const data: Prisma.OrderUpdateInput = {
     ...(input.channel !== undefined && { channel: input.channel }),
@@ -212,6 +286,7 @@ export async function updateOrder(
     ...(input.zone !== undefined && { zone: input.zone }),
     ...(input.latitude !== undefined && { latitude: input.latitude }),
     ...(input.longitude !== undefined && { longitude: input.longitude }),
+    ...(location && { latitude: location.latitude, longitude: location.longitude }),
     ...(input.expectedDate !== undefined && { expectedDate: input.expectedDate }),
     ...(input.description !== undefined && { description: input.description }),
     ...(input.notes !== undefined && { notes: input.notes }),
