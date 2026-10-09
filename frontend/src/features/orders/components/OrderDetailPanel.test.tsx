@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { OrderDetailPanel } from './OrderDetailPanel'
@@ -22,7 +23,7 @@ const mockOrder: OrderDetail = {
   expectedDate: null,
   description: 'Camiseta',
   notes: null,
-  client: { id: 'client-1', name: 'Laura García', email: null, phone: null },
+  client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -65,13 +66,12 @@ describe('OrderDetailPanel', () => {
 
   // Given the order loads successfully
   // When the panel is rendered
-  // Then it should show the order number and its status
-  it('shows the order number and status', async () => {
+  // Then it should show the order number as the panel title
+  it('shows the order number', async () => {
     vi.mocked(api.get).mockResolvedValue({ order: mockOrder })
     renderPanel()
 
     expect(await screen.findByText('Pedido #7')).toBeInTheDocument()
-    expect(screen.getByText('Pendiente')).toBeInTheDocument()
   })
 
   // Given the order loads successfully
@@ -87,5 +87,23 @@ describe('OrderDetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Seguimiento' })).toBeEnabled()
     expect(screen.getByRole('tab', { name: 'Notas' })).toBeEnabled()
     expect(screen.getByRole('tab', { name: 'Etiquetas' })).toBeDisabled()
+  })
+
+  // Given an order with items
+  // When the user switches to the Productos tab
+  // Then it should list those items
+  it('shows the order items on the Productos tab', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      order: {
+        ...mockOrder,
+        items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' }],
+      },
+    })
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    await userEvent.setup().click(screen.getByRole('tab', { name: 'Productos' }))
+
+    expect(await screen.findByText('Camiseta')).toBeInTheDocument()
   })
 })

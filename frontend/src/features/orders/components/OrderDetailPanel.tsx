@@ -1,6 +1,7 @@
-import { Badge, Tabs } from '@/shared/components'
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, ORDER_STATUS_ICONS } from '../orderStatus.constants'
+import { Tabs } from '@/shared/components'
 import { useOrderDetail } from '../hooks/useOrderDetail'
+import { OrderSummaryTab } from './OrderSummaryTab'
+import { OrderItemsList } from './OrderItemsList'
 
 interface OrderDetailPanelProps {
   id: string
@@ -19,16 +20,11 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
-        <Badge color={ORDER_STATUS_COLORS[order.status]} icon={ORDER_STATUS_ICONS[order.status]}>
-          {ORDER_STATUS_LABELS[order.status]}
-        </Badge>
-      </div>
+      <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
       <Tabs
         tabs={[
-          { key: 'resumen', label: 'Resumen', content: null },
-          { key: 'productos', label: 'Productos', content: null },
+          { key: 'resumen', label: 'Resumen', content: <OrderSummaryTab order={order} /> },
+          { key: 'productos', label: 'Productos', content: <OrderItemsList items={order.items} /> },
           { key: 'seguimiento', label: 'Seguimiento', content: null },
           { key: 'notas', label: 'Notas', content: null },
           {
