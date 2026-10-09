@@ -1,4 +1,5 @@
 import type { Channel } from '@/shared/types'
+import type { OrderStatus } from '@/features/orders/types/order.types'
 
 export type MapLayer = 'clients' | 'orders'
 
@@ -48,8 +49,22 @@ export interface OrderMapZoneSummary {
   percentage: number
 }
 
+export interface MapOrder {
+  id: string
+  number: number
+  status: OrderStatus
+  channel: Channel | null
+  price: string
+  zone: string | null
+  clientName: string
+  latitude: number
+  longitude: number
+  approximate: boolean
+}
+
 export interface OrderMapResponse {
   total: number
   deliveredRevenue: string
   zones: OrderMapZoneSummary[]
+  orders: MapOrder[]
 }

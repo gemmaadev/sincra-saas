@@ -83,7 +83,7 @@ const clientDetail = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
-const emptyOrdersMap: OrderMapResponse = { total: 0, deliveredRevenue: '0', zones: [] }
+const emptyOrdersMap: OrderMapResponse = { total: 0, deliveredRevenue: '0', zones: [], orders: [] }
 
 function mockMapResponse(response: ClientMapResponse, ordersResponse: OrderMapResponse = emptyOrdersMap) {
   vi.mocked(api.get).mockImplementation((path: string) => {
@@ -139,6 +139,7 @@ describe('MapPage', () => {
       total: 3,
       deliveredRevenue: '120',
       zones: [{ zone: 'Bilbao', count: 2, revenue: '120', percentage: 100 }],
+      orders: [],
     })
     renderPage()
 

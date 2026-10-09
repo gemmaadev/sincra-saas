@@ -13,6 +13,7 @@ const mockResponse: OrderMapResponse = {
   total: 2,
   deliveredRevenue: '100',
   zones: [{ zone: 'Barcelona', count: 1, revenue: '100', percentage: 100 }],
+  orders: [],
 }
 
 function renderUseOrdersMap(

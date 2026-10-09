@@ -14,6 +14,7 @@ describe('buildOrderMapKpis', () => {
         { zone: 'Bilbao', count: 1, revenue: '100', percentage: 50 },
         { zone: 'Manresa', count: 2, revenue: '50.5', percentage: 50 },
       ],
+      orders: [],
     }
 
     expect(buildOrderMapKpis(data)).toEqual({
@@ -28,7 +29,7 @@ describe('buildOrderMapKpis', () => {
   // When the KPIs are built
   // Then everything should be zero and there should be no top zone
   it('returns empty KPIs when there are no orders', () => {
-    expect(buildOrderMapKpis({ total: 0, deliveredRevenue: '0', zones: [] })).toEqual({
+    expect(buildOrderMapKpis({ total: 0, deliveredRevenue: '0', zones: [], orders: [] })).toEqual({
       totalOrders: 0,
       zonesWithSales: 0,
       deliveredRevenue: 0,
