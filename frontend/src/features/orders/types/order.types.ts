@@ -21,6 +21,51 @@ export interface Order {
   description: string | null
 }
 
+export interface OrderItem {
+  id: string
+  product: string
+  description: string | null
+  quantity: number
+  unitPrice: string
+}
+
+export interface OrderStatusChangeEntry {
+  id: string
+  status: OrderStatus
+  changedBy: string | null
+  changedAt: string
+}
+
+export interface OrderDetailClient {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+}
+
+export interface OrderDetail {
+  id: string
+  number: number
+  status: OrderStatus
+  channel: Channel | null
+  kind: OrderKind
+  price: string | null
+  address: string | null
+  zone: string | null
+  expectedDate: string | null
+  description: string | null
+  notes: string | null
+  client: OrderDetailClient
+  items: OrderItem[]
+  statusHistory: OrderStatusChangeEntry[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OrderDetailResponse {
+  order: OrderDetail
+}
+
 export interface OrdersResponse {
   data: Order[]
   pagination: {
