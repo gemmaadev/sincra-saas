@@ -13,8 +13,12 @@ import {
   findOrderWithDetails,
   updateOrderWithItems,
   deleteOrderById,
+  findActiveOrderTag,
+  insertOrderTag,
+  markOrderTagRemoved,
 } from './order.model'
 import { findClientById } from '../client/client.model'
+import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
@@ -175,7 +179,6 @@ export async function createOrder(
     longitude: location?.longitude,
     expectedDate: input.expectedDate,
     description: input.description,
-    notes: input.notes,
     createdBy: userId,
     items: { create: toItemsData(input.items) },
     statusHistory: { create: { status: 'PENDING', changedBy: userId } },
@@ -255,12 +258,15 @@ export async function getOrderById(businessId: string, orderId: string) {
 
 const FINAL_STATUSES = new Set<OrderStatus>(['DELIVERED', 'CANCELLED'])
 
+// Once in a final status, the order can still be reopened into the normal flow — to
+// correct a mistake, e.g. marked DELIVERED/CANCELLED too soon — but never swapped directly
+// into the *other* final status without passing back through the open flow first.
 function assertValidStatusTransition(currentStatus: OrderStatus, nextStatus: OrderStatus) {
   if (nextStatus === currentStatus) return
 
-  if (FINAL_STATUSES.has(currentStatus)) {
+  if (FINAL_STATUSES.has(currentStatus) && FINAL_STATUSES.has(nextStatus)) {
     throw new AppError(
-      `El pedido ya está en un estado final (${currentStatus}) y no se puede cambiar`,
+      `El pedido ya está en un estado final (${currentStatus}) y no se puede cambiar directamente a otro estado final`,
       400,
       'ORDER_STATUS_FINAL',
     )
@@ -292,7 +298,6 @@ export async function updateOrder(
     ...(location && { latitude: location.latitude, longitude: location.longitude }),
     ...(input.expectedDate !== undefined && { expectedDate: input.expectedDate }),
     ...(input.description !== undefined && { description: input.description }),
-    ...(input.notes !== undefined && { notes: input.notes }),
     ...(input.status !== undefined && { status: input.status }),
     ...(input.items && { price: computeItemsTotal(input.items) }),
   }
@@ -309,4 +314,31 @@ export async function deleteOrder(businessId: string, orderId: string) {
   await assertOrderExists(businessId, orderId)
 
   await deleteOrderById(orderId)
+}
+
+export async function assignTagToOrder(businessId: string, orderId: string, tagId: string) {
+  await assertOrderExists(businessId, orderId)
+
+  const tag = await findTagById(businessId, tagId)
+  if (!tag) {
+    throw new AppError('Etiqueta no encontrada', 404, 'TAG_NOT_FOUND')
+  }
+
+  const activeAssignment = await findActiveOrderTag(orderId, tagId)
+  if (activeAssignment) {
+    throw new AppError('Este pedido ya tiene esa etiqueta', 409, 'TAG_ALREADY_ASSIGNED')
+  }
+
+  return insertOrderTag(orderId, tagId)
+}
+
+export async function removeTagFromOrder(businessId: string, orderId: string, tagId: string) {
+  await assertOrderExists(businessId, orderId)
+
+  const activeAssignment = await findActiveOrderTag(orderId, tagId)
+  if (!activeAssignment) {
+    throw new AppError('El pedido no tiene esa etiqueta', 404, 'ORDER_TAG_NOT_FOUND')
+  }
+
+  await markOrderTagRemoved(activeAssignment.id)
 }

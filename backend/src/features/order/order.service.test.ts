@@ -2,13 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as orderModel from './order.model'
 import * as clientModel from '../client/client.model'
 import * as authModel from '../auth/auth.model'
+import * as tagModel from '../tag/tag.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
-import { createOrder, listOrders, getOrderById, updateOrder, deleteOrder } from './order.service'
+import {
+  createOrder,
+  listOrders,
+  getOrderById,
+  updateOrder,
+  deleteOrder,
+  assignTagToOrder,
+  removeTagFromOrder,
+} from './order.service'
 
 vi.mock('./order.model')
 vi.mock('../client/client.model')
 vi.mock('../auth/auth.model')
+vi.mock('../tag/tag.model')
 vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
 
@@ -428,9 +438,9 @@ describe('updateOrder', () => {
   it('throws ORDER_NOT_FOUND when the order is not in the business', async () => {
     vi.mocked(orderModel.findOrderById).mockResolvedValue(null)
 
-    await expect(updateOrder('business-1', 'user-1', 'order-1', { notes: 'x' })).rejects.toMatchObject(
-      { statusCode: 404, code: 'ORDER_NOT_FOUND' },
-    )
+    await expect(
+      updateOrder('business-1', 'user-1', 'order-1', { description: 'x' }),
+    ).rejects.toMatchObject({ statusCode: 404, code: 'ORDER_NOT_FOUND' })
     expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
   })
 
@@ -438,11 +448,11 @@ describe('updateOrder', () => {
   // When the order is updated
   // Then no status history entry should be appended
   it('does not append a status history entry when the status does not change', async () => {
-    await updateOrder('business-1', 'user-1', 'order-1', { notes: 'Entregar por la tarde' })
+    await updateOrder('business-1', 'user-1', 'order-1', { description: 'Entregar por la tarde' })
 
     expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
       'order-1',
-      { notes: 'Entregar por la tarde' },
+      { description: 'Entregar por la tarde' },
       undefined,
       undefined,
     )
@@ -476,14 +486,13 @@ describe('updateOrder', () => {
     )
   })
 
-  // Given an order already in a final state (DELIVERED or CANCELLED)
-  // When trying to move it to a different status
+  // Given an order in one final state (DELIVERED or CANCELLED)
+  // When trying to swap it directly into the *other* final state
   // Then a 400 ORDER_STATUS_FINAL is thrown and nothing is written
   it.each([
-    ['DELIVERED', 'PENDING'],
-    ['CANCELLED', 'PREPARING'],
     ['DELIVERED', 'CANCELLED'],
-  ])('rejects moving an order out of %s into %s', async (currentStatus, nextStatus) => {
+    ['CANCELLED', 'DELIVERED'],
+  ])('rejects swapping directly between final statuses (%s -> %s)', async (currentStatus, nextStatus) => {
     vi.mocked(orderModel.findOrderById).mockResolvedValue({
       id: 'order-1',
       status: currentStatus,
@@ -493,6 +502,28 @@ describe('updateOrder', () => {
       updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never }),
     ).rejects.toMatchObject({ statusCode: 400, code: 'ORDER_STATUS_FINAL' })
     expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given an order marked DELIVERED or CANCELLED by mistake
+  // When it is moved back into the normal (non-final) flow
+  // Then it should be accepted and a new status history entry appended
+  it.each([
+    ['DELIVERED', 'PENDING'],
+    ['CANCELLED', 'PREPARING'],
+  ])('reopens a final order into the normal flow (%s -> %s)', async (currentStatus, nextStatus) => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: currentStatus,
+    } as never)
+
+    await updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: nextStatus },
+      undefined,
+      { status: nextStatus, changedBy: 'user-1' },
+    )
   })
 
   // Given an order already DELIVERED
@@ -600,7 +631,7 @@ describe('updateOrder geocoding', () => {
   // Then nothing is geocoded and no coordinates are written
   it('does not geocode when the address and zone are unchanged', async () => {
     await updateOrder('business-1', 'user-1', 'order-1', {
-      notes: 'Entregar por la tarde',
+      description: 'Entregar por la tarde',
       address: 'Carrer Major 1',
       zone: 'Sabadell',
     })
@@ -608,7 +639,7 @@ describe('updateOrder geocoding', () => {
     expect(geocodeAddress).not.toHaveBeenCalled()
     expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
       'order-1',
-      { notes: 'Entregar por la tarde', address: 'Carrer Major 1', zone: 'Sabadell' },
+      { description: 'Entregar por la tarde', address: 'Carrer Major 1', zone: 'Sabadell' },
       undefined,
       undefined,
     )
@@ -686,5 +717,108 @@ describe('deleteOrder', () => {
     await deleteOrder('business-1', 'order-1')
 
     expect(orderModel.deleteOrderById).toHaveBeenCalledWith('order-1')
+  })
+})
+
+describe('assignTagToOrder', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given an order and a tag of the same business, not assigned yet
+  // When the tag is assigned
+  // Then a new assignment is created
+  it('assigns the tag to the order', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue({ id: 'tag-1' } as never)
+    vi.mocked(orderModel.findActiveOrderTag).mockResolvedValue(null)
+
+    await assignTagToOrder('business-1', 'order-1', 'tag-1')
+
+    expect(tagModel.findTagById).toHaveBeenCalledWith('business-1', 'tag-1')
+    expect(orderModel.insertOrderTag).toHaveBeenCalledWith('order-1', 'tag-1')
+  })
+
+  // Given an order that is not in the business
+  // When a tag is assigned
+  // Then ORDER_NOT_FOUND is thrown and nothing is created
+  it('throws ORDER_NOT_FOUND when the order is not in the business', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue(null)
+
+    await expect(assignTagToOrder('business-1', 'order-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ORDER_NOT_FOUND',
+    })
+    expect(orderModel.insertOrderTag).not.toHaveBeenCalled()
+  })
+
+  // Given a tag that belongs to another business
+  // When it is assigned
+  // Then TAG_NOT_FOUND is thrown and nothing is created
+  it('throws TAG_NOT_FOUND when the tag is not in the business', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue(null)
+
+    await expect(assignTagToOrder('business-1', 'order-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'TAG_NOT_FOUND',
+    })
+    expect(orderModel.insertOrderTag).not.toHaveBeenCalled()
+  })
+
+  // Given the order already has that tag active
+  // When it is assigned again
+  // Then a 409 TAG_ALREADY_ASSIGNED is thrown and no duplicate is created
+  it('rejects a tag that is already assigned', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(tagModel.findTagById).mockResolvedValue({ id: 'tag-1' } as never)
+    vi.mocked(orderModel.findActiveOrderTag).mockResolvedValue({ id: 'assignment-1' } as never)
+
+    await expect(assignTagToOrder('business-1', 'order-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'TAG_ALREADY_ASSIGNED',
+    })
+    expect(orderModel.insertOrderTag).not.toHaveBeenCalled()
+  })
+})
+
+describe('removeTagFromOrder', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  // Given an order with an active assignment of the tag
+  // When the tag is removed
+  // Then the assignment is marked as removed (the row is kept)
+  it('marks the assignment as removed', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(orderModel.findActiveOrderTag).mockResolvedValue({ id: 'assignment-1' } as never)
+
+    await removeTagFromOrder('business-1', 'order-1', 'tag-1')
+
+    expect(orderModel.findActiveOrderTag).toHaveBeenCalledWith('order-1', 'tag-1')
+    expect(orderModel.markOrderTagRemoved).toHaveBeenCalledWith('assignment-1')
+  })
+
+  // Given an order that does not have that tag active
+  // When the tag is removed
+  // Then ORDER_TAG_NOT_FOUND is thrown
+  it('throws ORDER_TAG_NOT_FOUND when the order does not have the tag', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
+    vi.mocked(orderModel.findActiveOrderTag).mockResolvedValue(null)
+
+    await expect(removeTagFromOrder('business-1', 'order-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ORDER_TAG_NOT_FOUND',
+    })
+    expect(orderModel.markOrderTagRemoved).not.toHaveBeenCalled()
+  })
+
+  // Given an order that is not in the business
+  // When a tag is removed
+  // Then ORDER_NOT_FOUND is thrown
+  it('throws ORDER_NOT_FOUND when the order is not in the business', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue(null)
+
+    await expect(removeTagFromOrder('business-1', 'order-1', 'tag-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'ORDER_NOT_FOUND',
+    })
   })
 })

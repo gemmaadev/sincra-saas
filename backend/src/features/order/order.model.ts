@@ -10,6 +10,7 @@ const ORDER_DETAIL_INCLUDE = {
   client: { select: { id: true, name: true, email: true, phone: true, channels: true } },
   items: true,
   statusHistory: { orderBy: { changedAt: 'asc' } },
+  orderTags: { where: { removedAt: null }, include: { tag: true } },
 } satisfies Prisma.OrderInclude
 
 export async function findMaxOrderNumber(businessId: string) {
@@ -86,4 +87,16 @@ export async function updateOrderWithItems(
 
 export async function deleteOrderById(orderId: string) {
   await prisma.order.delete({ where: { id: orderId } })
+}
+
+export async function findActiveOrderTag(orderId: string, tagId: string) {
+  return prisma.orderTag.findFirst({ where: { orderId, tagId, removedAt: null } })
+}
+
+export async function insertOrderTag(orderId: string, tagId: string) {
+  return prisma.orderTag.create({ data: { orderId, tagId }, include: { tag: true } })
+}
+
+export async function markOrderTagRemoved(orderTagId: string) {
+  await prisma.orderTag.update({ where: { id: orderTagId }, data: { removedAt: new Date() } })
 }

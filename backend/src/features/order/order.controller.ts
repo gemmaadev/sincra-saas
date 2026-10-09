@@ -2,7 +2,15 @@ import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
 import { assertValidCoordinates } from '../../shared/utils/coordinates'
-import { createOrder, listOrders, getOrderById, updateOrder, deleteOrder } from './order.service'
+import {
+  createOrder,
+  listOrders,
+  getOrderById,
+  updateOrder,
+  deleteOrder,
+  assignTagToOrder,
+  removeTagFromOrder,
+} from './order.service'
 import type { CreateOrderInput, UpdateOrderInput, ListOrdersFilters, OrderItemInput } from './order.types'
 
 const VALID_STATUSES = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
@@ -74,7 +82,7 @@ function parseOptionalDate(value: unknown, fieldLabel: string): Date | null | un
 }
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
-  const { clientId, channel, kind, address, zone, latitude, longitude, description, notes } =
+  const { clientId, channel, kind, address, zone, latitude, longitude, description } =
     req.body as CreateOrderInput
 
   if (typeof clientId !== 'string' || !clientId) {
@@ -95,7 +103,6 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
     latitude,
     longitude,
     description,
-    notes,
     expectedDate,
   })
 
@@ -130,7 +137,7 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as UpdateOrderInput
-  const { channel, kind, address, zone, latitude, longitude, description, notes, status } = body
+  const { channel, kind, address, zone, latitude, longitude, description, status } = body
 
   const items = req.body.items !== undefined ? assertValidItems(req.body.items) : undefined
   assertValidCoordinates(latitude, longitude)
@@ -146,7 +153,6 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     latitude,
     longitude,
     description,
-    notes,
     status,
     expectedDate,
   })
@@ -156,6 +162,24 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   await deleteOrder(req.businessId!, req.params.id as string)
+
+  res.status(204).send()
+})
+
+export const assignTag = asyncHandler(async (req: Request, res: Response) => {
+  const { tagId } = req.body as { tagId?: string }
+
+  if (typeof tagId !== 'string' || !tagId) {
+    throw new AppError('Indica la etiqueta', 400, 'MISSING_FIELDS')
+  }
+
+  const orderTag = await assignTagToOrder(req.businessId!, req.params.id as string, tagId)
+
+  res.status(201).json({ orderTag })
+})
+
+export const removeTag = asyncHandler(async (req: Request, res: Response) => {
+  await removeTagFromOrder(req.businessId!, req.params.id as string, req.params.tagId as string)
 
   res.status(204).send()
 })
