@@ -107,6 +107,7 @@ export interface OrderFormValues {
   clientId: string
   clientName: string
   items: OrderFormItemValues[]
+  channel: Channel | ''
   zone: string
   address: string
   expectedDate: string
@@ -122,6 +123,7 @@ export interface OrderItemPayload {
 export interface OrderPayload {
   clientId: string
   items: OrderItemPayload[]
+  channel: Channel | null
   zone: string | null
   address: string | null
   expectedDate: string | null

@@ -6,6 +6,7 @@ const filledValues: OrderFormValues = {
   clientId: 'client-1',
   clientName: 'Laura García',
   items: [{ product: '  Camiseta  ', description: '  Talla M  ', quantity: 2, unitPrice: 15 }],
+  channel: 'WHATSAPP',
   zone: 'Barcelona',
   address: 'Carrer Major 1',
   expectedDate: '2026-11-01',
@@ -47,6 +48,22 @@ describe('toOrderPayload', () => {
     })
 
     expect(payload).toMatchObject({ zone: null, address: null, expectedDate: null })
+  })
+
+  // Given no channel picked (the Select's placeholder option)
+  // When the form is converted to a payload
+  // Then the channel should be null, not an empty string
+  it('sends an unpicked channel as null', () => {
+    const payload = toOrderPayload({ ...filledValues, channel: '' })
+
+    expect(payload.channel).toBeNull()
+  })
+
+  // Given a channel picked
+  // When the form is converted to a payload
+  // Then it should be carried over as-is
+  it('carries the picked channel over', () => {
+    expect(toOrderPayload(filledValues)).toMatchObject({ channel: 'WHATSAPP' })
   })
 
   // Given a filled form

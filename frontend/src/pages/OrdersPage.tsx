@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
 import { Package, Clock, Truck, CheckCircle, XCircle, Plus } from 'lucide-react'
 import { useOrders } from '@/features/orders/hooks/useOrders'
@@ -5,6 +6,7 @@ import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
 import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
 import { OrderDetailPanel } from '@/features/orders/components/OrderDetailPanel'
+import { OrderFormModal } from '@/features/orders/components/OrderFormModal'
 import { ordersTableColumns } from '@/features/orders/utils/ordersTableColumns'
 import {
   Table,
@@ -18,6 +20,7 @@ import {
 export default function OrdersPage() {
   const navigate = useNavigate()
   const detailMatch = useMatch('/orders/:id')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false)
   const {
     search,
     status,
@@ -48,7 +51,7 @@ export default function OrdersPage() {
             encontrar lo que necesites.
           </p>
         </div>
-        <SincraButton className="shrink-0" disabled title="Disponible próximamente">
+        <SincraButton className="shrink-0" onClick={() => setIsCreateModalOpen(true)}>
           <Plus size={16} aria-hidden="true" />
           Nuevo pedido
         </SincraButton>
@@ -131,6 +134,8 @@ export default function OrdersPage() {
       <DetailDrawer opened={!!detailMatch} onClose={() => navigate('/orders')}>
         {detailMatch && <OrderDetailPanel id={detailMatch.params.id!} />}
       </DetailDrawer>
+
+      <OrderFormModal opened={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   )
 }

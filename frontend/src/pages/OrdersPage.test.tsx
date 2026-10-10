@@ -90,12 +90,15 @@ describe('OrdersPage', () => {
     expect(table.getByText('Pendiente')).toBeInTheDocument()
   })
 
-  // Given the orders page header
-  // When OrdersPage is rendered
-  // Then the "Nuevo pedido" button should be shown, disabled until the create modal exists
-  it('shows a disabled "Nuevo pedido" button', async () => {
+  // Given the orders page
+  // When the user clicks "Nuevo pedido"
+  // Then the create order modal should open
+  it('opens the create modal when "Nuevo pedido" is clicked', async () => {
     renderOrdersPage()
-    expect(await screen.findByRole('button', { name: 'Nuevo pedido' })).toBeDisabled()
+
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Nuevo pedido' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Nuevo pedido' })).toBeInTheDocument()
   })
 
   // Given a successful response with a known total

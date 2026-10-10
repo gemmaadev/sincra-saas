@@ -14,6 +14,7 @@ export function toOrderPayload(values: OrderFormValues): OrderPayload {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
     })),
+    channel: values.channel === '' ? null : values.channel,
     zone: emptyToNull(values.zone),
     address: emptyToNull(values.address),
     expectedDate: emptyToNull(values.expectedDate),

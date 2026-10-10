@@ -14,15 +14,8 @@ const client = { id: 'client-1', name: 'Laura García', email: 'laura@ejemplo.te
 
 function renderSearch() {
   const onSelect = vi.fn()
-  const onFormSubmit = vi.fn((event: React.FormEvent) => event.preventDefault())
-  render(
-    withQueryClient(
-      <form onSubmit={onFormSubmit}>
-        <ClientSearch onSelect={onSelect} />
-      </form>,
-    ),
-  )
-  return { onSelect, onFormSubmit, user: userEvent.setup() }
+  render(withQueryClient(<ClientSearch onSelect={onSelect} />))
+  return { onSelect, user: userEvent.setup() }
 }
 
 describe('ClientSearch', () => {
@@ -30,61 +23,43 @@ describe('ClientSearch', () => {
     vi.mocked(api.get).mockReset()
   })
 
-  // Given nothing or a single character typed
-  // When the search is rendered
-  // Then the "Buscar" button should be disabled
-  it('disables the search until there are two characters', async () => {
+  // Given fewer than two characters typed
+  // When the user types
+  // Then nothing should be requested
+  it('does not search until there are two characters', async () => {
     const { user } = renderSearch()
 
-    expect(screen.getByRole('button', { name: 'Buscar' })).toBeDisabled()
-
     await user.type(screen.getByLabelText('Buscar cliente'), 'L')
-    expect(screen.getByRole('button', { name: 'Buscar' })).toBeDisabled()
 
-    await user.type(screen.getByLabelText('Buscar cliente'), 'a')
-    expect(screen.getByRole('button', { name: 'Buscar' })).toBeEnabled()
+    expect(api.get).not.toHaveBeenCalled()
   })
 
   // Given a name typed
-  // When the user clicks "Buscar"
-  // Then the matching clients should be listed
-  it('lists the matches of the search', async () => {
+  // When the user stops typing
+  // Then the matching clients should be listed automatically, without clicking anything
+  it('searches live as the user types, with no search button', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [client] })
     const { user } = renderSearch()
 
+    expect(screen.queryByRole('button', { name: 'Buscar' })).not.toBeInTheDocument()
+
     await user.type(screen.getByLabelText('Buscar cliente'), 'Laura')
-    await user.click(screen.getByRole('button', { name: 'Buscar' }))
 
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
     expect(api.get).toHaveBeenCalledWith('/clients?search=Laura&limit=5')
   })
 
-  // Given the search is inside a form
-  // When the user presses Enter in the search box
-  // Then it should search without submitting the surrounding form
-  it('searches on Enter without submitting the surrounding form', async () => {
-    vi.mocked(api.get).mockResolvedValue({ data: [client] })
-    const { onFormSubmit, user } = renderSearch()
-
-    await user.type(screen.getByLabelText('Buscar cliente'), 'Laura{Enter}')
-
-    expect(await screen.findByText('Laura García')).toBeInTheDocument()
-    expect(onFormSubmit).not.toHaveBeenCalled()
-  })
-
   // Given the matches are listed
   // When the user picks one
-  // Then onSelect should receive it and the list and the text should be cleared
+  // Then onSelect should receive it and the search text should be cleared
   it('calls onSelect with the chosen client and clears the search', async () => {
     vi.mocked(api.get).mockResolvedValue({ data: [client] })
     const { onSelect, user } = renderSearch()
 
     await user.type(screen.getByLabelText('Buscar cliente'), 'Laura')
-    await user.click(screen.getByRole('button', { name: 'Buscar' }))
     await user.click(await screen.findByRole('button', { name: /Laura García/ }))
 
     expect(onSelect).toHaveBeenCalledWith(client)
-    expect(screen.queryByText('Laura García')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Buscar cliente')).toHaveValue('')
   })
 
@@ -96,7 +71,6 @@ describe('ClientSearch', () => {
     const { user } = renderSearch()
 
     await user.type(screen.getByLabelText('Buscar cliente'), 'Zzz')
-    await user.click(screen.getByRole('button', { name: 'Buscar' }))
 
     expect(
       await screen.findByText('No se han encontrado clientes con ese nombre, email o teléfono.'),
@@ -113,7 +87,6 @@ describe('ClientSearch', () => {
     const { user } = renderSearch()
 
     await user.type(screen.getByLabelText('Buscar cliente'), 'Laura')
-    await user.click(screen.getByRole('button', { name: 'Buscar' }))
 
     expect(
       await screen.findByText('No se ha podido buscar el cliente. Inténtalo de nuevo.'),

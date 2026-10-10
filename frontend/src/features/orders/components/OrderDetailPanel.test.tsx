@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
@@ -102,6 +102,24 @@ describe('OrderDetailPanel', () => {
     expect(await screen.findByText('Laura García')).toBeInTheDocument()
     expect(screen.getByText('laura@ejemplo.test')).toBeInTheDocument()
     expect(screen.getByText('600111222')).toBeInTheDocument()
+  })
+
+  // Given a loaded order
+  // When the user clicks the edit action
+  // Then the order form modal should open prefilled with the order's data
+  it('opens the edit modal prefilled with the order data', async () => {
+    mockApiGet({
+      ...mockOrder,
+      items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' }],
+    })
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    await userEvent.setup().click(screen.getByLabelText('Editar pedido'))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Editar pedido' })
+    expect(within(dialog).getByText('Laura García')).toBeInTheDocument()
+    expect(within(dialog).getByDisplayValue('Camiseta')).toBeInTheDocument()
   })
 
   // Given the order loads successfully

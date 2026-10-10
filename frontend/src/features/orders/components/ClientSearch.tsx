@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import type { KeyboardEvent } from 'react'
 import { UserRound, Search } from 'lucide-react'
-import { Input, SincraButton } from '@/shared/components'
+import { Input } from '@/shared/components'
+import { useDebouncedValue } from '@/shared/hooks'
 import { ApiError } from '@/shared/services'
 import { useSearchClients } from '../hooks/useSearchClients'
 import type { ClientSearchResult } from '../types/order.types'
@@ -14,23 +14,13 @@ interface ClientSearchProps {
 
 export function ClientSearch({ onSelect }: ClientSearchProps) {
   const [query, setQuery] = useState<string>('')
-  const search = useSearchClients()
-
-  function runSearch() {
-    const trimmedQuery = query.trim()
-    if (trimmedQuery.length >= MIN_QUERY_LENGTH) search.mutate(trimmedQuery)
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      runSearch()
-    }
-  }
+  const debouncedQuery = useDebouncedValue(query.trim())
+  const search = useSearchClients(
+    debouncedQuery.length >= MIN_QUERY_LENGTH ? debouncedQuery : '',
+  )
 
   function handleSelect(client: ClientSearchResult) {
     onSelect(client)
-    search.reset()
     setQuery('')
   }
 
@@ -42,27 +32,17 @@ export function ClientSearch({ onSelect }: ClientSearchProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-end gap-3">
-        <div className="flex-1">
-          <Input
-            label="Buscar cliente"
-            placeholder="Nombre, email o teléfono"
-            icon={<Search size={16} aria-hidden="true" />}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-        </div>
-        <SincraButton
-          type="button"
-          variant="secondary"
-          loading={search.isPending}
-          disabled={query.trim().length < MIN_QUERY_LENGTH}
-          onClick={runSearch}
-        >
-          Buscar
-        </SincraButton>
-      </div>
+      <Input
+        label="Buscar cliente"
+        placeholder="Nombre, email o teléfono"
+        icon={<Search size={16} aria-hidden="true" />}
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+
+      {search.isFetching && (
+        <p className="text-sm text-ink-muted">Buscando...</p>
+      )}
 
       {searchError && (
         <p role="alert" className="text-sm text-error">

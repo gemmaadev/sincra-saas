@@ -1,11 +1,13 @@
-import { Avatar, Tabs } from '@/shared/components'
+import { useState } from 'react'
+import { Avatar, SincraButton, Tabs } from '@/shared/components'
 import { useOrderDetail } from '../hooks/useOrderDetail'
+import { OrderFormModal } from './OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
 import { OrderItemsList } from './OrderItemsList'
 import { OrderTimeline } from './OrderTimeline'
 import { OrderNotesTab } from './OrderNotesTab'
 import { OrderTagsTab } from './OrderTagsTab'
-import { Mail, Phone } from 'lucide-react'
+import { Mail, Phone, Pencil } from 'lucide-react'
 
 interface OrderDetailPanelProps {
   id: string
@@ -13,6 +15,7 @@ interface OrderDetailPanelProps {
 
 export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
   const { data: order, isLoading, isError } = useOrderDetail(id)
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
 
   if (isLoading) {
     return <p className="text-ink-muted">Cargando pedido...</p>
@@ -24,7 +27,17 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
 
   return (
     <div className="flex h-full flex-col gap-2">
-      <h2 className="shrink-0 text-lg font-semibold text-ink">Pedido #{order.number}</h2>
+      <div className="flex shrink-0 items-center justify-between">
+        <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
+        <SincraButton
+          variant="secondary"
+          size="icon"
+          aria-label="Editar pedido"
+          onClick={() => setIsEditModalOpen(true)}
+        >
+          <Pencil size={16} aria-hidden="true" />
+        </SincraButton>
+      </div>
       <div className="flex flex-row gap-2 text-xs  w-full">
         <Avatar name={order.client.name} size="xs" roundness="rounded" />
         <div className="flex items-center text-xs  gap-2">
@@ -56,6 +69,12 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
           { key: 'notas', label: 'Notas', content: <OrderNotesTab orderId={order.id} /> },
           { key: 'etiquetas', label: 'Etiquetas', content: <OrderTagsTab order={order} /> },
         ]}
+      />
+
+      <OrderFormModal
+        opened={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        order={order}
       />
     </div>
   )
