@@ -14,10 +14,10 @@ const mockOrder: OrderDetail = {
   zone: null,
   expectedDate: null,
   description: null,
-  notes: null,
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
+  orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
@@ -27,39 +27,15 @@ function renderOrderSummaryTab(order: OrderDetail) {
 }
 
 describe('OrderSummaryTab', () => {
-  // Given an order with a channel and a client
+  // Given an order with a channel
   // When the tab is rendered
-  // Then it should show the client name and the channel icon
-  it('shows the client and the channel', () => {
+  // Then it should show that channel's icon as "Canal de origen"
+  // (the client's own identity — name/email/phone/channels — lives in OrderDetailPanel's
+  // header now, not duplicated here; see OrderDetailPanel.test.tsx for that coverage)
+  it("shows the order's channel", () => {
     renderOrderSummaryTab(mockOrder)
 
-    expect(screen.getByText('Laura García')).toBeInTheDocument()
     expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
-  })
-
-  // Given a client with an email and a phone
-  // When the tab is rendered
-  // Then both should be shown next to the client name, phone below email
-  it('shows the client email and phone when present', () => {
-    renderOrderSummaryTab({
-      ...mockOrder,
-      client: { ...mockOrder.client, email: 'laura@ejemplo.test', phone: '600111222' },
-    })
-
-    expect(screen.getByText('laura@ejemplo.test')).toBeInTheDocument()
-    expect(screen.getByText('600111222')).toBeInTheDocument()
-  })
-
-  // Given a client with its own channels on record
-  // When the tab is rendered
-  // Then those channels should be shown next to the client, separately from the order's own channel
-  it('shows the client channels', () => {
-    renderOrderSummaryTab({
-      ...mockOrder,
-      client: { ...mockOrder.client, channels: ['GMAIL'] },
-    })
-
-    expect(screen.getByLabelText('Gmail')).toBeInTheDocument()
   })
 
   // Given an order with a status
