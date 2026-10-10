@@ -1,5 +1,5 @@
-import { MapPin } from 'lucide-react'
-import { Badge } from '@/shared/components'
+import { MapPin, Pencil } from 'lucide-react'
+import { Badge, SincraButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import {
@@ -11,9 +11,10 @@ import type { MapOrder } from '../types/map.types'
 
 interface OrderPopupCardProps {
   order: MapOrder
+  onEdit: () => void
 }
 
-export function OrderPopupCard({ order }: OrderPopupCardProps) {
+export function OrderPopupCard({ order, onEdit }: OrderPopupCardProps) {
   return (
     <div className="flex w-60 flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -41,6 +42,19 @@ export function OrderPopupCard({ order }: OrderPopupCardProps) {
         {order.approximate && (
           <p className="text-xs">Ubicación aproximada: la del cliente, el pedido no tiene dirección propia.</p>
         )}
+      </div>
+
+      <div className="flex items-center border-t border-neutral-100 pt-2">
+        <SincraButton
+          variant="text"
+          size="icon"
+          className="hover:bg-neutral-50"
+          onClick={onEdit}
+          aria-label="Editar pedido"
+          title="Editar pedido"
+        >
+          <Pencil size={16} aria-hidden="true" />
+        </SincraButton>
       </div>
     </div>
   )

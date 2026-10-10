@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MapContainer } from 'react-leaflet'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { stubMapSize } from '@/shared/test/leaflet'
+import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { OrderMarker } from './OrderMarker'
 import type { MapOrder } from '../types/map.types'
 
@@ -20,12 +20,13 @@ const mockOrder: MapOrder = {
 }
 
 function renderMarker(order: MapOrder = mockOrder) {
+  const onEdit = vi.fn()
   render(
     <MapContainer center={[41.7, 1.8]} zoom={10}>
-      <OrderMarker order={order} />
+      <OrderMarker order={order} onEdit={onEdit} />
     </MapContainer>,
   )
-  return { user: userEvent.setup() }
+  return { onEdit, user: userEvent.setup() }
 }
 
 describe('OrderMarker', () => {
@@ -64,5 +65,19 @@ describe('OrderMarker', () => {
     await user.click(screen.getByTitle('Pedido #7'))
 
     expect(await screen.findByText('Laura Martínez')).toBeInTheDocument()
+  })
+
+  // Given the popup card is open
+  // When the user clicks "Editar pedido"
+  // Then onEdit should be called with the order
+  it('calls onEdit with the order from the card', async () => {
+    const { onEdit, user } = renderMarker()
+
+    await user.click(screen.getByTitle('Pedido #7'))
+    const editButton = await screen.findByRole('button', { name: 'Editar pedido' })
+    await waitOutDoubleClickWindow()
+    await user.click(editButton)
+
+    expect(onEdit).toHaveBeenCalledWith(mockOrder)
   })
 })
