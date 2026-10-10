@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import { OrdersTab } from './OrdersTab'
+import { ClientOrdersTab } from './ClientOrdersTab'
 import type { ClientDetail } from '../types/client.types'
 
 const mockClient: ClientDetail = {
@@ -21,21 +21,21 @@ const mockClient: ClientDetail = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
-describe('OrdersTab', () => {
+describe('ClientOrdersTab', () => {
   // Given a client with no orders
-  // When OrdersTab is rendered
+  // When ClientOrdersTab is rendered
   // Then it should explain there are none yet, not show an empty list
   it('shows an empty message when the client has no orders', () => {
-    render(<OrdersTab client={mockClient} />)
+    render(<ClientOrdersTab client={mockClient} />)
     expect(screen.getByText('Todavía no hay pedidos para este cliente.')).toBeInTheDocument()
   })
 
   // Given a client with orders
-  // When OrdersTab is rendered
+  // When ClientOrdersTab is rendered
   // Then each order's number, description, status and price should be shown
   it('shows the number, description, status and price of each order', () => {
     render(
-      <OrdersTab
+      <ClientOrdersTab
         client={{
           ...mockClient,
           orders: [

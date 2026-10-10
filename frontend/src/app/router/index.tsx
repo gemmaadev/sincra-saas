@@ -88,8 +88,11 @@ export const router = createBrowserRouter([
                 children: [{ path: ':id' }],
               },
               {
+                // OrdersPage renders the detail Drawer itself (via useMatch), so this
+                // only exists to make /orders/:id a valid, non-404 URL.
                 path: '/orders',
                 ...lazyPage(() => import('@/pages/OrdersPage')),
+                children: [{ path: ':id' }],
               },
               {
                 path: '/calendar',

@@ -1,24 +1,24 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { SincraButton, ConfirmDeleteModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { formatDateTime } from '@/shared/utils/date'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useClientNotes } from '../hooks/useClientNotes'
-import { useCreateNote } from '../hooks/useCreateNote'
-import { useDeleteNote } from '../hooks/useDeleteNote'
-import type { Note } from '../types/note.types'
+import type { Note } from '@/shared/types'
 
 interface NotesTabProps {
-  clientId: string
+  notesQuery: UseQueryResult<Note[], Error>
+  createNote: UseMutationResult<Note, Error, string>
+  deleteNote: UseMutationResult<void, Error, string>
+  placeholder: string
+  emptyMessage: string
 }
 
-export function NotesTab({ clientId }: NotesTabProps) {
+export function NotesTab({ notesQuery, createNote, deleteNote, placeholder, emptyMessage }: NotesTabProps) {
   const [content, setContent] = useState('')
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null)
-  const { data: notes = [], isLoading, isError } = useClientNotes(clientId)
-  const createNote = useCreateNote(clientId)
-  const deleteNote = useDeleteNote(clientId)
+  const { data: notes = [], isLoading, isError } = notesQuery
 
   function handleAdd() {
     createNote.mutate(content, { onSuccess: () => setContent('') })
@@ -53,7 +53,7 @@ export function NotesTab({ clientId }: NotesTabProps) {
           value={content}
           onChange={(event) => setContent(event.target.value)}
           rows={3}
-          placeholder="Escribe una nota sobre este cliente..."
+          placeholder={placeholder}
           className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <div className="flex justify-end items-center gap-2">
@@ -74,7 +74,7 @@ export function NotesTab({ clientId }: NotesTabProps) {
       {isLoading && <p className="text-sm text-ink-muted">Cargando notas...</p>}
       {isError && <p className="text-sm text-error">No se han podido cargar las notas.</p>}
       {!isLoading && !isError && notes.length === 0 && (
-        <p className="text-sm text-ink-muted">Todavía no hay notas para este cliente.</p>
+        <p className="text-sm text-ink-muted">{emptyMessage}</p>
       )}
       {!isLoading && !isError && notes.length > 0 && (
         <ul className="flex flex-col gap-3">

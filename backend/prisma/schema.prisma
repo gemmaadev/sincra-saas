@@ -155,14 +155,18 @@ model Client {
 
 model Note {
   id        String   @id @default(uuid())
-  clientId  String
+  // Exactly one of clientId/orderId is set per note: it belongs to a client OR an order, never both.
+  clientId  String?
+  orderId   String?
   content   String
   createdBy String?
   createdAt DateTime @default(now())
 
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  order  Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
+  @@index([orderId])
 }
 
 model Tag {
@@ -217,7 +221,6 @@ model Order {
   zone            String?
   expectedDate    DateTime?
   description     String?
-  notes           String?
   status          OrderStatus @default(PENDING)
   // true when the AI created this order from an email or message
   aiGenerated     Boolean     @default(false)
@@ -231,6 +234,7 @@ model Order {
   items         OrderItem[]
   statusHistory OrderStatusChange[]
   orderTags     OrderTag[]
+  notes         Note[]
 
   @@unique([businessId, number])
   @@index([businessId])

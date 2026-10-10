@@ -19,7 +19,6 @@ export interface CreateOrderInput {
   longitude?: number
   expectedDate?: Date | null
   description?: string | null
-  notes?: string | null
 }
 
 export interface UpdateOrderInput {
@@ -32,7 +31,6 @@ export interface UpdateOrderInput {
   longitude?: number
   expectedDate?: Date | null
   description?: string | null
-  notes?: string | null
   status?: OrderStatus
 }
 

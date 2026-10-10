@@ -8,11 +8,11 @@ import {
 } from '@/features/orders/orderStatus.constants'
 import type { ClientDetail } from '../types/client.types'
 
-interface OrdersTabProps {
+interface ClientOrdersTabProps {
   client: ClientDetail
 }
 
-export function OrdersTab({ client }: OrdersTabProps) {
+export function ClientOrdersTab({ client }: ClientOrdersTabProps) {
   if (client.orders.length === 0) {
     return <p className="text-sm text-ink-muted">Todavía no hay pedidos para este cliente.</p>
   }
@@ -27,9 +27,12 @@ export function OrdersTab({ client }: OrdersTabProps) {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="font-medium text-ink">#{order.number}</span>
-              {order.description && <span className="text-sm text-ink">{order.description}</span>}
+
+              <span className="text-xs text-ink-muted">
+                {formatDate(new Date(order.createdAt))}
+              </span>
             </div>
-            <span className="text-xs text-ink-muted">{formatDate(new Date(order.createdAt))}</span>
+            {order.description && <span className="text-sm text-ink">{order.description}</span>}
           </div>
           <div className="flex items-center gap-3">
             {order.channel && <ChannelIcons channels={[order.channel]} />}

@@ -7,6 +7,9 @@ import {
   countOrdersByStatus,
   updateOrderWithItems,
   deleteOrderById,
+  findActiveOrderTag,
+  insertOrderTag,
+  markOrderTagRemoved,
 } from './order.model'
 
 vi.mock('../../config/db', () => ({
@@ -22,6 +25,7 @@ vi.mock('../../config/db', () => ({
     },
     orderItem: { deleteMany: vi.fn(), createMany: vi.fn() },
     orderStatusChange: { create: vi.fn() },
+    orderTag: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -114,9 +118,10 @@ describe('insertOrder', () => {
     expect(prisma.order.create).toHaveBeenCalledWith({
       data,
       include: {
-        client: { select: { id: true, name: true, email: true, phone: true } },
+        client: { select: { id: true, name: true, email: true, phone: true, channels: true } },
         items: true,
         statusHistory: { orderBy: { changedAt: 'asc' } },
+        orderTags: { where: { removedAt: null }, include: { tag: true } },
       },
     })
   })
@@ -141,11 +146,11 @@ describe('updateOrderWithItems', () => {
   // When the order is updated
   // Then only the order row is touched, and the items/history are left alone
   it('updates only the order fields when neither items nor a status change are given', async () => {
-    await updateOrderWithItems('order-1', { notes: 'Entregar por la tarde' })
+    await updateOrderWithItems('order-1', { description: 'Entregar por la tarde' })
 
     expect(tx.order.update).toHaveBeenCalledWith({
       where: { id: 'order-1' },
-      data: { notes: 'Entregar por la tarde' },
+      data: { description: 'Entregar por la tarde' },
     })
     expect(tx.orderItem.deleteMany).not.toHaveBeenCalled()
     expect(tx.orderItem.createMany).not.toHaveBeenCalled()
@@ -186,11 +191,11 @@ describe('updateOrderWithItems', () => {
   // When the update finishes
   // Then it should return the order with its full detail
   it('returns the order with its full detail', async () => {
-    tx.order.findUniqueOrThrow.mockResolvedValue({ id: 'order-1', notes: 'listo' })
+    tx.order.findUniqueOrThrow.mockResolvedValue({ id: 'order-1', description: 'listo' })
 
-    const result = await updateOrderWithItems('order-1', { notes: 'listo' })
+    const result = await updateOrderWithItems('order-1', { description: 'listo' })
 
-    expect(result).toEqual({ id: 'order-1', notes: 'listo' })
+    expect(result).toEqual({ id: 'order-1', description: 'listo' })
   })
 })
 
@@ -206,5 +211,46 @@ describe('deleteOrderById', () => {
     await deleteOrderById('order-1')
 
     expect(prisma.order.delete).toHaveBeenCalledWith({ where: { id: 'order-1' } })
+  })
+})
+
+describe('order tag model', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given an order and a tag
+  // When looking for the active assignment
+  // Then only assignments that were not removed should be considered
+  it('looks only for assignments that were not removed', async () => {
+    await findActiveOrderTag('order-1', 'tag-1')
+
+    expect(prisma.orderTag.findFirst).toHaveBeenCalledWith({
+      where: { orderId: 'order-1', tagId: 'tag-1', removedAt: null },
+    })
+  })
+
+  // Given an order and a tag
+  // When the assignment is created
+  // Then it should include the tag so the caller can show it
+  it('creates the assignment including the tag', async () => {
+    await insertOrderTag('order-1', 'tag-1')
+
+    expect(prisma.orderTag.create).toHaveBeenCalledWith({
+      data: { orderId: 'order-1', tagId: 'tag-1' },
+      include: { tag: true },
+    })
+  })
+
+  // Given an active assignment
+  // When it is removed
+  // Then removedAt should be set and the row should never be deleted
+  it('sets removedAt instead of deleting the row', async () => {
+    await markOrderTagRemoved('assignment-1')
+
+    expect(prisma.orderTag.update).toHaveBeenCalledWith({
+      where: { id: 'assignment-1' },
+      data: { removedAt: expect.any(Date) },
+    })
   })
 })

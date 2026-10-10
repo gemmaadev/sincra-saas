@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
-import { Drawer } from '@mantine/core'
 import { Users, UserPlus, Repeat, Target, Plus, Trash2 } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import { useClientsFilters } from '@/features/clients/hooks/useClientsFilters'
@@ -17,6 +16,7 @@ import {
   SincraButton,
   SelectionBar,
   KpiCardsRow,
+  DetailDrawer,
 } from '@/shared/components'
 import { useRowSelection } from '@/shared/hooks'
 
@@ -166,14 +166,7 @@ export default function ClientsPage() {
         </div>
       )}
 
-      <Drawer
-        opened={!!detailMatch}
-        onClose={() => navigate('/clients')}
-        position="right"
-        size="lg"
-        closeButtonProps={{ 'aria-label': 'Cerrar' }}
-        transitionProps={{ duration: 300, timingFunction: 'ease-out' }}
-      >
+      <DetailDrawer opened={!!detailMatch} onClose={() => navigate('/clients')}>
         {detailMatch && (
           <ClientDetailPanel
             id={detailMatch.params.id!}
@@ -183,7 +176,7 @@ export default function ClientsPage() {
             }}
           />
         )}
-      </Drawer>
+      </DetailDrawer>
 
       <ClientFormModal opened={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 

@@ -167,7 +167,7 @@ describe('ClientDetailPanel', () => {
 
   // Given the clients tabs
   // When the user selects Notas
-  // Then the real NotesTab content (its "add note" form) should be shown
+  // Then the real ClientNotesTab content (its "add note" form) should be shown
   it('switches to the Notas tab content when selected', async () => {
     mockApiGet()
     renderPanel()

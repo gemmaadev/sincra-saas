@@ -10,4 +10,6 @@ export interface Tab {
 export interface TabsProps {
   tabs: Tab[]
   defaultTab?: string
+  /** Stretches the tab list/panel to the height of their container instead of sizing to content. */
+  fillHeight?: boolean
 }

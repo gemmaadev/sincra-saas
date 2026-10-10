@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api, ApiError } from '@/shared/services'
-import { TagsTab } from './TagsTab'
+import { ClientTagsTab } from './ClientTagsTab'
 import type { ClientDetail } from '../types/client.types'
 
 const mockClient: ClientDetail = {
@@ -50,18 +50,18 @@ function clientWithTags(tags: { tag: typeof vipTag; aiGenerated?: boolean }[]): 
   }
 }
 
-function renderTagsTab(client: ClientDetail = mockClient) {
+function renderClientTagsTab(client: ClientDetail = mockClient) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <MantineProvider env="test">
       <QueryClientProvider client={queryClient}>
-        <TagsTab client={client} />
+        <ClientTagsTab client={client} />
       </QueryClientProvider>
     </MantineProvider>,
   )
 }
 
-describe('TagsTab', () => {
+describe('ClientTagsTab', () => {
   beforeEach(() => {
     vi.mocked(api.get)
       .mockReset()
@@ -71,29 +71,29 @@ describe('TagsTab', () => {
   })
 
   // Given a client with no tags
-  // When TagsTab is rendered
+  // When ClientTagsTab is rendered
   // Then an empty-state message should be shown
   it('shows an empty state when there are no tags', () => {
-    renderTagsTab()
+    renderClientTagsTab()
 
     expect(screen.getByText('Este cliente no tiene etiquetas todavía.')).toBeInTheDocument()
   })
 
   // Given a client with tags
-  // When TagsTab is rendered
+  // When ClientTagsTab is rendered
   // Then each tag should be shown
   it('shows the client tags when present', () => {
-    renderTagsTab(clientWithTags([{ tag: vipTag }]))
+    renderClientTagsTab(clientWithTags([{ tag: vipTag }]))
 
     expect(screen.getByText('VIP')).toBeInTheDocument()
     expect(screen.queryByText('Este cliente no tiene etiquetas todavía.')).not.toBeInTheDocument()
   })
 
   // Given a tag that the AI assigned and one that a person assigned
-  // When TagsTab is rendered
+  // When ClientTagsTab is rendered
   // Then only the AI one should carry the "Sugerido por IA" badge
   it('marks the tags assigned by the AI', () => {
-    renderTagsTab(clientWithTags([{ tag: vipTag, aiGenerated: true }, { tag: urgentTag }]))
+    renderClientTagsTab(clientWithTags([{ tag: vipTag, aiGenerated: true }, { tag: urgentTag }]))
 
     expect(screen.getAllByText('Sugerido por IA')).toHaveLength(1)
   })
@@ -102,7 +102,7 @@ describe('TagsTab', () => {
   // When the user clicks its remove button
   // Then the tag should be removed from the client through the API
   it('removes a tag from the client', async () => {
-    renderTagsTab(clientWithTags([{ tag: vipTag }]))
+    renderClientTagsTab(clientWithTags([{ tag: vipTag }]))
 
     fireEvent.click(screen.getByRole('button', { name: 'Quitar etiqueta VIP' }))
 
@@ -113,7 +113,7 @@ describe('TagsTab', () => {
   // When the user picks it in the selector
   // Then it should be assigned to the client
   it('adds an existing tag to the client', async () => {
-    renderTagsTab(clientWithTags([{ tag: vipTag }]))
+    renderClientTagsTab(clientWithTags([{ tag: vipTag }]))
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir etiqueta' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Urgente' }))
@@ -132,7 +132,7 @@ describe('TagsTab', () => {
         ? Promise.resolve({ tag: { id: 'tag-new', name: 'Mayorista', color: '#8b5cf6' } })
         : Promise.resolve({}),
     )
-    renderTagsTab()
+    renderClientTagsTab()
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir etiqueta' }))
     fireEvent.change(await screen.findByLabelText('Buscar o crear etiqueta'), {
@@ -158,7 +158,7 @@ describe('TagsTab', () => {
     vi.mocked(api.post).mockRejectedValue(
       new ApiError('Este cliente ya tiene esa etiqueta', 409, 'TAG_ALREADY_ASSIGNED'),
     )
-    renderTagsTab()
+    renderClientTagsTab()
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir etiqueta' }))
     fireEvent.click(await screen.findByRole('option', { name: 'VIP' }))

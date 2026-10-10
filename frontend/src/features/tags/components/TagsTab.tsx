@@ -1,26 +1,33 @@
 import { X } from 'lucide-react'
+import type { UseMutationResult } from '@tanstack/react-query'
 import { TagPill, AiSuggestedBadge } from '@/shared/components'
 import { ApiError } from '@/shared/services'
-import { TagPicker } from '@/features/tags/components/TagPicker'
-import { useTags } from '@/features/tags/hooks/useTags'
-import { useCreateTag } from '@/features/tags/hooks/useCreateTag'
-import { pickTagColor } from '@/features/tags/utils/pickTagColor'
-import type { Tag } from '@/features/tags/types/tag.types'
-import { useAssignClientTag } from '../hooks/useAssignClientTag'
-import { useRemoveClientTag } from '../hooks/useRemoveClientTag'
-import type { ClientDetail } from '../types/client.types'
+import { TagPicker } from './TagPicker'
+import { useTags } from '../hooks/useTags'
+import { useCreateTag } from '../hooks/useCreateTag'
+import { pickTagColor } from '../utils/pickTagColor'
+import type { Tag } from '../types/tag.types'
 
-interface TagsTabProps {
-  client: ClientDetail
+export interface TagAssignment {
+  id: string
+  tagId: string
+  aiGenerated: boolean
+  tag: Tag
 }
 
-export function TagsTab({ client }: TagsTabProps) {
+interface TagsTabProps {
+  assignedTags: TagAssignment[]
+  assignTag: UseMutationResult<unknown, unknown, string>
+  removeTag: UseMutationResult<unknown, unknown, string>
+  emptyMessage: string
+  ariaLabel: string
+}
+
+export function TagsTab({ assignedTags, assignTag, removeTag, emptyMessage, ariaLabel }: TagsTabProps) {
   const { data: tags = [] } = useTags()
   const createTag = useCreateTag()
-  const assignTag = useAssignClientTag(client.id)
-  const removeTag = useRemoveClientTag(client.id)
 
-  const assignedTagIds = new Set(client.clientTags.map((clientTag) => clientTag.tagId))
+  const assignedTagIds = new Set(assignedTags.map((assignment) => assignment.tagId))
   const isBusy = createTag.isPending || assignTag.isPending || removeTag.isPending
 
   function resetErrors() {
@@ -56,11 +63,11 @@ export function TagsTab({ client }: TagsTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {client.clientTags.length === 0 ? (
-        <p className="text-sm text-ink-muted">Este cliente no tiene etiquetas todavía.</p>
+      {assignedTags.length === 0 ? (
+        <p className="text-sm text-ink-muted">{emptyMessage}</p>
       ) : (
-        <ul aria-label="Etiquetas del cliente" className="flex flex-wrap gap-3">
-          {client.clientTags.map(({ id, tagId, aiGenerated, tag }) => (
+        <ul aria-label={ariaLabel} className="flex flex-wrap gap-3">
+          {assignedTags.map(({ id, tagId, aiGenerated, tag }) => (
             <li key={id} className="inline-flex items-center gap-1.5">
               <TagPill name={tag.name} color={tag.color} />
               {aiGenerated && <AiSuggestedBadge />}
