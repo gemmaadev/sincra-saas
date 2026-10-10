@@ -1,5 +1,6 @@
-import { MapPin } from 'lucide-react'
-import { Badge } from '@/shared/components'
+import { Link } from 'react-router'
+import { ArrowRight, MapPin, Pencil } from 'lucide-react'
+import { Badge, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import {
@@ -11,9 +12,10 @@ import type { MapOrder } from '../types/map.types'
 
 interface OrderPopupCardProps {
   order: MapOrder
+  onEdit: () => void
 }
 
-export function OrderPopupCard({ order }: OrderPopupCardProps) {
+export function OrderPopupCard({ order, onEdit }: OrderPopupCardProps) {
   return (
     <div className="flex w-60 flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -41,6 +43,23 @@ export function OrderPopupCard({ order }: OrderPopupCardProps) {
         {order.approximate && (
           <p className="text-xs">Ubicación aproximada: la del cliente, el pedido no tiene dirección propia.</p>
         )}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border-t border-neutral-100 pt-2">
+        <IconButton
+          icon={Pencil}
+          label="Editar pedido"
+          variant="text"
+          className="hover:bg-neutral-50"
+          onClick={onEdit}
+        />
+        <Link
+          to={`/orders/${order.id}`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary-light px-3 py-1.5 text-sm font-medium text-primary! no-underline hover:bg-surface-hover"
+        >
+          Ver pedido
+          <ArrowRight size={14} aria-hidden="true" />
+        </Link>
       </div>
     </div>
   )

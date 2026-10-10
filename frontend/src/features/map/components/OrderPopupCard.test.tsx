@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { MemoryRouter } from 'react-router'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi } from 'vitest'
 import { OrderPopupCard } from './OrderPopupCard'
 import type { MapOrder } from '../types/map.types'
 
@@ -17,7 +19,13 @@ const mockOrder: MapOrder = {
 }
 
 function renderCard(order: MapOrder = mockOrder) {
-  render(<OrderPopupCard order={order} />)
+  const onEdit = vi.fn()
+  render(
+    <MemoryRouter>
+      <OrderPopupCard order={order} onEdit={onEdit} />
+    </MemoryRouter>,
+  )
+  return { onEdit, user: userEvent.setup() }
 }
 
 describe('OrderPopupCard', () => {
@@ -69,5 +77,28 @@ describe('OrderPopupCard', () => {
     renderCard()
 
     expect(screen.queryByText(/Ubicación aproximada/)).not.toBeInTheDocument()
+  })
+
+  // Given the card is open
+  // When the user clicks the edit button
+  // Then onEdit should be called
+  it('calls onEdit from the edit button', async () => {
+    const { onEdit, user } = renderCard()
+
+    await user.click(screen.getByRole('button', { name: 'Editar pedido' }))
+
+    expect(onEdit).toHaveBeenCalledTimes(1)
+  })
+
+  // Given any order
+  // When the card is rendered
+  // Then "Ver pedido" should link to the order detail
+  it('links to the order detail', () => {
+    renderCard()
+
+    expect(screen.getByRole('link', { name: /Ver pedido/ })).toHaveAttribute(
+      'href',
+      '/orders/order-1',
+    )
   })
 })

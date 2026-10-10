@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { divIcon } from 'leaflet'
-import { Marker, Popup } from 'react-leaflet'
+import { Marker, Popup, useMap } from 'react-leaflet'
 import { OrderPopupCard } from './OrderPopupCard'
 import type { MapOrder } from '../types/map.types'
 
@@ -20,9 +20,17 @@ function buildOrderIcon(number: number) {
 
 interface OrderMarkerProps {
   order: MapOrder
+  onEdit: (order: MapOrder) => void
 }
 
-export function OrderMarker({ order }: OrderMarkerProps) {
+export function OrderMarker({ order, onEdit }: OrderMarkerProps) {
+  const map = useMap()
+
+  function handleEdit() {
+    map.closePopup()
+    onEdit(order)
+  }
+
   return (
     <Marker
       position={[order.latitude, order.longitude]}
@@ -30,7 +38,7 @@ export function OrderMarker({ order }: OrderMarkerProps) {
       title={`Pedido #${order.number}`}
     >
       <Popup minWidth={240}>
-        <OrderPopupCard order={order} />
+        <OrderPopupCard order={order} onEdit={handleEdit} />
       </Popup>
     </Marker>
   )

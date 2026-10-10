@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { ArrowRight, MapPin, Pencil, Trash2 } from 'lucide-react'
-import { Avatar, SincraButton } from '@/shared/components'
+import { Avatar, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import type { MapClient } from '../types/map.types'
@@ -47,26 +47,21 @@ export function ClientPopupCard({ client, onEdit, onDelete }: ClientPopupCardPro
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center">
-          <SincraButton
+          <IconButton
+            icon={Pencil}
+            label="Editar cliente"
             variant="text"
-            size="icon"
             className="hover:bg-neutral-50"
             onClick={onEdit}
-            aria-label="Editar cliente"
-            title="Editar cliente"
-          >
-            <Pencil size={16} aria-hidden="true" />
-          </SincraButton>
-          <SincraButton
+          />
+          <IconButton
+            icon={Trash2}
+            label="Eliminar cliente"
             variant="text"
-            size="icon"
             className="hover:bg-neutral-50"
+            iconClassName="text-error"
             onClick={onDelete}
-            aria-label="Eliminar cliente"
-            title="Eliminar cliente"
-          >
-            <Trash2 size={16} className="text-error" aria-hidden="true" />
-          </SincraButton>
+          />
         </div>
         <Link
           to={`/clients/${client.id}`}

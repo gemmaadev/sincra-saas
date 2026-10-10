@@ -95,3 +95,47 @@ export interface UseOrdersParams {
   dateTo?: string
   search?: string
 }
+
+export interface OrderFormItemValues {
+  product: string
+  description: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface OrderFormValues {
+  clientId: string
+  clientName: string
+  items: OrderFormItemValues[]
+  channel: Channel | ''
+  zone: string
+  address: string
+  expectedDate: string
+}
+
+export interface OrderItemPayload {
+  product: string
+  description: string | null
+  quantity: number
+  unitPrice: number
+}
+
+export interface OrderPayload {
+  clientId: string
+  items: OrderItemPayload[]
+  channel: Channel | null
+  zone: string | null
+  address: string | null
+  expectedDate: string | null
+}
+
+export interface OrderMutationResponse {
+  order: OrderDetail
+}
+
+export interface ClientSearchResult {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+}
