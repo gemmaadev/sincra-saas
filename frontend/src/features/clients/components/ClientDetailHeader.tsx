@@ -1,5 +1,5 @@
 import { Mail, Phone, Pencil, Trash2 } from 'lucide-react'
-import { Avatar, SincraButton } from '@/shared/components'
+import { Avatar, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import type { ClientDetail } from '../types/client.types'
 
@@ -35,12 +35,8 @@ export function ClientDetailHeader({ client, onEdit, onDelete }: ClientDetailHea
         </div>
       </div>
       <div className="flex gap-2">
-        <SincraButton variant="secondary" size="icon" aria-label="Editar cliente" onClick={onEdit}>
-          <Pencil size={16} aria-hidden="true" />
-        </SincraButton>
-        <SincraButton variant="danger" size="icon" aria-label="Eliminar cliente" onClick={onDelete}>
-          <Trash2 size={16} aria-hidden="true" />
-        </SincraButton>
+        <IconButton icon={Pencil} label="Editar cliente" variant="secondary" onClick={onEdit} />
+        <IconButton icon={Trash2} label="Eliminar cliente" variant="danger" onClick={onDelete} />
       </div>
     </div>
   )

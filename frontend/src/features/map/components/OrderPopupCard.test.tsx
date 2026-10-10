@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { OrderPopupCard } from './OrderPopupCard'
@@ -19,7 +20,11 @@ const mockOrder: MapOrder = {
 
 function renderCard(order: MapOrder = mockOrder) {
   const onEdit = vi.fn()
-  render(<OrderPopupCard order={order} onEdit={onEdit} />)
+  render(
+    <MemoryRouter>
+      <OrderPopupCard order={order} onEdit={onEdit} />
+    </MemoryRouter>,
+  )
   return { onEdit, user: userEvent.setup() }
 }
 
@@ -83,5 +88,17 @@ describe('OrderPopupCard', () => {
     await user.click(screen.getByRole('button', { name: 'Editar pedido' }))
 
     expect(onEdit).toHaveBeenCalledTimes(1)
+  })
+
+  // Given any order
+  // When the card is rendered
+  // Then "Ver pedido" should link to the order detail
+  it('links to the order detail', () => {
+    renderCard()
+
+    expect(screen.getByRole('link', { name: /Ver pedido/ })).toHaveAttribute(
+      'href',
+      '/orders/order-1',
+    )
   })
 })

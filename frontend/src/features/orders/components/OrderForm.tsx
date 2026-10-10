@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Trash2, Plus } from 'lucide-react'
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
-import { Input, Select, SincraButton } from '@/shared/components'
+import { Input, Select, SincraButton, IconButton } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import { ClientSearch } from './ClientSearch'
 import type { OrderDetail, OrderFormValues, ClientSearchResult } from '../types/order.types'
@@ -154,15 +154,13 @@ export function OrderForm({
               </div>
               <div className="col-span-1">
                 {fields.length > 1 && (
-                  <SincraButton
+                  <IconButton
                     type="button"
+                    icon={Trash2}
+                    label={`Quitar producto ${index + 1}`}
                     variant="danger"
-                    size="icon"
-                    aria-label={`Quitar producto ${index + 1}`}
                     onClick={() => remove(index)}
-                  >
-                    <Trash2 size={16} aria-hidden="true" />
-                  </SincraButton>
+                  />
                 )}
               </div>
             </div>

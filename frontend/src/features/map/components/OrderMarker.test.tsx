@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
 import { MapContainer } from 'react-leaflet'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
@@ -22,9 +23,11 @@ const mockOrder: MapOrder = {
 function renderMarker(order: MapOrder = mockOrder) {
   const onEdit = vi.fn()
   render(
-    <MapContainer center={[41.7, 1.8]} zoom={10}>
-      <OrderMarker order={order} onEdit={onEdit} />
-    </MapContainer>,
+    <MemoryRouter>
+      <MapContainer center={[41.7, 1.8]} zoom={10}>
+        <OrderMarker order={order} onEdit={onEdit} />
+      </MapContainer>
+    </MemoryRouter>,
   )
   return { onEdit, user: userEvent.setup() }
 }

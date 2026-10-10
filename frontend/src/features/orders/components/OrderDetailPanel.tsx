@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Avatar, SincraButton, Tabs } from '@/shared/components'
+import { Avatar, IconButton, Tabs } from '@/shared/components'
 import { useOrderDetail } from '../hooks/useOrderDetail'
 import { OrderFormModal } from './OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
@@ -29,14 +29,12 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
-        <SincraButton
+        <IconButton
+          icon={Pencil}
+          label="Editar pedido"
           variant="secondary"
-          size="icon"
-          aria-label="Editar pedido"
           onClick={() => setIsEditModalOpen(true)}
-        >
-          <Pencil size={16} aria-hidden="true" />
-        </SincraButton>
+        />
       </div>
       <div className="flex flex-row gap-2 text-xs  w-full">
         <Avatar name={order.client.name} size="xs" roundness="rounded" />
