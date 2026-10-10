@@ -1,4 +1,5 @@
 import type { Channel } from '@/shared/types'
+import type { Tag } from '@/features/tags/types/tag.types'
 
 export type OrderStatus = 'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 export type OrderKind = 'PRODUCT' | 'SERVICE'
@@ -44,6 +45,13 @@ export interface OrderDetailClient {
   channels: Channel[]
 }
 
+export interface OrderTag {
+  id: string
+  tagId: string
+  aiGenerated: boolean
+  tag: Tag
+}
+
 export interface OrderDetail {
   id: string
   number: number
@@ -55,10 +63,10 @@ export interface OrderDetail {
   zone: string | null
   expectedDate: string | null
   description: string | null
-  notes: string | null
   client: OrderDetailClient
   items: OrderItem[]
   statusHistory: OrderStatusChangeEntry[]
+  orderTags: OrderTag[]
   createdAt: string
   updatedAt: string
 }

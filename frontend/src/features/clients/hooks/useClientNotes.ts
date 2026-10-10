@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/shared/services'
-import type { Note } from '../types/note.types'
+import type { Note } from '@/shared/types'
 
 export function useClientNotes(clientId: string) {
   return useQuery({
