@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Avatar, IconButton, Tabs } from '@/shared/components'
 import { useOrderDetail } from '../hooks/useOrderDetail'
 import { OrderFormModal } from './OrderFormModal'
@@ -7,15 +8,20 @@ import { OrderItemsList } from './OrderItemsList'
 import { OrderTimeline } from './OrderTimeline'
 import { OrderNotesTab } from './OrderNotesTab'
 import { OrderTagsTab } from './OrderTagsTab'
-import { Mail, Phone, Pencil } from 'lucide-react'
+import { CancelOrderModal } from './CancelOrderModal'
+import { DeleteOrderModal } from './DeleteOrderModal'
+import { Mail, Phone, Pencil, X, Trash2 } from 'lucide-react'
 
 interface OrderDetailPanelProps {
   id: string
 }
 
 export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
+  const navigate = useNavigate()
   const { data: order, isLoading, isError } = useOrderDetail(id)
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState<boolean>(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
 
   if (isLoading) {
     return <p className="text-ink-muted">Cargando pedido...</p>
@@ -29,12 +35,27 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
-        <IconButton
-          icon={Pencil}
-          label="Editar pedido"
-          variant="secondary"
-          onClick={() => setIsEditModalOpen(true)}
-        />
+        <div className="flex gap-2">
+          <IconButton
+            icon={Pencil}
+            label="Editar pedido"
+            variant="secondary"
+            onClick={() => setIsEditModalOpen(true)}
+          />
+          <IconButton
+            icon={X}
+            label="Cancelar pedido"
+            variant="dangerOutline"
+            disabled={order.status === 'CANCELLED' || order.status === 'DELIVERED'}
+            onClick={() => setIsCancelModalOpen(true)}
+          />
+          <IconButton
+            icon={Trash2}
+            label="Eliminar pedido"
+            variant="danger"
+            onClick={() => setIsDeleteModalOpen(true)}
+          />
+        </div>
       </div>
       <div className="flex flex-row gap-2 text-xs  w-full">
         <Avatar name={order.client.name} size="xs" roundness="rounded" />
@@ -73,6 +94,18 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
         opened={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         order={order}
+      />
+      <CancelOrderModal
+        order={order}
+        opened={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onCancelled={() => setIsCancelModalOpen(false)}
+      />
+      <DeleteOrderModal
+        order={order}
+        opened={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onDeleted={() => navigate('/orders')}
       />
     </div>
   )

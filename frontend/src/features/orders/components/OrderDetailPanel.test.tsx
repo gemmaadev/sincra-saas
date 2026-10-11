@@ -12,6 +12,16 @@ vi.mock('@/shared/services', async (importOriginal) => {
   return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
 })
 
+const mockNavigate = vi.fn()
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 const mockOrder: OrderDetail = {
   id: 'order-1',
   number: 7,
@@ -57,6 +67,7 @@ function renderPanel() {
 describe('OrderDetailPanel', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset()
+    mockNavigate.mockReset()
   })
 
   // Given the order is still loading
@@ -203,5 +214,52 @@ describe('OrderDetailPanel', () => {
     await userEvent.setup().click(screen.getByRole('tab', { name: 'Etiquetas' }))
 
     expect(await screen.findByText('VIP')).toBeInTheDocument()
+  })
+
+  // Given a loaded order that is not yet in a final status
+  // When the user confirms "Cancelar pedido"
+  // Then it should PATCH the order's status to CANCELLED and stay on the panel
+  it('cancels the order and keeps the record', async () => {
+    mockApiGet()
+    vi.mocked(api.patch).mockResolvedValue({})
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    const user = userEvent.setup()
+    await user.click(screen.getByLabelText('Cancelar pedido'))
+    const dialog = await screen.findByRole('dialog', { name: '¿Cancelar pedido?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar pedido' }))
+
+    await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'CANCELLED' }))
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  // Given a loaded order
+  // When the user confirms "Eliminar pedido"
+  // Then it should DELETE the order and navigate back to the orders list
+  it('deletes the order and navigates back to the orders list', async () => {
+    mockApiGet()
+    vi.mocked(api.delete).mockResolvedValue({})
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    const user = userEvent.setup()
+    await user.click(screen.getByLabelText('Eliminar pedido'))
+    const dialog = await screen.findByRole('dialog', { name: '¿Eliminar pedido?' })
+    await user.click(within(dialog).getByRole('button', { name: 'Eliminar' }))
+
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/orders/order-1'))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/orders'))
+  })
+
+  // Given an order that already reached a final status (DELIVERED)
+  // When the panel is rendered
+  // Then the "Cancelar pedido" action should be disabled, since that transition is blocked
+  it('disables cancelling an order that is already DELIVERED', async () => {
+    mockApiGet({ ...mockOrder, status: 'DELIVERED' })
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    expect(screen.getByLabelText('Cancelar pedido')).toBeDisabled()
   })
 })
