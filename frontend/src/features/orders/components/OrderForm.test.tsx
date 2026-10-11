@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api } from '@/shared/services'
@@ -33,7 +34,13 @@ const mockOrder: OrderDetail = {
 function renderForm(props: Partial<React.ComponentProps<typeof OrderForm>> = {}) {
   const onSubmit = vi.fn()
   const onCancel = vi.fn()
-  render(withQueryClient(<OrderForm onSubmit={onSubmit} onCancel={onCancel} {...props} />))
+  render(
+    withQueryClient(
+      <MantineProvider>
+        <OrderForm onSubmit={onSubmit} onCancel={onCancel} {...props} />
+      </MantineProvider>,
+    ),
+  )
   return { onSubmit, onCancel, user: userEvent.setup() }
 }
 

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientPopupCard } from './ClientPopupCard'
@@ -22,9 +23,11 @@ function renderCard(client: MapClient = mockClient) {
   const onEdit = vi.fn()
   const onDelete = vi.fn()
   render(
-    <MemoryRouter>
-      <ClientPopupCard client={client} onEdit={onEdit} onDelete={onDelete} />
-    </MemoryRouter>,
+    <MantineProvider>
+      <MemoryRouter>
+        <ClientPopupCard client={client} onEdit={onEdit} onDelete={onDelete} />
+      </MemoryRouter>
+    </MantineProvider>,
   )
   return { onEdit, onDelete, user: userEvent.setup() }
 }

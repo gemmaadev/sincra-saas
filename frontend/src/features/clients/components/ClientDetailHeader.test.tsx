@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import type { ClientDetail } from '../types/client.types'
@@ -26,7 +27,11 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then the client's name should be shown
   it('shows the client name', () => {
-    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />
+      </MantineProvider>,
+    )
     expect(screen.getByText('Laura García')).toBeInTheDocument()
   })
 
@@ -35,11 +40,13 @@ describe('ClientDetailHeader', () => {
   // Then both should be shown, each on its own line
   it('shows the client email and phone', () => {
     render(
-      <ClientDetailHeader
-        client={{ ...mockClient, email: 'laura@ejemplo.test', phone: '+34600000000' }}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-      />,
+      <MantineProvider>
+        <ClientDetailHeader
+          client={{ ...mockClient, email: 'laura@ejemplo.test', phone: '+34600000000' }}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </MantineProvider>,
     )
     expect(screen.getByText('laura@ejemplo.test')).toBeInTheDocument()
     expect(screen.getByText('+34600000000')).toBeInTheDocument()
@@ -49,7 +56,11 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then a dash should be shown instead
   it('shows a dash when there is no email or phone', () => {
-    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />
+      </MantineProvider>,
+    )
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
@@ -57,7 +68,11 @@ describe('ClientDetailHeader', () => {
   // When ClientDetailHeader is rendered
   // Then each channel's brand icon should be shown
   it('shows an icon for each of the client channels', () => {
-    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />
+      </MantineProvider>,
+    )
     expect(screen.getByLabelText('Gmail')).toBeInTheDocument()
     expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
   })
@@ -67,7 +82,11 @@ describe('ClientDetailHeader', () => {
   // Then onEdit should be called
   it('calls onEdit when the edit action is clicked', () => {
     const onEdit = vi.fn()
-    render(<ClientDetailHeader client={mockClient} onEdit={onEdit} onDelete={vi.fn()} />)
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={onEdit} onDelete={vi.fn()} />
+      </MantineProvider>,
+    )
 
     fireEvent.click(screen.getByLabelText('Editar cliente'))
 
@@ -79,7 +98,11 @@ describe('ClientDetailHeader', () => {
   // Then onDelete should be called
   it('calls onDelete when the delete action is clicked', () => {
     const onDelete = vi.fn()
-    render(<ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={onDelete} />)
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={onDelete} />
+      </MantineProvider>,
+    )
 
     fireEvent.click(screen.getByLabelText('Eliminar cliente'))
 

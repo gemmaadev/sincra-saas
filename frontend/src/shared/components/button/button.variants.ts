@@ -4,6 +4,7 @@ export const buttonVariants = {
   tertiary: 'bg-primary/10 text-primary hover:bg-primary/15',
   text: 'text-primary hover:underline',
   danger: 'bg-error text-white hover:bg-error-hover',
+  dangerOutline: 'border border-error text-error bg-white hover:bg-error/10',
 } as const
 
 export const buttonDisabledVariants = {
@@ -12,6 +13,7 @@ export const buttonDisabledVariants = {
   tertiary: 'bg-neutral-100 text-neutral-400',
   text: 'text-neutral-400',
   danger: 'bg-neutral-300 text-white/70',
+  dangerOutline: 'border border-neutral-300 text-neutral-400 bg-white',
 } as const
 
 export const buttonSizes = {

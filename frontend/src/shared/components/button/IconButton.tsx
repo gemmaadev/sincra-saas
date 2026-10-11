@@ -1,3 +1,4 @@
+import { Tooltip } from '@mantine/core'
 import type { LucideIcon } from 'lucide-react'
 import { SincraButton } from './SincraButton'
 import type { ButtonProps } from './button.types'
@@ -11,8 +12,10 @@ interface IconButtonProps extends Omit<ButtonProps, 'size' | 'icon' | 'children'
 
 export function IconButton({ icon: Icon, label, iconClassName, ...props }: IconButtonProps) {
   return (
-    <SincraButton size="icon" aria-label={label} title={label} {...props}>
-      <Icon size={16} className={iconClassName} aria-hidden="true" />
-    </SincraButton>
+    <Tooltip label={label} withArrow position="top">
+      <SincraButton size="icon" aria-label={label} {...props}>
+        <Icon size={16} className={iconClassName} aria-hidden="true" />
+      </SincraButton>
+    </Tooltip>
   )
 }
