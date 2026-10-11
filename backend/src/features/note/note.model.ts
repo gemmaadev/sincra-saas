@@ -7,16 +7,29 @@ export async function findNotesByClient(clientId: string) {
   })
 }
 
-export async function insertNote(clientId: string, content: string, createdBy: string) {
+export async function findNotesByOrder(orderId: string) {
+  return prisma.note.findMany({
+    where: { orderId },
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+export async function insertClientNote(clientId: string, content: string, createdBy: string) {
   return prisma.note.create({
     data: { clientId, content, createdBy },
   })
 }
 
-export async function findNoteWithClient(noteId: string) {
+export async function insertOrderNote(orderId: string, content: string, createdBy: string) {
+  return prisma.note.create({
+    data: { orderId, content, createdBy },
+  })
+}
+
+export async function findNoteWithOwner(noteId: string) {
   return prisma.note.findUnique({
     where: { id: noteId },
-    include: { client: true },
+    include: { client: true, order: true },
   })
 }
 

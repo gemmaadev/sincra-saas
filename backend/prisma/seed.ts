@@ -4,7 +4,7 @@
 // Run with: npx prisma db seed
 import 'dotenv/config'
 import prisma from '../src/config/db'
-import type { Channel } from '../src/generated/prisma/client'
+import type { Channel, Client, OrderKind, OrderStatus } from '../src/generated/prisma/client'
 import { DEFAULT_TAGS } from '../src/shared/defaultTags'
 
 const SEED_BUSINESS_OWNER_EMAIL = process.env.SEED_BUSINESS_EMAIL
@@ -94,6 +94,65 @@ function slugify(name: string): string {
   return name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '.')
 }
 
+interface CatalogItem {
+  product: string
+  description?: string
+  unitPrice: number
+}
+
+const PRODUCT_CATALOG: CatalogItem[] = [
+  { product: 'Chaqueta oversize', description: 'Talla M, beige', unitPrice: 89.9 },
+  { product: 'Zapatillas urbanas', description: 'Talla 42, negro', unitPrice: 59.9 },
+  { product: 'Camiseta personalizada', description: 'Talla L, blanco', unitPrice: 24.9 },
+  { product: 'Pack 3 camisetas', description: 'Tallas M, L, XL, colores varios', unitPrice: 49.9 },
+  { product: 'Bolso de piel', description: 'Color marrón', unitPrice: 129.9 },
+  { product: 'Sudadera con capucha', description: 'Talla L, gris', unitPrice: 54.9 },
+  { product: 'Pantalón vaquero', description: 'Talla 38, azul', unitPrice: 39.9 },
+  { product: 'Gorra personalizada', description: 'Talla única, negra', unitPrice: 19.9 },
+  { product: 'Mochila urbana', description: 'Color negro', unitPrice: 69.9 },
+  { product: 'Pañuelo de seda', unitPrice: 15 },
+]
+
+const ORDER_KIND_POOL: OrderKind[] = ['PRODUCT', 'PRODUCT', 'PRODUCT', 'PRODUCT', 'SERVICE']
+
+// Weighted so most demo orders are already resolved one way or another,
+// with cancellations being the rarer case (closer to how a real shop looks).
+const ORDER_STATUS_POOL: OrderStatus[] = [
+  'PENDING',
+  'PENDING',
+  'PREPARING',
+  'PREPARING',
+  'SHIPPED',
+  'SHIPPED',
+  'DELIVERED',
+  'DELIVERED',
+  'DELIVERED',
+  'CANCELLED',
+]
+
+const STATUS_PROGRESSION: OrderStatus[] = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED']
+
+// Builds a believable status history leading up to the final status, instead of
+// a single entry — useful once the order detail timeline gets built.
+function buildStatusHistory(finalStatus: OrderStatus) {
+  if (finalStatus === 'CANCELLED') {
+    return [{ status: 'PENDING' as OrderStatus }, { status: 'CANCELLED' as OrderStatus }]
+  }
+
+  const finalIndex = STATUS_PROGRESSION.indexOf(finalStatus)
+  return STATUS_PROGRESSION.slice(0, finalIndex + 1).map((status) => ({ status }))
+}
+
+function randomPastDate(maxDaysAgo: number): Date {
+  const daysAgo = Math.random() * maxDaysAgo
+  return new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
+}
+
+function randomFutureDate(from: Date, maxDaysAhead: number): Date {
+  const daysAhead = Math.random() * maxDaysAhead
+  return new Date(from.getTime() + daysAhead * 24 * 60 * 60 * 1000)
+}
+
 async function main() {
   const owner = await prisma.user.findUnique({
     where: { email: SEED_BUSINESS_OWNER_EMAIL },
@@ -108,7 +167,9 @@ async function main() {
 
   const businessId = owner.memberships[0].businessId
 
-  // Idempotent: clear previously-seeded clients and tags for this business before reseeding
+  // Idempotent: clear previously-seeded data before reseeding. Orders must go first —
+  // the schema blocks deleting a client that still has orders (onDelete: NoAction).
+  await prisma.order.deleteMany({ where: { businessId } })
   await prisma.client.deleteMany({ where: { businessId } })
   await prisma.tag.deleteMany({ where: { businessId } })
 
@@ -121,6 +182,7 @@ async function main() {
   )
 
   let created = 0
+  const clients: Client[] = []
 
   for (let index = 0; index < DEMO_NAMES.length; index += 1) {
     const name = DEMO_NAMES[index]
@@ -143,6 +205,7 @@ async function main() {
       },
     })
     created += 1
+    clients.push(client)
 
     // Tag roughly a third of the demo clients, so the Etiquetas UI has something to show
     if (Math.random() < 0.3) {
@@ -150,9 +213,51 @@ async function main() {
     }
   }
 
+  const ordersCreated = await seedOrders(businessId, clients)
+
   console.log(
-    `Seed completado: ${created} clientes y ${tags.length} etiquetas por defecto para el negocio ${businessId}.`,
+    `Seed completado: ${created} clientes, ${tags.length} etiquetas por defecto y ${ordersCreated} pedidos para el negocio ${businessId}.`,
   )
+}
+
+async function seedOrders(businessId: string, clients: Client[]): Promise<number> {
+  const ORDERS_TO_CREATE = 60
+
+  // Order numbers increase over time in real use — generate the random dates
+  // first and sort them, so the number assigned below stays chronological.
+  const createdAtDates = Array.from({ length: ORDERS_TO_CREATE }, () => randomPastDate(45)).sort(
+    (a, b) => a.getTime() - b.getTime(),
+  )
+
+  for (let index = 0; index < ORDERS_TO_CREATE; index += 1) {
+    const client = pickRandom(clients)
+    const status = pickRandom(ORDER_STATUS_POOL)
+    const itemsCount = Math.random() < 0.75 ? 1 : 2
+    const items = Array.from({ length: itemsCount }, () => pickRandom(PRODUCT_CATALOG))
+    const price = items.reduce((total, item) => total + item.unitPrice, 0)
+    const createdAt = createdAtDates[index]
+    const channel = Math.random() < 0.7 && client.channels.length > 0
+      ? pickRandom(client.channels)
+      : undefined
+
+    await prisma.order.create({
+      data: {
+        businessId,
+        clientId: client.id,
+        number: index + 1,
+        channel,
+        kind: pickRandom(ORDER_KIND_POOL),
+        price,
+        createdAt,
+        expectedDate: Math.random() < 0.6 ? randomFutureDate(createdAt, 10) : undefined,
+        items: { create: items.map((item) => ({ ...item })) },
+        statusHistory: { create: buildStatusHistory(status) },
+        status,
+      },
+    })
+  }
+
+  return ORDERS_TO_CREATE
 }
 
 main()

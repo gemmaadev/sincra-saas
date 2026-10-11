@@ -4,10 +4,10 @@ import { useClientDetail } from '../hooks/useClientDetail'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import { ClientFormModal } from './ClientFormModal'
 import { DeleteClientModal } from './DeleteClientModal'
-import { SummaryTab } from './SummaryTab'
-import { OrdersTab } from './OrdersTab'
-import { NotesTab } from './NotesTab'
-import { TagsTab } from './TagsTab'
+import { ClientSummaryTab } from './ClientSummaryTab'
+import { ClientOrdersTab } from './ClientOrdersTab'
+import { ClientNotesTab } from './ClientNotesTab'
+import { ClientTagsTab } from './ClientTagsTab'
 
 interface ClientDetailPanelProps {
   id: string
@@ -36,11 +36,11 @@ export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
       />
       <Tabs
         tabs={[
-          { key: 'resumen', label: 'Resumen', content: <SummaryTab client={client} /> },
+          { key: 'resumen', label: 'Resumen', content: <ClientSummaryTab client={client} /> },
           { key: 'historial', label: 'Historial', content: null, disabled: true },
-          { key: 'pedidos', label: 'Pedidos', content: <OrdersTab /> },
-          { key: 'notas', label: 'Notas', content: <NotesTab clientId={client.id} /> },
-          { key: 'etiquetas', label: 'Etiquetas', content: <TagsTab client={client} /> },
+          { key: 'pedidos', label: 'Pedidos', content: <ClientOrdersTab client={client} /> },
+          { key: 'notas', label: 'Notas', content: <ClientNotesTab clientId={client.id} /> },
+          { key: 'etiquetas', label: 'Etiquetas', content: <ClientTagsTab client={client} /> },
         ]}
       />
       <ClientFormModal

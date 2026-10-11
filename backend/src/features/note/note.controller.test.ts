@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { list, create, remove } from './note.controller'
+import { listForClient, createForClient, listForOrder, createForOrder, remove } from './note.controller'
 import * as noteService from './note.service'
 import { AppError } from '../../shared/AppError'
 
@@ -16,7 +16,7 @@ function createMockResponse() {
   return res
 }
 
-describe('list', () => {
+describe('listForClient', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
@@ -32,24 +32,24 @@ describe('list', () => {
     const req = createMockRequest({ businessId: 'biz-1', params: { clientId: 'client-1' } })
     const res = createMockResponse()
 
-    await list(req, res, vi.fn() as NextFunction)
+    await listForClient(req, res, vi.fn() as NextFunction)
 
     expect(listSpy).toHaveBeenCalledWith('biz-1', 'client-1')
     expect(res.json).toHaveBeenCalledWith({ notes: [{ id: 'note-1', content: 'Hola' }] })
   })
 })
 
-describe('create', () => {
+describe('createForClient', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
   // Given valid content
-  // When creating a note
+  // When creating a client note
   // Then it should call the service with the business id, client id, content and author, and respond 201
   it('creates the note and responds 201 with it', async () => {
     const createSpy = vi
-      .spyOn(noteService, 'createNote')
+      .spyOn(noteService, 'createNoteForClient')
       .mockResolvedValue({ id: 'note-1', content: 'Hola' } as never)
 
     const req = createMockRequest({
@@ -60,7 +60,7 @@ describe('create', () => {
     })
     const res = createMockResponse()
 
-    await create(req, res, vi.fn() as NextFunction)
+    await createForClient(req, res, vi.fn() as NextFunction)
 
     expect(createSpy).toHaveBeenCalledWith('biz-1', 'client-1', 'Hola', 'user-1')
     expect(res.status).toHaveBeenCalledWith(201)
@@ -71,7 +71,7 @@ describe('create', () => {
   // When creating a note
   // Then it should throw a 400 AppError without calling the service
   it('rejects empty content', async () => {
-    const createSpy = vi.spyOn(noteService, 'createNote')
+    const createSpy = vi.spyOn(noteService, 'createNoteForClient')
 
     const req = createMockRequest({
       businessId: 'biz-1',
@@ -82,7 +82,80 @@ describe('create', () => {
     const res = createMockResponse()
     const next = vi.fn()
 
-    await create(req, res, next as NextFunction)
+    await createForClient(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('listForOrder', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given an order id
+  // When listing its notes
+  // Then it should call the service with the business and order ids, and respond with them
+  it('lists the notes for an order', async () => {
+    const listSpy = vi
+      .spyOn(noteService, 'listNotesForOrder')
+      .mockResolvedValue([{ id: 'note-1', content: 'Hola' }] as never)
+
+    const req = createMockRequest({ businessId: 'biz-1', params: { orderId: 'order-1' } })
+    const res = createMockResponse()
+
+    await listForOrder(req, res, vi.fn() as NextFunction)
+
+    expect(listSpy).toHaveBeenCalledWith('biz-1', 'order-1')
+    expect(res.json).toHaveBeenCalledWith({ notes: [{ id: 'note-1', content: 'Hola' }] })
+  })
+})
+
+describe('createForOrder', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given valid content
+  // When creating an order note
+  // Then it should call the service with the business id, order id, content and author, and respond 201
+  it('creates the note and responds 201 with it', async () => {
+    const createSpy = vi
+      .spyOn(noteService, 'createNoteForOrder')
+      .mockResolvedValue({ id: 'note-1', content: 'Hola' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { orderId: 'order-1' },
+      body: { content: 'Hola' },
+    })
+    const res = createMockResponse()
+
+    await createForOrder(req, res, vi.fn() as NextFunction)
+
+    expect(createSpy).toHaveBeenCalledWith('biz-1', 'order-1', 'Hola', 'user-1')
+    expect(res.status).toHaveBeenCalledWith(201)
+    expect(res.json).toHaveBeenCalledWith({ note: { id: 'note-1', content: 'Hola' } })
+  })
+
+  // Given empty content
+  // When creating a note
+  // Then it should throw a 400 AppError without calling the service
+  it('rejects empty content', async () => {
+    const createSpy = vi.spyOn(noteService, 'createNoteForOrder')
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { orderId: 'order-1' },
+      body: { content: '   ' },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await createForOrder(req, res, next as NextFunction)
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
     expect(createSpy).not.toHaveBeenCalled()

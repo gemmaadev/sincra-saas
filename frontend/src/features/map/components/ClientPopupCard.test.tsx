@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientPopupCard } from './ClientPopupCard'
@@ -14,15 +15,19 @@ const mockClient: MapClient = {
   channels: ['WHATSAPP'],
   type: 'Panadería',
   approximate: false,
+  orderCount: 0,
+  deliveredRevenue: '0',
 }
 
 function renderCard(client: MapClient = mockClient) {
   const onEdit = vi.fn()
   const onDelete = vi.fn()
   render(
-    <MemoryRouter>
-      <ClientPopupCard client={client} onEdit={onEdit} onDelete={onDelete} />
-    </MemoryRouter>,
+    <MantineProvider>
+      <MemoryRouter>
+        <ClientPopupCard client={client} onEdit={onEdit} onDelete={onDelete} />
+      </MemoryRouter>
+    </MantineProvider>,
   )
   return { onEdit, onDelete, user: userEvent.setup() }
 }
@@ -53,13 +58,31 @@ describe('ClientPopupCard', () => {
     )
   })
 
-  // Given the orders module does not exist yet
+  // Given a client with no orders
   // When the card is rendered
-  // Then the orders line should show a placeholder
-  it('shows a placeholder line for the orders', () => {
+  // Then the orders line should say so, not show a count or revenue
+  it('shows "Sin pedidos" for a client with no orders', () => {
     renderCard()
 
-    expect(screen.getByText('Pedidos: —')).toBeInTheDocument()
+    expect(screen.getByText('Sin pedidos')).toBeInTheDocument()
+  })
+
+  // Given a client with 3 orders, 2 of them delivered
+  // When the card is rendered
+  // Then the orders line should show the count and the delivered revenue
+  it('shows the order count and the delivered revenue', () => {
+    renderCard({ ...mockClient, orderCount: 3, deliveredRevenue: '150.5' })
+
+    expect(screen.getByText('3 pedidos · 150,50 €')).toBeInTheDocument()
+  })
+
+  // Given a client with exactly 1 order
+  // When the card is rendered
+  // Then the order count should be singular
+  it('uses the singular for a single order', () => {
+    renderCard({ ...mockClient, orderCount: 1, deliveredRevenue: '0' })
+
+    expect(screen.getByText('1 pedido · 0,00 €')).toBeInTheDocument()
   })
 
   // Given a client placed at the centre of its zone

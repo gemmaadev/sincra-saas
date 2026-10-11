@@ -7,6 +7,7 @@ import * as authModel from '../auth/auth.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
 import {
   listClients,
+  getClientById,
   createClient,
   updateClient,
   deleteClient,
@@ -25,6 +26,7 @@ describe('listClients', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(clientModel.findClientsPage).mockResolvedValue([])
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(0)
   })
 
   // Given a business with 2 clients, 1 of them created in the last 30 days
@@ -42,6 +44,69 @@ describe('listClients', () => {
     expect(newClientsWhere.createdAt).toEqual({ gte: expect.any(Date) })
   })
 
+  // Given a business with some repeat buyers and some clients with no orders at all
+  // When listClients is called
+  // Then recurringClientsCount and potentialClientsCount come from their own counts
+  it('counts recurring and potential clients separately from the total', async () => {
+    vi.mocked(clientModel.countClients)
+      .mockResolvedValueOnce(10) // total
+      .mockResolvedValueOnce(2) // newClientsCount
+      .mockResolvedValueOnce(4) // potentialClientsCount
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(3)
+
+    const result = await listClients('business-1', {})
+
+    expect(result.recurringClientsCount).toBe(3)
+    expect(result.potentialClientsCount).toBe(4)
+    const potentialWhere = vi.mocked(clientModel.countClients).mock.calls[2][0]
+    expect(potentialWhere.orders).toEqual({ none: {} })
+  })
+
+  // Given a client row with its order count and most recent order from Prisma's raw include shape
+  // When listClients maps it for the response
+  // Then it should expose clean orderCount/lastOrderAt fields instead of Prisma's _count/orders
+  it('maps the order count and most recent order date for each client row', async () => {
+    vi.mocked(clientModel.findClientsPage).mockResolvedValue([
+      {
+        id: 'client-1',
+        name: 'Laura García',
+        _count: { orders: 5 },
+        orders: [{ createdAt: new Date('2026-10-07') }],
+      },
+      {
+        id: 'client-2',
+        name: 'Carlos Ruiz',
+        _count: { orders: 0 },
+        orders: [],
+      },
+    ] as never)
+
+    const result = await listClients('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      id: 'client-1',
+      orderCount: 5,
+      lastOrderAt: new Date('2026-10-07'),
+    })
+    expect(result.data[0]).not.toHaveProperty('_count')
+    expect(result.data[0]).not.toHaveProperty('orders')
+    expect(result.data[1]).toMatchObject({ id: 'client-2', orderCount: 0, lastOrderAt: null })
+  })
+
+  // Given an active channel filter on the list
+  // When listClients is called
+  // Then recurringClientsCount should be scoped to that same filter, not the whole business
+  it('scopes recurringClientsCount to the active filters', async () => {
+    vi.mocked(clientModel.countClients).mockResolvedValue(0)
+    vi.mocked(clientModel.countRecurringClients).mockResolvedValue(0)
+
+    await listClients('business-1', { channel: 'WHATSAPP' })
+
+    expect(clientModel.countRecurringClients).toHaveBeenCalledWith(
+      expect.objectContaining({ businessId: 'business-1', channels: { has: 'WHATSAPP' } }),
+    )
+  })
+
   // Given a search term and a channel filter
   // When listClients is called
   // Then the where clause is scoped to the business and includes both filters
@@ -54,6 +119,50 @@ describe('listClients', () => {
     expect(where.businessId).toBe('business-1')
     expect(where.channels).toEqual({ has: 'EMAIL' })
     expect(where.OR).toHaveLength(3)
+  })
+})
+
+describe('getClientById', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  // Given a client whose orders mix one with its own description and one without
+  // When the client detail is fetched
+  // Then each order should expose a resolved description (its own, or a summary of its items)
+  // and the raw items should not leak into the response
+  it('resolves a description for each order and drops the raw items', async () => {
+    vi.mocked(clientModel.findClientWithDetails).mockResolvedValue({
+      id: 'client-1',
+      orders: [
+        { id: 'order-1', description: 'Pedido de temporada', items: [{ product: 'Camiseta', quantity: 1 }] },
+        {
+          id: 'order-2',
+          description: null,
+          items: [
+            { product: 'Chaqueta oversize', quantity: 2 },
+            { product: 'Bolso de piel', quantity: 1 },
+          ],
+        },
+      ],
+    } as never)
+
+    const result = await getClientById('business-1', 'client-1')
+
+    expect(result?.orders[0]).toMatchObject({ description: 'Pedido de temporada' })
+    expect(result?.orders[1]).toMatchObject({
+      description: 'Chaqueta oversize x2, Bolso de piel',
+    })
+    expect(result?.orders[0]).not.toHaveProperty('items')
+  })
+
+  // Given a client id that does not exist
+  // When the client detail is fetched
+  // Then null should be returned as-is, without trying to map its (nonexistent) orders
+  it('returns null when the client does not exist', async () => {
+    vi.mocked(clientModel.findClientWithDetails).mockResolvedValue(null)
+
+    expect(await getClientById('business-1', 'missing')).toBeNull()
   })
 })
 

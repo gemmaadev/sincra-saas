@@ -41,6 +41,19 @@ enum Channel {
   MESSENGER
 }
 
+enum OrderKind {
+  PRODUCT
+  SERVICE
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 model Business {
   id          String   @id @default(uuid())
   name        String
@@ -61,6 +74,7 @@ model Business {
   memberships BusinessMember[]
   clients     Client[]
   tags        Tag[]
+  orders      Order[]
 }
 
 model User {
@@ -130,6 +144,7 @@ model Client {
   business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   clientTags ClientTag[]
   notes      Note[]
+  orders     Order[]
 
   @@unique([businessId, email])
   @@unique([businessId, phone])
@@ -140,14 +155,18 @@ model Client {
 
 model Note {
   id        String   @id @default(uuid())
-  clientId  String
+  // Exactly one of clientId/orderId is set per note: it belongs to a client OR an order, never both.
+  clientId  String?
+  orderId   String?
   content   String
   createdBy String?
   createdAt DateTime @default(now())
 
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  order  Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
+  @@index([orderId])
 }
 
 model Tag {
@@ -157,6 +176,7 @@ model Tag {
   color       String
   priority    TagPriority @default(LOW)
   isDefault   Boolean     @default(false)
+  // true when the AI created this catalog tag
   aiGenerated Boolean     @default(false)
   createdBy   String?
   createdAt   DateTime    @default(now())
@@ -164,6 +184,7 @@ model Tag {
 
   business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   clientTags ClientTag[]
+  orderTags  OrderTag[]
 
   @@unique([businessId, name])
   @@index([businessId])
@@ -173,6 +194,7 @@ model ClientTag {
   id          String    @id @default(uuid())
   clientId    String
   tagId       String
+  // true when the AI assigned this tag to this client
   aiGenerated Boolean   @default(false)
   createdAt   DateTime  @default(now())
   removedAt   DateTime?
@@ -182,4 +204,86 @@ model ClientTag {
 
   @@index([clientId])
   @@index([tagId])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  businessId      String
+  clientId        String
+  number          Int
+  channel         Channel?
+  kind            OrderKind   @default(PRODUCT)
+  // total of the order; must equal the sum of its items
+  price           Decimal?    @db.Decimal(10, 2)
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  zone            String?
+  expectedDate    DateTime?
+  description     String?
+  status          OrderStatus @default(PENDING)
+  // true when the AI created this order from an email or message
+  aiGenerated     Boolean     @default(false)
+  communicationId String?
+  createdBy       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  business      Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  client        Client              @relation(fields: [clientId], references: [id], onDelete: NoAction)
+  items         OrderItem[]
+  statusHistory OrderStatusChange[]
+  orderTags     OrderTag[]
+  notes         Note[]
+
+  @@unique([businessId, number])
+  @@index([businessId])
+  @@index([clientId])
+  @@index([businessId, status])
+  @@index([businessId, createdAt])
+  @@index([businessId, channel])
+  @@index([businessId, kind])
+  @@index([communicationId])
+}
+
+model OrderStatusChange {
+  id        String      @id @default(uuid())
+  orderId   String
+  status    OrderStatus
+  changedBy String?
+  changedAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderTag {
+  id          String    @id @default(uuid())
+  orderId     String
+  tagId       String
+  // true when the AI assigned this tag to this order
+  aiGenerated Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  removedAt   DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([tagId])
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  product     String
+  description String?
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }

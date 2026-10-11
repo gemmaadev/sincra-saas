@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import type { TabsProps } from './tabs.types'
 
-export function Tabs({ tabs, defaultTab }: TabsProps) {
+export function Tabs({ tabs, defaultTab, fillHeight = false }: TabsProps) {
   const [activeKey, setActiveKey] = useState(
     defaultTab ?? (tabs.find((tab) => !tab.disabled) ?? tabs[0])?.key,
   )
   const activeTab = tabs.find((tab) => tab.key === activeKey)
 
   return (
-    <div>
-      <div role="tablist" className="flex gap-4 border-b border-neutral-100">
+    <div className={fillHeight ? 'flex h-full flex-col' : undefined}>
+      <div
+        role="tablist"
+        className="flex shrink-0 gap-4 border-b overflow-x-auto border-neutral-100"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -37,7 +40,7 @@ export function Tabs({ tabs, defaultTab }: TabsProps) {
         role="tabpanel"
         id={`tabpanel-${activeKey}`}
         aria-labelledby={`tab-${activeKey}`}
-        className="pt-4"
+        className={fillHeight ? 'flex min-h-0 flex-1 flex-col pt-4' : 'pt-4'}
       >
         {activeTab?.content}
       </div>

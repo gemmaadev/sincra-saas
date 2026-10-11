@@ -13,6 +13,8 @@ const approximateClient: MapClient = {
   channels: [],
   type: null,
   approximate: true,
+  orderCount: 0,
+  deliveredRevenue: '0',
 }
 
 describe('ApproximateClientsCard', () => {

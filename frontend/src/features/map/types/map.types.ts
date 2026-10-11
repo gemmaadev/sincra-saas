@@ -1,7 +1,10 @@
-import type { ChannelFilter } from '@/features/clients/types/client.types'
+import type { Channel } from '@/shared/types'
+import type { OrderStatus } from '@/features/orders/types/order.types'
+
+export type MapLayer = 'clients' | 'orders'
 
 export interface MapFilters {
-  channel?: ChannelFilter
+  channel?: Channel
   type?: string
   from?: string
   to?: string
@@ -13,9 +16,11 @@ export interface MapClient {
   latitude: number
   longitude: number
   zone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   approximate: boolean
+  orderCount: number
+  deliveredRevenue: string
 }
 
 export interface ZoneSummary {
@@ -25,7 +30,7 @@ export interface ZoneSummary {
 }
 
 export interface ChannelShare {
-  channel: ChannelFilter
+  channel: Channel
   count: number
   percentage: number
 }
@@ -35,4 +40,31 @@ export interface ClientMapResponse {
   clients: MapClient[]
   zones: ZoneSummary[]
   channelOrigin: ChannelShare[]
+}
+
+export interface OrderMapZoneSummary {
+  zone: string
+  count: number
+  revenue: string
+  percentage: number
+}
+
+export interface MapOrder {
+  id: string
+  number: number
+  status: OrderStatus
+  channel: Channel | null
+  price: string
+  zone: string | null
+  clientName: string
+  latitude: number
+  longitude: number
+  approximate: boolean
+}
+
+export interface OrderMapResponse {
+  total: number
+  deliveredRevenue: string
+  zones: OrderMapZoneSummary[]
+  orders: MapOrder[]
 }

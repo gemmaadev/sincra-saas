@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ClientsPage from './ClientsPage'
 import { api } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import type { Client, ClientDetail } from '@/features/clients/types/client.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -14,7 +15,9 @@ vi.mock('@/shared/services', async (importOriginal) => {
 
 vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
-const mockClient = {
+// Reused both as a list row (Client) and as the /clients/:id detail response
+// (ClientDetail) in the mocks below, so it carries every field either needs.
+const mockClient: Client & ClientDetail = {
   id: 'client-1',
   name: 'Laura García',
   email: 'laura@ejemplo.test',
@@ -22,7 +25,14 @@ const mockClient = {
   channels: ['GMAIL'],
   type: null,
   zone: null,
+  address: null,
+  latitude: null,
+  longitude: null,
+  lastContact: null,
   clientTags: [],
+  orders: [],
+  orderCount: 0,
+  lastOrderAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
@@ -31,6 +41,8 @@ function mockApiGet(overrides?: {
   data?: (typeof mockClient)[]
   total?: number
   newClientsCount?: number
+  recurringClientsCount?: number
+  potentialClientsCount?: number
 }) {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path.startsWith('/tags')) {
@@ -44,6 +56,8 @@ function mockApiGet(overrides?: {
       data,
       pagination: { page: 1, limit: 10, total: overrides?.total ?? data.length, totalPages: 1 },
       newClientsCount: overrides?.newClientsCount ?? 0,
+      recurringClientsCount: overrides?.recurringClientsCount ?? 0,
+      potentialClientsCount: overrides?.potentialClientsCount ?? 0,
     })
   })
 }
@@ -281,6 +295,40 @@ describe('ClientsPage', () => {
     mockApiGet({ data: [mockClient], newClientsCount: 7 })
     renderClientsPage()
     await waitFor(() => expect(screen.getByText('7')).toBeInTheDocument())
+  })
+
+  // Given a successful response with known recurring and potential client counts
+  // When ClientsPage is rendered
+  // Then the "Clientes recurrentes" and "Clientes potenciales" KPIs should show those counts
+  it('shows the real counts in the "Clientes recurrentes" and "Clientes potenciales" KPIs', async () => {
+    mockApiGet({ data: [mockClient], recurringClientsCount: 17, potentialClientsCount: 4 })
+    renderClientsPage()
+    await waitFor(() => expect(screen.getByText('17')).toBeInTheDocument())
+    expect(screen.getByText('4')).toBeInTheDocument()
+  })
+
+  // Given a client with orders
+  // When ClientsPage is rendered
+  // Then the table should show the client's order count and the date of their last order
+  it('shows the order count and last order date in the table', async () => {
+    mockApiGet({
+      data: [{ ...mockClient, orderCount: 5, lastOrderAt: '2026-10-07T10:16:33.000Z' }],
+    })
+    renderClientsPage()
+    await screen.findByText('Laura García')
+    const table = screen.getByRole('table')
+    expect(table).toHaveTextContent('5')
+    expect(table).toHaveTextContent('07 oct 2026')
+  })
+
+  // Given a client with no orders at all
+  // When ClientsPage is rendered
+  // Then the "Última compra" cell should show a placeholder, not a date
+  it('shows a placeholder for last activity when the client has no orders', async () => {
+    mockApiGet({ data: [{ ...mockClient, orderCount: 0, lastOrderAt: null }] })
+    renderClientsPage()
+    await screen.findByText('Laura García')
+    expect(screen.getByTitle('Este cliente todavía no tiene pedidos')).toBeInTheDocument()
   })
 
   // Given no clients returned by the API

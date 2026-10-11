@@ -4,14 +4,9 @@ import { useForm, useWatch } from 'react-hook-form'
 import { Input, Checkbox, SincraButton } from '@/shared/components'
 import { EMAIL_PATTERN, PHONE_PATTERN } from '@/shared/utils'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import type { Channel } from '@/shared/types'
 import { AddressSearch } from './AddressSearch'
-import type {
-  AddressCandidate,
-  ChannelFilter,
-  ClientDetail,
-  ClientFormValues,
-  Coordinates,
-} from '../types/client.types'
+import type { AddressCandidate, ClientDetail, ClientFormValues, Coordinates } from '../types/client.types'
 
 interface ClientFormProps {
   client?: ClientDetail
@@ -116,7 +111,7 @@ export function ClientForm({
                   className="rounded-lg border border-neutral-100 px-3 py-2 transition-colors has-checked:border-primary has-checked:bg-primary-light"
                 >
                   <Checkbox
-                    value={brand.id.toUpperCase() as ChannelFilter}
+                    value={brand.id.toUpperCase() as Channel}
                     label={
                       <span className="flex items-center gap-1.5 text-ink">
                         <Icon size={16} className={brand.colorClassName} aria-hidden="true" />

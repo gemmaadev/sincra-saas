@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
 import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import type { ClientDetail } from '../types/client.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -13,7 +14,7 @@ vi.mock('@/shared/services', async (importOriginal) => {
 
 vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
-const mockClient = {
+const mockClient: ClientDetail = {
   id: 'client-1',
   name: 'Laura García',
   email: null,
@@ -26,6 +27,7 @@ const mockClient = {
   longitude: null,
   lastContact: null,
   clientTags: [],
+  orders: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 }
@@ -165,7 +167,7 @@ describe('ClientDetailPanel', () => {
 
   // Given the clients tabs
   // When the user selects Notas
-  // Then the real NotesTab content (its "add note" form) should be shown
+  // Then the real ClientNotesTab content (its "add note" form) should be shown
   it('switches to the Notas tab content when selected', async () => {
     mockApiGet()
     renderPanel()

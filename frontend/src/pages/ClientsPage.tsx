@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
-import { Drawer } from '@mantine/core'
-import { Users, UserPlus, Repeat, ShoppingCart, Plus, Trash2 } from 'lucide-react'
+import { Users, UserPlus, Repeat, Target, Plus, Trash2 } from 'lucide-react'
 import { useClients } from '@/features/clients/hooks/useClients'
 import { useClientsFilters } from '@/features/clients/hooks/useClientsFilters'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
@@ -9,14 +8,15 @@ import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTable
 import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { BulkDeleteClientsModal } from '@/features/clients/components/BulkDeleteClientsModal'
-import { clientsTableColumns } from '@/features/clients/components/clientsTableColumns'
+import { clientsTableColumns } from '@/features/clients/utils/clientsTableColumns'
 import {
   Table,
   EmptyState,
   Pagination,
   SincraButton,
   SelectionBar,
-  KpiCard,
+  KpiCardsRow,
+  DetailDrawer,
 } from '@/shared/components'
 import { useRowSelection } from '@/shared/hooks'
 
@@ -79,21 +79,37 @@ export default function ClientsPage() {
           Nuevo cliente
         </SincraButton>
       </div>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard
-          icon={Users}
-          label="Total de clientes"
-          value={String(data?.pagination.total ?? 0)}
-        />
-        <KpiCard
-          icon={UserPlus}
-          label="Clientes nuevos"
-          value={String(data?.newClientsCount ?? 0)}
-          infoTooltip="Añadidos en los últimos 30 días"
-        />
-        <KpiCard icon={Repeat} label="Clientes recurrentes" value="—" pending />
-        <KpiCard icon={ShoppingCart} label="Total de pedidos" value="—" pending />
-      </div>
+      <KpiCardsRow
+        cards={[
+          {
+            icon: Users,
+            label: 'Total de clientes',
+            value: String(data?.pagination.total ?? 0),
+            pending: !data,
+          },
+          {
+            icon: UserPlus,
+            label: 'Clientes nuevos',
+            value: String(data?.newClientsCount ?? 0),
+            infoTooltip: 'Añadidos en los últimos 30 días',
+            pending: !data,
+          },
+          {
+            icon: Repeat,
+            label: 'Clientes recurrentes',
+            value: String(data?.recurringClientsCount ?? 0),
+            infoTooltip: 'Clientes con 2 o más pedidos',
+            pending: !data,
+          },
+          {
+            icon: Target,
+            label: 'Clientes potenciales',
+            value: String(data?.potentialClientsCount ?? 0),
+            infoTooltip: 'Clientes que todavía no han hecho ningún pedido',
+            pending: !data,
+          },
+        ]}
+      />
 
       <ClientsFilterBar
         search={search}
@@ -150,14 +166,7 @@ export default function ClientsPage() {
         </div>
       )}
 
-      <Drawer
-        opened={!!detailMatch}
-        onClose={() => navigate('/clients')}
-        position="right"
-        size="lg"
-        closeButtonProps={{ 'aria-label': 'Cerrar' }}
-        transitionProps={{ duration: 300, timingFunction: 'ease-out' }}
-      >
+      <DetailDrawer opened={!!detailMatch} onClose={() => navigate('/clients')}>
         {detailMatch && (
           <ClientDetailPanel
             id={detailMatch.params.id!}
@@ -167,7 +176,7 @@ export default function ClientsPage() {
             }}
           />
         )}
-      </Drawer>
+      </DetailDrawer>
 
       <ClientFormModal opened={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 

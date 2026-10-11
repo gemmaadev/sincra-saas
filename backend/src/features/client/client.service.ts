@@ -5,14 +5,16 @@ import {
   insertClient,
   findClientsPage,
   countClients,
+  countRecurringClients,
   findClientById,
-  findClientWithTags,
+  findClientWithDetails,
   updateClientById,
   deleteClientById,
   findActiveClientTag,
   insertClientTag,
   markClientTagRemoved,
 } from './client.model'
+import { resolveOrderDescription } from '../order/order.service'
 import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
@@ -99,6 +101,12 @@ export async function searchClientAddress(businessId: string, query: string) {
   return candidates
 }
 
+function mapClientRow(client: Awaited<ReturnType<typeof findClientsPage>>[number]) {
+  const { orders, _count, ...rest } = client
+
+  return { ...rest, orderCount: _count.orders, lastOrderAt: orders[0]?.createdAt ?? null }
+}
+
 export async function listClients(businessId: string, filters: ListClientsFilters) {
   const { page, limit, skip } = parsePagination(filters)
 
@@ -121,18 +129,37 @@ export async function listClients(businessId: string, filters: ListClientsFilter
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const [data, total, newClientsCount] = await Promise.all([
-    findClientsPage(where, skip, limit),
-    countClients(where),
-    countClients({ ...where, createdAt: { gte: thirtyDaysAgo } }),
-  ])
+  const [data, total, newClientsCount, recurringClientsCount, potentialClientsCount] =
+    await Promise.all([
+      findClientsPage(where, skip, limit),
+      countClients(where),
+      countClients({ ...where, createdAt: { gte: thirtyDaysAgo } }),
+      countRecurringClients(where),
+      countClients({ ...where, orders: { none: {} } }),
+    ])
 
-  return { ...buildPaginatedResponse(data, total, page, limit), newClientsCount }
+  return {
+    ...buildPaginatedResponse(data.map(mapClientRow), total, page, limit),
+    newClientsCount,
+    recurringClientsCount,
+    potentialClientsCount,
+  }
 }
 
-// TODO: once the Order (and later Communication) models exist, include them here too.
+function mapOrderSummary(
+  order: NonNullable<Awaited<ReturnType<typeof findClientWithDetails>>>['orders'][number],
+) {
+  const { items, ...rest } = order
+  return { ...rest, description: resolveOrderDescription(order) }
+}
+
+// TODO: once the Communication model exists (if Epic 2 is ever picked back up), include it here too.
 export async function getClientById(businessId: string, clientId: string) {
-  return findClientWithTags(businessId, clientId)
+  const client = await findClientWithDetails(businessId, clientId)
+
+  if (!client) return null
+
+  return { ...client, orders: client.orders.map(mapOrderSummary) }
 }
 
 function hasTextChanged(newValue: string | null | undefined, currentValue: string | null): boolean {

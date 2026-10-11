@@ -1,6 +1,6 @@
 import type { Tag } from '@/features/tags/types/tag.types'
-
-export type ChannelFilter = 'GMAIL' | 'OUTLOOK' | 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
+import type { OrderStatus, OrderKind } from '@/features/orders/types/order.types'
+import type { Channel } from '@/shared/types'
 
 export interface ClientTag {
   id: string
@@ -9,15 +9,29 @@ export interface ClientTag {
   tag: Tag
 }
 
+export interface ClientOrderSummary {
+  id: string
+  number: number
+  status: OrderStatus
+  kind: OrderKind
+  channel: Channel | null
+  price: string | null
+  expectedDate: string | null
+  createdAt: string
+  description: string | null
+}
+
 export interface Client {
   id: string
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   zone: string | null
   clientTags: ClientTag[]
+  orderCount: number
+  lastOrderAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -27,7 +41,7 @@ export interface ClientDetail {
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   address: string | null
   zone: string | null
@@ -35,6 +49,7 @@ export interface ClientDetail {
   longitude: number | null
   lastContact: string | null
   clientTags: ClientTag[]
+  orders: ClientOrderSummary[]
   createdAt: string
   updatedAt: string
 }
@@ -48,6 +63,8 @@ export interface ClientsResponse {
     totalPages: number
   }
   newClientsCount: number
+  recurringClientsCount: number
+  potentialClientsCount: number
 }
 
 export interface ClientDetailResponse {
@@ -58,7 +75,7 @@ export interface UseClientsParams {
   page?: number
   limit?: number
   search?: string
-  channel?: ChannelFilter
+  channel?: Channel
   type?: string
   tagId?: string
 }
@@ -78,7 +95,7 @@ export interface ClientFormValues {
   name: string
   email: string
   phone: string
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string
   zone: string
   address: string
@@ -90,7 +107,7 @@ export interface ClientPayload {
   name: string
   email: string | null
   phone: string | null
-  channels: ChannelFilter[]
+  channels: Channel[]
   type: string | null
   zone: string | null
   address: string | null
