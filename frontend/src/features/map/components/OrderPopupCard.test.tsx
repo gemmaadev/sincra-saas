@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { OrderPopupCard } from './OrderPopupCard'
@@ -20,12 +21,16 @@ const mockOrder: MapOrder = {
 
 function renderCard(order: MapOrder = mockOrder) {
   const onEdit = vi.fn()
+  const onCancel = vi.fn()
+  const onDelete = vi.fn()
   render(
-    <MemoryRouter>
-      <OrderPopupCard order={order} onEdit={onEdit} />
-    </MemoryRouter>,
+    <MantineProvider>
+      <MemoryRouter>
+        <OrderPopupCard order={order} onEdit={onEdit} onCancel={onCancel} onDelete={onDelete} />
+      </MemoryRouter>
+    </MantineProvider>,
   )
-  return { onEdit, user: userEvent.setup() }
+  return { onEdit, onCancel, onDelete, user: userEvent.setup() }
 }
 
 describe('OrderPopupCard', () => {
@@ -88,6 +93,37 @@ describe('OrderPopupCard', () => {
     await user.click(screen.getByRole('button', { name: 'Editar pedido' }))
 
     expect(onEdit).toHaveBeenCalledTimes(1)
+  })
+
+  // Given the card is open
+  // When the user clicks the cancel button
+  // Then onCancel should be called
+  it('calls onCancel from the cancel button', async () => {
+    const { onCancel, user } = renderCard()
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar pedido' }))
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  // Given an order that is already DELIVERED
+  // When the card is rendered
+  // Then the cancel button should be disabled
+  it('disables the cancel button for a DELIVERED order', () => {
+    renderCard({ ...mockOrder, status: 'DELIVERED' })
+
+    expect(screen.getByRole('button', { name: 'Cancelar pedido' })).toBeDisabled()
+  })
+
+  // Given the card is open
+  // When the user clicks the delete button
+  // Then onDelete should be called
+  it('calls onDelete from the delete button', async () => {
+    const { onDelete, user } = renderCard()
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar pedido' }))
+
+    expect(onDelete).toHaveBeenCalledTimes(1)
   })
 
   // Given any order

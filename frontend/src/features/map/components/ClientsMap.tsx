@@ -28,6 +28,8 @@ interface ClientsMapProps {
   onDeleteClient: (client: MapClient) => void
   onCreateClientAt: (location: Coordinates) => void
   onEditOrder: (order: MapOrder) => void
+  onCancelOrder: (order: MapOrder) => void
+  onDeleteOrder: (order: MapOrder) => void
 }
 
 export function ClientsMap({
@@ -39,6 +41,8 @@ export function ClientsMap({
   onDeleteClient,
   onCreateClientAt,
   onEditOrder,
+  onCancelOrder,
+  onDeleteOrder,
 }: ClientsMapProps) {
   const clientPositions = clients.map((client): LatLngTuple => [client.latitude, client.longitude])
   const orderPositions = orders.map((order): LatLngTuple => [order.latitude, order.longitude])
@@ -76,7 +80,13 @@ export function ClientsMap({
               />
             ))
           : orders.map((order) => (
-              <OrderMarker key={order.id} order={order} onEdit={onEditOrder} />
+              <OrderMarker
+                key={order.id}
+                order={order}
+                onEdit={onEditOrder}
+                onCancel={onCancelOrder}
+                onDelete={onDeleteOrder}
+              />
             ))}
       </MarkerClusterGroup>
     </MapContainer>
