@@ -8,6 +8,7 @@ import { ClientMarker } from './ClientMarker'
 import { LayerFocus } from './LayerFocus'
 import { MapFocus } from './MapFocus'
 import { NewClientPin } from './NewClientPin'
+import { NewOrderPin } from './NewOrderPin'
 import { OrderMarker } from './OrderMarker'
 import { createClusterIcon } from '../utils/createClusterIcon'
 import type { Coordinates } from '@/features/clients/types/client.types'
@@ -30,6 +31,7 @@ interface ClientsMapProps {
   onEditOrder: (order: MapOrder) => void
   onCancelOrder: (order: MapOrder) => void
   onDeleteOrder: (order: MapOrder) => void
+  onCreateOrderAt: (location: Coordinates) => void
 }
 
 export function ClientsMap({
@@ -43,6 +45,7 @@ export function ClientsMap({
   onEditOrder,
   onCancelOrder,
   onDeleteOrder,
+  onCreateOrderAt,
 }: ClientsMapProps) {
   const clientPositions = clients.map((client): LatLngTuple => [client.latitude, client.longitude])
   const orderPositions = orders.map((order): LatLngTuple => [order.latitude, order.longitude])
@@ -60,7 +63,11 @@ export function ClientsMap({
       <TileLayer url={TILES_URL} attribution={TILES_ATTRIBUTION} />
       <MapFocus positions={focusedPositions} />
       <LayerFocus layer={layer} positions={activePositions} />
-      {layer === 'clients' && <NewClientPin onCreate={onCreateClientAt} />}
+      {layer === 'clients' ? (
+        <NewClientPin onCreate={onCreateClientAt} />
+      ) : (
+        <NewOrderPin onCreate={onCreateOrderAt} />
+      )}
       <MarkerClusterGroup
         key={layer}
         iconCreateFunction={(cluster) =>

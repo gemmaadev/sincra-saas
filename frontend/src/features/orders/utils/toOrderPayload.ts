@@ -18,5 +18,10 @@ export function toOrderPayload(values: OrderFormValues): OrderPayload {
     zone: emptyToNull(values.zone),
     address: emptyToNull(values.address),
     expectedDate: emptyToNull(values.expectedDate),
+    ...(values.latitude !== undefined &&
+      values.longitude !== undefined && {
+        latitude: values.latitude,
+        longitude: values.longitude,
+      }),
   }
 }

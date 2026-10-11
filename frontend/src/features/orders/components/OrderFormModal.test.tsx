@@ -202,4 +202,25 @@ describe('OrderFormModal', () => {
     expect(await screen.findByText('Indica el cliente')).toBeInTheDocument()
     expect(api.post).not.toHaveBeenCalled()
   })
+
+  // Given the modal is opened with a location chosen on the map
+  // When the user fills the form and creates the order
+  // Then the request should include the coordinates
+  it('creates the order with the chosen location', async () => {
+    vi.mocked(api.post).mockResolvedValue({ order: mockOrder })
+    const { user } = renderModal({ initialLocation: { latitude: 41.7288, longitude: 1.8286 } })
+
+    await selectClient(user)
+    await user.type(screen.getByLabelText('Producto'), 'Camiseta')
+    await user.clear(screen.getByLabelText('Precio'))
+    await user.type(screen.getByLabelText('Precio'), '15')
+    await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/orders',
+        expect.objectContaining({ latitude: 41.7288, longitude: 1.8286 }),
+      ),
+    )
+  })
 })

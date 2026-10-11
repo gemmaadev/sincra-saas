@@ -15,6 +15,7 @@ import { buildRevenueByZone, buildAverageTicketByZone } from '@/features/map/uti
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
+import { OrderFormModal } from '@/features/orders/components/OrderFormModal'
 import { EditOrderModal } from '@/features/orders/components/EditOrderModal'
 import { CancelOrderModal } from '@/features/orders/components/CancelOrderModal'
 import { DeleteOrderModal } from '@/features/orders/components/DeleteOrderModal'
@@ -33,6 +34,7 @@ export default function MapPage() {
     isPlaceholderData,
   )
   const [newClientLocation, setNewClientLocation] = useState<Coordinates | null>(null)
+  const [newOrderLocation, setNewOrderLocation] = useState<Coordinates | null>(null)
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
   const [orderToEdit, setOrderToEdit] = useState<MapOrder | null>(null)
@@ -89,6 +91,7 @@ export default function MapPage() {
                 onEditOrder={setOrderToEdit}
                 onCancelOrder={setOrderToCancel}
                 onDeleteOrder={setOrderToDelete}
+                onCreateOrderAt={setNewOrderLocation}
               />
               {isMapEmpty && (
                 <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm text-ink-muted shadow-md">
@@ -138,6 +141,13 @@ export default function MapPage() {
           opened
           onClose={() => setClientToDelete(null)}
           onDeleted={() => setClientToDelete(null)}
+        />
+      )}
+      {newOrderLocation && (
+        <OrderFormModal
+          opened
+          initialLocation={newOrderLocation}
+          onClose={() => setNewOrderLocation(null)}
         />
       )}
       {orderToEdit && (

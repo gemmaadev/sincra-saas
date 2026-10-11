@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, MapPin } from 'lucide-react'
 import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { Input, Select, SincraButton, IconButton } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import type { Coordinates } from '@/features/clients/types/client.types'
 import { ClientSearch } from './ClientSearch'
 import type { OrderDetail, OrderFormValues, ClientSearchResult } from '../types/order.types'
 
@@ -13,6 +14,7 @@ const CHANNEL_OPTIONS = CHANNEL_BRANDS.map((brand) => ({
 
 interface OrderFormProps {
   order?: OrderDetail
+  initialLocation?: Coordinates
   onSubmit: (values: OrderFormValues) => void
   onCancel: () => void
   isSubmitting?: boolean
@@ -25,7 +27,7 @@ function toDateInputValue(isoDate: string | null): string {
   return isoDate ? isoDate.slice(0, 10) : ''
 }
 
-function toFormValues(order?: OrderDetail): OrderFormValues {
+function toFormValues(order?: OrderDetail, initialLocation?: Coordinates): OrderFormValues {
   return {
     clientId: order?.client.id ?? '',
     clientName: order?.client.name ?? '',
@@ -39,6 +41,7 @@ function toFormValues(order?: OrderDetail): OrderFormValues {
     zone: order?.zone ?? '',
     address: order?.address ?? '',
     expectedDate: toDateInputValue(order?.expectedDate ?? null),
+    ...(!order && initialLocation),
   }
 }
 
@@ -58,6 +61,7 @@ function FormSection({ title, children }: FormSectionProps) {
 
 export function OrderForm({
   order,
+  initialLocation,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -69,11 +73,12 @@ export function OrderForm({
     setValue,
     control,
     formState: { errors },
-  } = useForm<OrderFormValues>({ defaultValues: toFormValues(order) })
+  } = useForm<OrderFormValues>({ defaultValues: toFormValues(order, initialLocation) })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
   const clientId = useWatch({ control, name: 'clientId' })
   const clientName = useWatch({ control, name: 'clientName' })
+  const [latitude, longitude] = useWatch({ control, name: ['latitude', 'longitude'] })
 
   function handleSelectClient(client: ClientSearchResult) {
     setValue('clientId', client.id, { shouldValidate: true })
@@ -195,6 +200,12 @@ export function OrderForm({
             {...register('address')}
           />
         </div>
+        {latitude !== undefined && longitude !== undefined && (
+          <p className="flex items-center gap-2 text-sm text-ink-muted">
+            <MapPin size={15} aria-hidden="true" />
+            Ubicación elegida: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+          </p>
+        )}
       </FormSection>
 
       <FormSection title="Entrega">
