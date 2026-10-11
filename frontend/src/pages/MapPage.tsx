@@ -15,7 +15,10 @@ import { buildRevenueByZone, buildAverageTicketByZone } from '@/features/map/uti
 import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
 import { EditClientModal } from '@/features/clients/components/EditClientModal'
 import { DeleteClientModal } from '@/features/clients/components/DeleteClientModal'
+import { OrderFormModal } from '@/features/orders/components/OrderFormModal'
 import { EditOrderModal } from '@/features/orders/components/EditOrderModal'
+import { CancelOrderModal } from '@/features/orders/components/CancelOrderModal'
+import { DeleteOrderModal } from '@/features/orders/components/DeleteOrderModal'
 import { KpiCardsRow } from '@/shared/components'
 import type { Coordinates } from '@/features/clients/types/client.types'
 import type { MapClient, MapLayer, MapOrder } from '@/features/map/types/map.types'
@@ -31,9 +34,12 @@ export default function MapPage() {
     isPlaceholderData,
   )
   const [newClientLocation, setNewClientLocation] = useState<Coordinates | null>(null)
+  const [newOrderLocation, setNewOrderLocation] = useState<Coordinates | null>(null)
   const [clientToEdit, setClientToEdit] = useState<MapClient | null>(null)
   const [clientToDelete, setClientToDelete] = useState<MapClient | null>(null)
   const [orderToEdit, setOrderToEdit] = useState<MapOrder | null>(null)
+  const [orderToCancel, setOrderToCancel] = useState<MapOrder | null>(null)
+  const [orderToDelete, setOrderToDelete] = useState<MapOrder | null>(null)
 
   const isMapEmpty =
     layer === 'clients' ? data?.clients.length === 0 : (ordersMapData?.orders.length ?? 0) === 0
@@ -83,6 +89,9 @@ export default function MapPage() {
                 onDeleteClient={setClientToDelete}
                 onCreateClientAt={setNewClientLocation}
                 onEditOrder={setOrderToEdit}
+                onCancelOrder={setOrderToCancel}
+                onDeleteOrder={setOrderToDelete}
+                onCreateOrderAt={setNewOrderLocation}
               />
               {isMapEmpty && (
                 <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white px-4 py-2 text-sm text-ink-muted shadow-md">
@@ -134,8 +143,31 @@ export default function MapPage() {
           onDeleted={() => setClientToDelete(null)}
         />
       )}
+      {newOrderLocation && (
+        <OrderFormModal
+          opened
+          initialLocation={newOrderLocation}
+          onClose={() => setNewOrderLocation(null)}
+        />
+      )}
       {orderToEdit && (
         <EditOrderModal orderId={orderToEdit.id} opened onClose={() => setOrderToEdit(null)} />
+      )}
+      {orderToCancel && (
+        <CancelOrderModal
+          order={orderToCancel}
+          opened
+          onClose={() => setOrderToCancel(null)}
+          onCancelled={() => setOrderToCancel(null)}
+        />
+      )}
+      {orderToDelete && (
+        <DeleteOrderModal
+          order={orderToDelete}
+          opened
+          onClose={() => setOrderToDelete(null)}
+          onDeleted={() => setOrderToDelete(null)}
+        />
       )}
     </div>
   )

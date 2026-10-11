@@ -21,14 +21,26 @@ function buildOrderIcon(number: number) {
 interface OrderMarkerProps {
   order: MapOrder
   onEdit: (order: MapOrder) => void
+  onCancel: (order: MapOrder) => void
+  onDelete: (order: MapOrder) => void
 }
 
-export function OrderMarker({ order, onEdit }: OrderMarkerProps) {
+export function OrderMarker({ order, onEdit, onCancel, onDelete }: OrderMarkerProps) {
   const map = useMap()
 
   function handleEdit() {
     map.closePopup()
     onEdit(order)
+  }
+
+  function handleCancel() {
+    map.closePopup()
+    onCancel(order)
+  }
+
+  function handleDelete() {
+    map.closePopup()
+    onDelete(order)
   }
 
   return (
@@ -38,7 +50,12 @@ export function OrderMarker({ order, onEdit }: OrderMarkerProps) {
       title={`Pedido #${order.number}`}
     >
       <Popup minWidth={240}>
-        <OrderPopupCard order={order} onEdit={handleEdit} />
+        <OrderPopupCard
+          order={order}
+          onEdit={handleEdit}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
+        />
       </Popup>
     </Marker>
   )

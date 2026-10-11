@@ -111,6 +111,8 @@ export interface OrderFormValues {
   zone: string
   address: string
   expectedDate: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface OrderItemPayload {
@@ -127,6 +129,8 @@ export interface OrderPayload {
   zone: string | null
   address: string | null
   expectedDate: string | null
+  latitude?: number
+  longitude?: number
 }
 
 export interface OrderMutationResponse {

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MapContainer } from 'react-leaflet'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { ClientMarker } from './ClientMarker'
@@ -24,11 +25,13 @@ function renderMarker() {
   const onEdit = vi.fn()
   const onDelete = vi.fn()
   render(
-    <MemoryRouter>
-      <MapContainer center={[41.7, 1.8]} zoom={10}>
-        <ClientMarker client={mockClient} onEdit={onEdit} onDelete={onDelete} />
-      </MapContainer>
-    </MemoryRouter>,
+    <MantineProvider>
+      <MemoryRouter>
+        <MapContainer center={[41.7, 1.8]} zoom={10}>
+          <ClientMarker client={mockClient} onEdit={onEdit} onDelete={onDelete} />
+        </MapContainer>
+      </MemoryRouter>
+    </MantineProvider>,
   )
   return { onEdit, onDelete, user: userEvent.setup() }
 }

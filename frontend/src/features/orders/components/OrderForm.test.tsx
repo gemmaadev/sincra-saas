@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api } from '@/shared/services'
@@ -33,7 +34,13 @@ const mockOrder: OrderDetail = {
 function renderForm(props: Partial<React.ComponentProps<typeof OrderForm>> = {}) {
   const onSubmit = vi.fn()
   const onCancel = vi.fn()
-  render(withQueryClient(<OrderForm onSubmit={onSubmit} onCancel={onCancel} {...props} />))
+  render(
+    withQueryClient(
+      <MantineProvider>
+        <OrderForm onSubmit={onSubmit} onCancel={onCancel} {...props} />
+      </MantineProvider>,
+    ),
+  )
   return { onSubmit, onCancel, user: userEvent.setup() }
 }
 
@@ -161,5 +168,41 @@ describe('OrderForm', () => {
     renderForm({ submitError: 'No se ha podido guardar el pedido.' })
 
     expect(screen.getByText('No se ha podido guardar el pedido.')).toBeInTheDocument()
+  })
+
+  // Given the form is opened with a location chosen on the map
+  // When it is rendered
+  // Then the chosen location should be shown, read-only
+  it('shows the location chosen on the map', () => {
+    renderForm({ initialLocation: { latitude: 41.72889, longitude: 1.82868 } })
+
+    expect(screen.getByText(/Ubicación elegida: 41.72889, 1.82868/)).toBeInTheDocument()
+  })
+
+  // Given a create form opened with a location
+  // When the user fills it and submits
+  // Then the coordinates should be part of the submitted values
+  it('submits the coordinates of the chosen location', async () => {
+    const { onSubmit, user } = renderForm({
+      initialLocation: { latitude: 41.7288, longitude: 1.8286 },
+    })
+
+    await selectClient(user)
+    await user.type(screen.getByLabelText('Producto'), 'Camiseta')
+    await user.clear(screen.getByLabelText('Precio'))
+    await user.type(screen.getByLabelText('Precio'), '15')
+    await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ latitude: 41.7288, longitude: 1.8286 })
+  })
+
+  // Given an existing order is edited
+  // When a location is also passed
+  // Then it should be ignored, so editing never overwrites the coordinates by accident
+  it('ignores the initial location when editing', () => {
+    renderForm({ order: mockOrder, initialLocation: { latitude: 41.7288, longitude: 1.8286 } })
+
+    expect(screen.queryByText(/Ubicación elegida/)).not.toBeInTheDocument()
   })
 })

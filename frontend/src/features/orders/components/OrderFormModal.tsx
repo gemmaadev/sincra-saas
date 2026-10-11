@@ -2,6 +2,7 @@ import { Package } from 'lucide-react'
 import { SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import type { Coordinates } from '@/features/clients/types/client.types'
 import { useSaveOrder } from '../hooks/useSaveOrder'
 import { OrderForm } from './OrderForm'
 import type { OrderDetail, OrderFormValues } from '../types/order.types'
@@ -10,9 +11,10 @@ interface OrderFormModalProps {
   opened: boolean
   onClose: () => void
   order?: OrderDetail
+  initialLocation?: Coordinates
 }
 
-export function OrderFormModal({ opened, onClose, order }: OrderFormModalProps) {
+export function OrderFormModal({ opened, onClose, order, initialLocation }: OrderFormModalProps) {
   const isEditing = order !== undefined
   const saveOrder = useSaveOrder(order?.id)
 
@@ -45,6 +47,7 @@ export function OrderFormModal({ opened, onClose, order }: OrderFormModalProps) 
     >
       <OrderForm
         order={order}
+        initialLocation={initialLocation}
         onSubmit={handleSubmit}
         onCancel={handleClose}
         isSubmitting={saveOrder.isPending}

@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { MapContainer } from 'react-leaflet'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { OrderMarker } from './OrderMarker'
@@ -22,14 +23,18 @@ const mockOrder: MapOrder = {
 
 function renderMarker(order: MapOrder = mockOrder) {
   const onEdit = vi.fn()
+  const onCancel = vi.fn()
+  const onDelete = vi.fn()
   render(
-    <MemoryRouter>
-      <MapContainer center={[41.7, 1.8]} zoom={10}>
-        <OrderMarker order={order} onEdit={onEdit} />
-      </MapContainer>
-    </MemoryRouter>,
+    <MantineProvider>
+      <MemoryRouter>
+        <MapContainer center={[41.7, 1.8]} zoom={10}>
+          <OrderMarker order={order} onEdit={onEdit} onCancel={onCancel} onDelete={onDelete} />
+        </MapContainer>
+      </MemoryRouter>
+    </MantineProvider>,
   )
-  return { onEdit, user: userEvent.setup() }
+  return { onEdit, onCancel, onDelete, user: userEvent.setup() }
 }
 
 describe('OrderMarker', () => {
@@ -82,5 +87,33 @@ describe('OrderMarker', () => {
     await user.click(editButton)
 
     expect(onEdit).toHaveBeenCalledWith(mockOrder)
+  })
+
+  // Given the popup card is open
+  // When the user clicks "Cancelar pedido"
+  // Then onCancel should be called with the order
+  it('calls onCancel with the order from the card', async () => {
+    const { onCancel, user } = renderMarker()
+
+    await user.click(screen.getByTitle('Pedido #7'))
+    const cancelButton = await screen.findByRole('button', { name: 'Cancelar pedido' })
+    await waitOutDoubleClickWindow()
+    await user.click(cancelButton)
+
+    expect(onCancel).toHaveBeenCalledWith(mockOrder)
+  })
+
+  // Given the popup card is open
+  // When the user clicks "Eliminar pedido"
+  // Then onDelete should be called with the order
+  it('calls onDelete with the order from the card', async () => {
+    const { onDelete, user } = renderMarker()
+
+    await user.click(screen.getByTitle('Pedido #7'))
+    const deleteButton = await screen.findByRole('button', { name: 'Eliminar pedido' })
+    await waitOutDoubleClickWindow()
+    await user.click(deleteButton)
+
+    expect(onDelete).toHaveBeenCalledWith(mockOrder)
   })
 })
