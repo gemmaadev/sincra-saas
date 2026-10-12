@@ -1,3 +1,4 @@
+export * from './bulkDelete'
 export * from './currency'
 export * from './date'
 export * from './emptyToNull'
