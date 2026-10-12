@@ -9,6 +9,7 @@ export async function findCalendarEventsInRange(businessId: string, dateFrom: Da
   return prisma.calendarEvent.findMany({
     where: { businessId, date: { gte: dateFrom, lte: dateTo } },
     orderBy: { date: 'asc' },
+    include: { client: { select: { name: true } } },
   })
 }
 
