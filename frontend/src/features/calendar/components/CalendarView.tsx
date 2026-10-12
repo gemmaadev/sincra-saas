@@ -9,6 +9,7 @@ import { getInitialRange } from '../utils/getInitialRange'
 import { CalendarNavigation } from './CalendarNavigation'
 import { CalendarViewToggle } from './CalendarViewToggle'
 import { CalendarMonthSelect } from './CalendarMonthSelect'
+import { CalendarEventContent } from './CalendarEventContent'
 import type { CalendarEventsFilters, CalendarViewMode } from '../types/calendar.types'
 
 export function CalendarView() {
@@ -51,6 +52,9 @@ export function CalendarView() {
         locale="es"
         height="auto"
         datesSet={handleDatesSet}
+        eventContent={CalendarEventContent}
+        eventBackgroundColor="transparent"
+        eventBorderColor="transparent"
         events={(events ?? []).map((item) => ({
           id: item.id,
           title: item.title,
