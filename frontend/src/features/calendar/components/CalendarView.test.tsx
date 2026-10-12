@@ -43,13 +43,18 @@ const orderEvent = {
   editable: false,
 }
 
-function renderCalendarView() {
+function renderCalendarView(
+  overrides: Partial<React.ComponentProps<typeof CalendarView>> = {},
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
+  const onDateClick = vi.fn()
+  const onEventClick = vi.fn()
+  const view = render(
     <QueryClientProvider client={queryClient}>
-      <CalendarView />
+      <CalendarView onDateClick={onDateClick} onEventClick={onEventClick} {...overrides} />
     </QueryClientProvider>,
   )
+  return { ...view, onDateClick, onEventClick }
 }
 
 describe('CalendarView', () => {
@@ -81,5 +86,36 @@ describe('CalendarView', () => {
 
     await waitFor(() => expect(screen.queryAllByText('#42 - Laura')).toHaveLength(0))
     expect(screen.getAllByText('Llamar a Juan').length).toBeGreaterThan(0)
+  })
+
+  // dateClick isn't covered here: FullCalendar resolves which day was clicked via geometry
+  // (getBoundingClientRect-based hit testing), which jsdom doesn't compute — every element has
+  // zero size, so a simulated click never resolves to a date in this environment. eventClick
+  // below works because it fires directly off the clicked event element, no geometry involved.
+
+  // Given an editable (manual) event is shown
+  // When the user clicks it
+  // Then onEventClick should be called with that event
+  it('calls onEventClick when an editable event is clicked', async () => {
+    const user = userEvent.setup()
+    const { onEventClick } = renderCalendarView()
+
+    const [eventChip] = await screen.findAllByText('Llamar a Juan')
+    await user.click(eventChip as Element)
+
+    expect(onEventClick).toHaveBeenCalledWith(expect.objectContaining({ id: 'event-1' }))
+  })
+
+  // Given a non-editable order delivery is shown
+  // When the user clicks it
+  // Then onEventClick should still be called, so its details can be previewed read-only
+  it('calls onEventClick for a non-editable order delivery too', async () => {
+    const user = userEvent.setup()
+    const { onEventClick } = renderCalendarView()
+
+    const [eventChip] = await screen.findAllByText('#42 - Laura')
+    await user.click(eventChip as Element)
+
+    expect(onEventClick).toHaveBeenCalledWith(expect.objectContaining({ id: 'order-1' }))
   })
 })

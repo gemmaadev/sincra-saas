@@ -16,6 +16,7 @@ import { CalendarUpcomingEvents } from './CalendarUpcomingEvents'
 import type {
   CalendarEventSource,
   CalendarEventsFilters,
+  CalendarItem,
   CalendarViewMode,
 } from '../types/calendar.types'
 
@@ -26,7 +27,12 @@ const DEFAULT_VISIBLE_SOURCES: CalendarEventSource[] = ['MANUAL', 'ORDER', 'AI']
 const CALENDAR_PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin]
 const CALENDAR_LOCALES = [esLocale]
 
-export function CalendarView() {
+interface CalendarViewProps {
+  onDateClick: (date: Date) => void
+  onEventClick: (event: CalendarItem) => void
+}
+
+export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null)
   const [range, setRange] = useState<CalendarEventsFilters>(getInitialRange)
   const [view, setView] = useState<CalendarViewMode>('dayGridMonth')
@@ -61,6 +67,11 @@ export function CalendarView() {
 
   const visibleEvents = (events ?? []).filter((item) => visibleSources.has(item.source))
 
+  function handleEventClick(eventId: string) {
+    const item = visibleEvents.find((candidate) => candidate.id === eventId)
+    if (item) onEventClick(item)
+  }
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
       <div className="flex flex-1 flex-col gap-4 rounded-card border border-neutral-100 bg-white p-4 shadow-md">
@@ -85,6 +96,8 @@ export function CalendarView() {
           locale="es"
           height="auto"
           datesSet={handleDatesSet}
+          dateClick={(arg) => onDateClick(arg.date)}
+          eventClick={(arg) => handleEventClick(arg.event.id)}
           eventContent={CalendarEventContent}
           eventBackgroundColor="transparent"
           eventBorderColor="transparent"
@@ -97,7 +110,7 @@ export function CalendarView() {
           }))}
         />
       </div>
-      <CalendarUpcomingEvents events={visibleEvents} />
+      <CalendarUpcomingEvents events={visibleEvents} onEventClick={onEventClick} />
     </div>
   )
 }
