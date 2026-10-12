@@ -54,7 +54,10 @@ describe('findCalendarEventsInRange', () => {
     expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith({
       where: { businessId: 'business-1', date: { gte: dateFrom, lte: dateTo } },
       orderBy: { date: 'asc' },
-      include: { client: { select: { name: true } } },
+      include: {
+        client: { select: { name: true } },
+        order: { select: { number: true, client: { select: { name: true } } } },
+      },
     })
   })
 })

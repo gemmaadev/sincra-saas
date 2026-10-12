@@ -13,6 +13,7 @@ function buildEvent(overrides: Partial<CalendarItem>): CalendarItem {
     clientId: null,
     clientName: null,
     orderId: null,
+    orderLabel: null,
     editable: true,
     ...overrides,
   }

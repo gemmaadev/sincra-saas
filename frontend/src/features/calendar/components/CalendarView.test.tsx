@@ -24,6 +24,7 @@ const manualEvent = {
   clientId: 'client-1',
   clientName: 'Juan',
   orderId: null,
+  orderLabel: null,
   editable: true,
 }
 
@@ -36,6 +37,7 @@ const orderEvent = {
   clientId: 'client-2',
   clientName: 'Laura',
   orderId: 'order-1',
+  orderLabel: 'Pedido #42 - Laura',
   editable: false,
 }
 
@@ -75,9 +77,7 @@ describe('CalendarView', () => {
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
     await user.click(screen.getByLabelText('Entrega pedido'))
 
-    await waitFor(() =>
-      expect(screen.queryAllByText('Pedido #42 - Laura')).toHaveLength(0),
-    )
+    await waitFor(() => expect(screen.queryAllByText('Pedido #42 - Laura')).toHaveLength(0))
     expect(screen.getAllByText('Llamar a Juan').length).toBeGreaterThan(0)
   })
 })

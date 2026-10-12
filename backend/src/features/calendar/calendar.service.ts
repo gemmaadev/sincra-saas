@@ -40,6 +40,7 @@ function toCalendarItemFromEvent(event: CalendarEventWithClient): CalendarItem {
     clientId: event.clientId,
     clientName: event.client?.name ?? null,
     orderId: event.orderId,
+    orderLabel: event.order ? `Pedido #${event.order.number} - ${event.order.client.name}` : null,
     editable: true,
   }
 }
@@ -54,6 +55,7 @@ function toCalendarItemFromOrder(order: OrderWithExpectedDate): CalendarItem {
     clientId: order.clientId,
     clientName: order.client.name,
     orderId: order.id,
+    orderLabel: `Pedido #${order.number} - ${order.client.name}`,
     editable: false,
   }
 }

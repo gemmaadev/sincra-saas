@@ -62,6 +62,27 @@ describe('listEvents', () => {
     ])
   })
 
+  // Given a manual calendar event linked to an order (not a client)
+  // When listing events
+  // Then its orderLabel should be resolved from the order's number and client name
+  it('resolves orderLabel for an event linked to an order', async () => {
+    vi.mocked(calendarModel.findCalendarEventsInRange).mockResolvedValue([
+      {
+        ...existingEvent,
+        orderId: 'order-1',
+        order: { number: 42, client: { name: 'Juan' } },
+      },
+    ] as never)
+    vi.mocked(orderModel.findOrdersWithExpectedDateInRange).mockResolvedValue([])
+
+    const events = await listEvents('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(events).toEqual([expect.objectContaining({ orderLabel: 'Pedido #42 - Juan' })])
+  })
+
   // Given an invalid dateFrom
   // When listing events
   // Then it should throw a 400 INVALID_DATE without querying anything
