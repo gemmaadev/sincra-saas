@@ -9,10 +9,43 @@ export interface CalendarItem {
   clientId: string | null
   clientName: string | null
   orderId: string | null
+  orderLabel: string | null
+  orderNumber: number | null
   editable: boolean
 }
 
 export interface CalendarEventsFilters {
   dateFrom: string
   dateTo: string
+}
+
+export type CalendarEventLinkType = 'client' | 'order' | 'none'
+
+export interface CalendarEventFormValues {
+  title: string
+  date: string
+  time: string
+  description: string
+  linkType: CalendarEventLinkType
+  clientId: string
+  clientName: string
+  orderId: string
+  orderLabel: string
+}
+
+export interface CalendarEventMutationResponse {
+  event: { id: string }
+}
+
+export interface CalendarClientSearchResult {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
+}
+
+export interface CalendarOrderSearchResult {
+  id: string
+  number: number
+  clientName: string
 }

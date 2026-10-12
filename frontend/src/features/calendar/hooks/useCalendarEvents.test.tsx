@@ -18,6 +18,8 @@ const mockEvents = [
     clientId: 'client-1',
     clientName: 'Juan',
     orderId: null,
+    orderLabel: null,
+    orderNumber: null,
     editable: true,
   },
 ]

@@ -8,7 +8,7 @@ export function CalendarEventContent({ event }: EventContentArg) {
 
   return (
     <div
-      className={`flex w-full min-w-0 items-center gap-1 overflow-hidden rounded px-2 py-0.5 text-sm font-medium text-white ${CALENDAR_SOURCE_BACKGROUND_CLASSES[source]}`}
+      className={`flex w-full min-w-0 cursor-pointer items-center gap-1 overflow-hidden rounded px-2 py-0.5 text-sm font-medium text-white ${CALENDAR_SOURCE_BACKGROUND_CLASSES[source]}`}
     >
       <Icon size={12} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate">{event.title}</span>

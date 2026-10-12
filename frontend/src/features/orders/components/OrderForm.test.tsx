@@ -150,6 +150,22 @@ describe('OrderForm', () => {
     })
   })
 
+  // Given a valid client and product
+  // When the user also types a description
+  // Then onSubmit should receive it
+  it('submits a custom description', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await selectClient(user)
+    await user.type(screen.getByLabelText('Producto'), 'Camiseta')
+    await user.clear(screen.getByLabelText('Precio'))
+    await user.type(screen.getByLabelText('Precio'), '15')
+    await user.type(screen.getByLabelText('Descripción (opcional)'), 'Entregar en portería')
+    await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
+
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ description: 'Entregar en portería' })
+  })
+
   // Given an existing order
   // When the form is rendered
   // Then it should be prefilled and the submit button should say "Guardar cambios"
@@ -159,6 +175,15 @@ describe('OrderForm', () => {
     expect(screen.getByText('Laura García')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Camiseta')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
+  })
+
+  // Given an existing order with its own description
+  // When the form is rendered to edit it
+  // Then the description should be prefilled
+  it('prefills the description when editing an order that has one', () => {
+    renderForm({ order: { ...mockOrder, description: 'Entregar en portería' } })
+
+    expect(screen.getByLabelText('Descripción (opcional)')).toHaveValue('Entregar en portería')
   })
 
   // Given the parent passed a submit error

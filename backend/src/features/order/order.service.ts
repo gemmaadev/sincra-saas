@@ -204,6 +204,20 @@ function buildCreatedAtRange(
   return Object.keys(range).length > 0 ? range : undefined
 }
 
+function buildSearchFilter(search: string): Prisma.OrderWhereInput['OR'] {
+  const filters: Prisma.OrderWhereInput[] = [
+    { client: { name: { contains: search, mode: 'insensitive' } } },
+    { items: { some: { product: { contains: search, mode: 'insensitive' } } } },
+  ]
+
+  const number = Number(search)
+  if (Number.isInteger(number)) {
+    filters.push({ number })
+  }
+
+  return filters
+}
+
 export async function listOrders(businessId: string, filters: ListOrdersFilters) {
   const { page, limit, skip } = parsePagination(filters)
   const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
@@ -213,12 +227,7 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
     ...(filters.status && { status: filters.status }),
     ...(filters.channel && { channel: filters.channel }),
     ...(createdAtRange && { createdAt: createdAtRange }),
-    ...(filters.search && {
-      OR: [
-        { client: { name: { contains: filters.search, mode: 'insensitive' } } },
-        { items: { some: { product: { contains: filters.search, mode: 'insensitive' } } } },
-      ],
-    }),
+    ...(filters.search && { OR: buildSearchFilter(filters.search) }),
   }
 
   const [data, total, statusGroups] = await Promise.all([

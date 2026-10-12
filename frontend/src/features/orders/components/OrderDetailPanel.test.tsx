@@ -130,7 +130,7 @@ describe('OrderDetailPanel', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Editar pedido' })
     expect(within(dialog).getByText('Laura García')).toBeInTheDocument()
-    expect(within(dialog).getByDisplayValue('Camiseta')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Producto')).toHaveValue('Camiseta')
   })
 
   // Given the order loads successfully

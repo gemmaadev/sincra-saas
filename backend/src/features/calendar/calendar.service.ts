@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/AppError'
 import { findClientById } from '../client/client.model'
 import { findOrderById, findOrdersWithExpectedDateInRange } from '../order/order.model'
+import { resolveOrderDescription } from '../order/order.service'
 import {
   insertCalendarEvent,
   findCalendarEventsInRange,
@@ -40,6 +41,8 @@ function toCalendarItemFromEvent(event: CalendarEventWithClient): CalendarItem {
     clientId: event.clientId,
     clientName: event.client?.name ?? null,
     orderId: event.orderId,
+    orderLabel: event.order ? `Pedido #${event.order.number} - ${event.order.client.name}` : null,
+    orderNumber: event.order?.number ?? null,
     editable: true,
   }
 }
@@ -47,13 +50,15 @@ function toCalendarItemFromEvent(event: CalendarEventWithClient): CalendarItem {
 function toCalendarItemFromOrder(order: OrderWithExpectedDate): CalendarItem {
   return {
     id: order.id,
-    title: `Pedido #${order.number} - ${order.client.name}`,
-    description: null,
+    title: `#${order.number} - ${order.client.name}`,
+    description: resolveOrderDescription(order),
     date: order.expectedDate!,
     source: 'ORDER',
     clientId: order.clientId,
     clientName: order.client.name,
     orderId: order.id,
+    orderLabel: `Pedido #${order.number} - ${order.client.name}`,
+    orderNumber: order.number,
     editable: false,
   }
 }
@@ -124,7 +129,7 @@ export async function createEvent(
     date: input.date,
     clientId: input.clientId,
     orderId: input.orderId,
-    source: input.orderId ? 'ORDER' : 'MANUAL',
+    source: 'MANUAL',
     createdBy,
   })
 }

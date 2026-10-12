@@ -1,9 +1,5 @@
+import { emptyToNull } from '@/shared/utils'
 import type { OrderFormValues, OrderPayload } from '../types/order.types'
-
-function emptyToNull(value: string): string | null {
-  const trimmed = value.trim()
-  return trimmed === '' ? null : trimmed
-}
 
 export function toOrderPayload(values: OrderFormValues): OrderPayload {
   return {
@@ -18,6 +14,7 @@ export function toOrderPayload(values: OrderFormValues): OrderPayload {
     zone: emptyToNull(values.zone),
     address: emptyToNull(values.address),
     expectedDate: emptyToNull(values.expectedDate),
+    description: emptyToNull(values.description),
     ...(values.latitude !== undefined &&
       values.longitude !== undefined && {
         latitude: values.latitude,

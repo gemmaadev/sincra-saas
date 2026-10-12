@@ -10,6 +10,7 @@ const filledValues: OrderFormValues = {
   zone: 'Barcelona',
   address: 'Carrer Major 1',
   expectedDate: '2026-11-01',
+  description: 'Entregar en portería',
 }
 
 describe('toOrderPayload', () => {
@@ -45,9 +46,22 @@ describe('toOrderPayload', () => {
       zone: '',
       address: '   ',
       expectedDate: '',
+      description: '',
     })
 
-    expect(payload).toMatchObject({ zone: null, address: null, expectedDate: null })
+    expect(payload).toMatchObject({
+      zone: null,
+      address: null,
+      expectedDate: null,
+      description: null,
+    })
+  })
+
+  // Given a custom description
+  // When it is converted to a payload
+  // Then it should be carried over as-is
+  it('carries the description over', () => {
+    expect(toOrderPayload(filledValues)).toMatchObject({ description: 'Entregar en portería' })
   })
 
   // Given no channel picked (the Select's placeholder option)
