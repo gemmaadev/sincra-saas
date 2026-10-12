@@ -25,12 +25,13 @@ const manualEvent = {
   clientName: 'Juan',
   orderId: null,
   orderLabel: null,
+  orderNumber: null,
   editable: true,
 }
 
 const orderEvent = {
   id: 'order-1',
-  title: 'Pedido #42 - Laura',
+  title: '#42 - Laura',
   description: null,
   date: todayAt(16),
   source: 'ORDER',
@@ -38,6 +39,7 @@ const orderEvent = {
   clientName: 'Laura',
   orderId: 'order-1',
   orderLabel: 'Pedido #42 - Laura',
+  orderNumber: 42,
   editable: false,
 }
 
@@ -62,7 +64,7 @@ describe('CalendarView', () => {
     renderCalendarView()
 
     expect((await screen.findAllByText('Llamar a Juan')).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Pedido #42 - Laura').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('#42 - Laura').length).toBeGreaterThan(0)
   })
 
   // Given both event types are loaded
@@ -77,7 +79,7 @@ describe('CalendarView', () => {
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
     await user.click(screen.getByLabelText('Entrega pedido'))
 
-    await waitFor(() => expect(screen.queryAllByText('Pedido #42 - Laura')).toHaveLength(0))
+    await waitFor(() => expect(screen.queryAllByText('#42 - Laura')).toHaveLength(0))
     expect(screen.getAllByText('Llamar a Juan').length).toBeGreaterThan(0)
   })
 })

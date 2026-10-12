@@ -24,7 +24,13 @@ export function CalendarUpcomingEvents({ events }: CalendarUpcomingEventsProps) 
         <ul className="flex flex-col gap-3">
           {upcomingEvents.map((item) => (
             <li key={item.id} className="flex items-center gap-3">
-              <Avatar name={item.clientName ?? item.title} size="sm" />
+              {item.orderNumber !== null ? (
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark bg-primary-dark text-xs font-semibold text-white">
+                  #{item.orderNumber}
+                </div>
+              ) : (
+                <Avatar name={item.clientName ?? item.title} size="sm" />
+              )}
               <div className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-medium text-ink">{item.title}</span>
                 <span className="truncate text-xs text-ink-muted">

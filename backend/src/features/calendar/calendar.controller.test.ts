@@ -26,7 +26,7 @@ describe('list', () => {
   it('returns events combining calendar events and orders', async () => {
     const combinedEvents = [
       { id: 'event-1', title: 'Llamar a Juan', editable: true, source: 'MANUAL' },
-      { id: 'order-1', title: 'Pedido #42 - Juan', editable: false, source: 'ORDER' },
+      { id: 'order-1', title: '#42 - Juan', editable: false, source: 'ORDER' },
     ]
     const listSpy = vi
       .spyOn(calendarService, 'listEvents')

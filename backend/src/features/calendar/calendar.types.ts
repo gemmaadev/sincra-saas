@@ -33,5 +33,6 @@ export interface CalendarItem {
   clientName: string | null
   orderId: string | null
   orderLabel: string | null
+  orderNumber: number | null
   editable: boolean
 }

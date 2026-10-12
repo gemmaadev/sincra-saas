@@ -57,7 +57,7 @@ describe('listEvents', () => {
     })
 
     expect(events).toEqual([
-      expect.objectContaining({ id: 'order-1', title: 'Pedido #42 - Juan', editable: false }),
+      expect.objectContaining({ id: 'order-1', title: '#42 - Juan', orderNumber: 42, editable: false }),
       expect.objectContaining({ id: 'event-1', editable: true }),
     ])
   })
@@ -80,7 +80,9 @@ describe('listEvents', () => {
       dateTo: '2026-10-31',
     })
 
-    expect(events).toEqual([expect.objectContaining({ orderLabel: 'Pedido #42 - Juan' })])
+    expect(events).toEqual([
+      expect.objectContaining({ orderLabel: 'Pedido #42 - Juan', orderNumber: 42 }),
+    ])
   })
 
   // Given an invalid dateFrom

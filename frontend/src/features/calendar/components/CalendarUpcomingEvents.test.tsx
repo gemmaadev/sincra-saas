@@ -14,6 +14,7 @@ function buildEvent(overrides: Partial<CalendarItem>): CalendarItem {
     clientName: null,
     orderId: null,
     orderLabel: null,
+    orderNumber: null,
     editable: true,
     ...overrides,
   }
@@ -63,6 +64,21 @@ describe('CalendarUpcomingEvents', () => {
     render(<CalendarUpcomingEvents events={[event]} />)
 
     expect(screen.getByText(/Laura García/)).toBeInTheDocument()
+  })
+
+  // Given an order delivery (orderNumber set)
+  // When CalendarUpcomingEvents is rendered
+  // Then it should show the order number instead of a client avatar
+  it('shows the order number for an order delivery', () => {
+    const event = buildEvent({
+      title: '#42 - Laura',
+      orderNumber: 42,
+      date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
+    })
+
+    render(<CalendarUpcomingEvents events={[event]} />)
+
+    expect(screen.getByText('#42')).toBeInTheDocument()
   })
 
   // Given more than 5 upcoming events
