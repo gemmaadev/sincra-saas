@@ -1,4 +1,5 @@
 export * from './bulkDelete'
+export * from './computePageAfterBulkDelete'
 export * from './currency'
 export * from './date'
 export * from './emptyToNull'
