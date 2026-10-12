@@ -3,7 +3,7 @@ import type { CalendarEventSource } from './types/calendar.types'
 
 export const CALENDAR_SOURCE_LABELS: Record<CalendarEventSource, string> = {
   MANUAL: 'Seguimiento',
-  ORDER: 'Pedido',
+  ORDER: 'Entrega pedido',
   AI: 'Sugerido por IA',
   GOOGLE: 'Google Calendar',
   OUTLOOK: 'Outlook Calendar',
