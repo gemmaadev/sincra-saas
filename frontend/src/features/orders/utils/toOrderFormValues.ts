@@ -24,6 +24,7 @@ export function toOrderFormValues(
     zone: order?.zone ?? '',
     address: order?.address ?? '',
     expectedDate: toDateInputValue(order?.expectedDate ?? null),
+    description: order?.description ?? '',
     ...(!order && initialLocation),
   }
 }

@@ -47,6 +47,8 @@ describe('listEvents', () => {
         clientId: 'client-1',
         expectedDate: new Date('2026-10-05'),
         status: 'PENDING',
+        description: null,
+        items: [],
         client: { name: 'Juan' },
       },
     ] as never)
@@ -60,6 +62,58 @@ describe('listEvents', () => {
       expect.objectContaining({ id: 'order-1', title: '#42 - Juan', orderNumber: 42, editable: false }),
       expect.objectContaining({ id: 'event-1', editable: true }),
     ])
+  })
+
+  // Given an order with its own description
+  // When it is shown on the calendar
+  // Then that description should be used as-is
+  it("uses the order's own description when it has one", async () => {
+    vi.mocked(calendarModel.findCalendarEventsInRange).mockResolvedValue([])
+    vi.mocked(orderModel.findOrdersWithExpectedDateInRange).mockResolvedValue([
+      {
+        id: 'order-1',
+        number: 42,
+        clientId: 'client-1',
+        expectedDate: new Date('2026-10-05'),
+        status: 'PENDING',
+        description: 'Entregar en portería',
+        items: [{ product: 'Camiseta', quantity: 1 }],
+        client: { name: 'Juan' },
+      },
+    ] as never)
+
+    const events = await listEvents('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(events).toEqual([expect.objectContaining({ description: 'Entregar en portería' })])
+  })
+
+  // Given an order with no description of its own, but with items
+  // When it is shown on the calendar
+  // Then the description should fall back to a summary built from its items
+  it('falls back to an item summary when the order has no description', async () => {
+    vi.mocked(calendarModel.findCalendarEventsInRange).mockResolvedValue([])
+    vi.mocked(orderModel.findOrdersWithExpectedDateInRange).mockResolvedValue([
+      {
+        id: 'order-1',
+        number: 42,
+        clientId: 'client-1',
+        expectedDate: new Date('2026-10-05'),
+        status: 'PENDING',
+        description: null,
+        items: [{ product: 'Camiseta', quantity: 2 }],
+        client: { name: 'Juan' },
+      },
+    ] as never)
+
+    const events = await listEvents('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(events).toEqual([expect.objectContaining({ description: 'Camiseta x2' })])
   })
 
   // Given a manual calendar event linked to an order (not a client)

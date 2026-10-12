@@ -189,6 +189,21 @@ export function OrderForm({
         <Input label="Fecha prevista" type="date" {...register('expectedDate')} />
       </FormSection>
 
+      <FormSection title="Descripción">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="order-description" className="font-medium text-ink">
+            Descripción (opcional)
+          </label>
+          <textarea
+            id="order-description"
+            rows={3}
+            placeholder="Si lo dejas en blanco, se resume a partir de los productos"
+            {...register('description')}
+            className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+      </FormSection>
+
       {submitError && (
         <p role="alert" className="text-sm text-error">
           {submitError}

@@ -1,6 +1,7 @@
 import { AppError } from '../../shared/AppError'
 import { findClientById } from '../client/client.model'
 import { findOrderById, findOrdersWithExpectedDateInRange } from '../order/order.model'
+import { resolveOrderDescription } from '../order/order.service'
 import {
   insertCalendarEvent,
   findCalendarEventsInRange,
@@ -50,7 +51,7 @@ function toCalendarItemFromOrder(order: OrderWithExpectedDate): CalendarItem {
   return {
     id: order.id,
     title: `#${order.number} - ${order.client.name}`,
-    description: null,
+    description: resolveOrderDescription(order),
     date: order.expectedDate!,
     source: 'ORDER',
     clientId: order.clientId,

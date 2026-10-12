@@ -78,6 +78,8 @@ describe('findOrdersWithExpectedDateInRange', () => {
         clientId: true,
         expectedDate: true,
         status: true,
+        description: true,
+        items: { select: { product: true, quantity: true } },
         client: { select: { name: true } },
       },
     })

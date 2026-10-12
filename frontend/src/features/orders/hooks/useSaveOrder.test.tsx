@@ -17,6 +17,7 @@ const values: OrderFormValues = {
   zone: '',
   address: '',
   expectedDate: '',
+  description: '',
 }
 
 function renderSaveOrder(orderId?: string) {
