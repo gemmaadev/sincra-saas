@@ -147,8 +147,9 @@ describe('createEvent', () => {
 
   // Given an event created with an orderId
   // When it is created
-  // Then its source should be set to ORDER
-  it('sets the source to ORDER when an orderId is given', async () => {
+  // Then its source should still be MANUAL: ORDER is reserved for an order's own expectedDate,
+  // not for a manually created follow-up that merely links to an order for context
+  it('keeps the source as MANUAL even when an orderId is given', async () => {
     vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1' } as never)
 
     await createEvent('business-1', 'user-1', {
@@ -158,7 +159,7 @@ describe('createEvent', () => {
     })
 
     expect(calendarModel.insertCalendarEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ source: 'ORDER', orderId: 'order-1' }),
+      expect.objectContaining({ source: 'MANUAL', orderId: 'order-1' }),
     )
   })
 })

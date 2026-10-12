@@ -126,7 +126,7 @@ export async function createEvent(
     date: input.date,
     clientId: input.clientId,
     orderId: input.orderId,
-    source: input.orderId ? 'ORDER' : 'MANUAL',
+    source: 'MANUAL',
     createdBy,
   })
 }
