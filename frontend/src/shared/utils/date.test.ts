@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDate, formatDateTime } from './date'
+import { formatDate, formatDateTime, formatTime } from './date'
 
 describe('formatDate', () => {
   // Given a Date
@@ -16,5 +16,14 @@ describe('formatDateTime', () => {
   // Then it should render the date plus hour and minute
   it('formats the date including hour and minute', () => {
     expect(formatDateTime(new Date('2025-04-12T10:24:00'))).toBe('12 abr 2025, 10:24')
+  })
+})
+
+describe('formatTime', () => {
+  // Given a Date
+  // When formatting only its time
+  // Then it should render just the hour and minute
+  it('formats only the hour and minute', () => {
+    expect(formatTime(new Date('2025-04-12T10:24:00'))).toBe('10:24')
   })
 })
