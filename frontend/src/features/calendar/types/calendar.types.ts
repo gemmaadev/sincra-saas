@@ -1,5 +1,5 @@
 export type CalendarEventSource = 'MANUAL' | 'ORDER' | 'AI' | 'GOOGLE' | 'OUTLOOK'
-
+export type CalendarViewMode = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay'
 export interface CalendarItem {
   id: string
   title: string
