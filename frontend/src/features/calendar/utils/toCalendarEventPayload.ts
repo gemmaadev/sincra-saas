@@ -1,3 +1,4 @@
+import { emptyToNull } from '@/shared/utils'
 import type { CalendarEventFormValues } from '../types/calendar.types'
 
 export interface CalendarEventPayload {
@@ -6,11 +7,6 @@ export interface CalendarEventPayload {
   date: string
   clientId: string | null
   orderId: string | null
-}
-
-function emptyToNull(value: string): string | null {
-  const trimmed = value.trim()
-  return trimmed === '' ? null : trimmed
 }
 
 export function toCalendarEventPayload(values: CalendarEventFormValues): CalendarEventPayload {

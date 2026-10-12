@@ -1,9 +1,5 @@
+import { emptyToNull } from '@/shared/utils'
 import type { OrderFormValues, OrderPayload } from '../types/order.types'
-
-function emptyToNull(value: string): string | null {
-  const trimmed = value.trim()
-  return trimmed === '' ? null : trimmed
-}
 
 export function toOrderPayload(values: OrderFormValues): OrderPayload {
   return {

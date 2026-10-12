@@ -1,9 +1,5 @@
+import { emptyToNull } from '@/shared/utils'
 import type { ClientFormValues, ClientPayload } from '../types/client.types'
-
-function emptyToNull(value: string): string | null {
-  const trimmed = value.trim()
-  return trimmed === '' ? null : trimmed
-}
 
 export function toClientPayload(values: ClientFormValues): ClientPayload {
   return {
