@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { CalendarView } from '@/features/calendar/components/CalendarView'
 import { EventFormModal } from '@/features/calendar/components/EventFormModal'
 import { EventDetailModal } from '@/features/calendar/components/EventDetailModal'
+import { DeleteEventModal } from '@/features/calendar/components/DeleteEventModal'
 import { SincraButton } from '@/shared/components'
 import type { CalendarItem } from '@/features/calendar/types/calendar.types'
 
@@ -11,6 +12,7 @@ type EventModalState =
   | { mode: 'create'; date?: Date }
   | { mode: 'preview'; event: CalendarItem }
   | { mode: 'edit'; event: CalendarItem }
+  | { mode: 'delete'; event: CalendarItem }
 
 export default function CalendarPage() {
   const [modalState, setModalState] = useState<EventModalState>({ mode: 'closed' })
@@ -42,7 +44,17 @@ export default function CalendarPage() {
           opened
           onClose={closeModal}
           onEdit={() => setModalState({ mode: 'edit', event: modalState.event })}
+          onDelete={() => setModalState({ mode: 'delete', event: modalState.event })}
           event={modalState.event}
+        />
+      )}
+      {modalState.mode === 'delete' && (
+        <DeleteEventModal
+          opened
+          onClose={closeModal}
+          onDeleted={closeModal}
+          eventId={modalState.event.id}
+          eventTitle={modalState.event.title}
         />
       )}
       <EventFormModal

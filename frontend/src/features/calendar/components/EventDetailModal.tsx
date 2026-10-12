@@ -1,4 +1,4 @@
-import { Calendar, Pencil } from 'lucide-react'
+import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { SincraModal, SincraButton } from '@/shared/components'
 import { formatDateTime } from '@/shared/utils'
 import type { CalendarItem } from '../types/calendar.types'
@@ -7,10 +7,17 @@ interface EventDetailModalProps {
   opened: boolean
   onClose: () => void
   onEdit: () => void
+  onDelete: () => void
   event: CalendarItem
 }
 
-export function EventDetailModal({ opened, onClose, onEdit, event }: EventDetailModalProps) {
+export function EventDetailModal({
+  opened,
+  onClose,
+  onEdit,
+  onDelete,
+  event,
+}: EventDetailModalProps) {
   const linkedTo = event.clientName ?? event.orderLabel
 
   return (
@@ -41,16 +48,26 @@ export function EventDetailModal({ opened, onClose, onEdit, event }: EventDetail
           </p>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-neutral-100 pt-5">
-          <SincraButton type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </SincraButton>
-          {event.editable && (
-            <SincraButton type="button" onClick={onEdit}>
-              <Pencil size={16} aria-hidden="true" />
-              Editar
+        <div className="flex items-center justify-between gap-3 border-t border-neutral-100 pt-5">
+          {event.editable ? (
+            <SincraButton type="button" variant="dangerOutline" onClick={onDelete}>
+              <Trash2 size={16} aria-hidden="true" />
+              Eliminar
             </SincraButton>
+          ) : (
+            <span />
           )}
+          <div className="flex gap-3">
+            <SincraButton type="button" variant="secondary" onClick={onClose}>
+              Cancelar
+            </SincraButton>
+            {event.editable && (
+              <SincraButton type="button" onClick={onEdit}>
+                <Pencil size={16} aria-hidden="true" />
+                Editar
+              </SincraButton>
+            )}
+          </div>
         </div>
       </div>
     </SincraModal>
