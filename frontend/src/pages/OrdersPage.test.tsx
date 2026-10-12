@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,11 +6,14 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import OrdersPage from './OrdersPage'
 import { api } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockOrder = {
   id: 'order-1',
@@ -34,6 +37,13 @@ const mockOrderDetail = {
   items: [],
   statusHistory: [],
   updatedAt: '2026-01-01T00:00:00.000Z',
+}
+
+const secondOrder = {
+  ...mockOrder,
+  id: 'order-2',
+  number: 2,
+  client: { id: 'client-2', name: 'Carlos Ruiz' },
 }
 
 function mockApiGet(overrides?: {
@@ -163,6 +173,140 @@ describe('OrdersPage', () => {
 
     await waitFor(() =>
       expect(api.get).toHaveBeenCalledWith(expect.stringContaining('status=PREPARING')),
+    )
+  })
+
+  // Given the orders table is rendered
+  // When the user ticks an order checkbox
+  // Then the order should be selected without opening its detail
+  it('selects an order without opening its detail', async () => {
+    renderOrdersPage()
+    const checkbox = await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' })
+
+    fireEvent.click(checkbox)
+
+    expect(checkbox).toBeChecked()
+    expect(screen.queryByText('Pedido #1')).not.toBeInTheDocument()
+  })
+
+  // Given the orders table is rendered
+  // When the user ticks "Seleccionar todos" and then ticks it again
+  // Then every order should be selected and then deselected
+  it('selects and deselects every order with the header checkbox', async () => {
+    mockApiGet({ data: [mockOrder, secondOrder], total: 2 })
+    renderOrdersPage()
+    const selectAll = await screen.findByRole('checkbox', { name: 'Seleccionar todos' })
+    const orderCheckbox = screen.getByRole('checkbox', { name: 'Seleccionar pedido #1' })
+
+    fireEvent.click(selectAll)
+    expect(orderCheckbox).toBeChecked()
+
+    fireEvent.click(selectAll)
+    expect(orderCheckbox).not.toBeChecked()
+  })
+
+  // Given no order is selected
+  // When the page is rendered
+  // Then neither bulk action button should be shown
+  it('hides the bulk action buttons when nothing is selected', async () => {
+    renderOrdersPage()
+    await screen.findByText('Laura García')
+
+    expect(screen.queryByRole('button', { name: /Eliminar \(/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Cancelar \(/ })).not.toBeInTheDocument()
+  })
+
+  // Given an order is selected
+  // When the user changes a filter
+  // Then the selection should be cleared, since it is another list
+  it('clears the selection when a filter changes', async () => {
+    renderOrdersPage()
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' }))
+    expect(screen.getByRole('status')).toBeInTheDocument()
+
+    await userEvent.setup().selectOptions(screen.getByLabelText('Estado'), 'PREPARING')
+
+    expect(screen.queryByRole('region', { name: 'Acciones de selección' })).not.toBeInTheDocument()
+  })
+
+  // Given an order is selected
+  // When the user clears the selection from the selection bar
+  // Then the order should be deselected and the bar should disappear
+  it('clears the selection from the selection bar', async () => {
+    renderOrdersPage()
+    const checkbox = await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' })
+    fireEvent.click(checkbox)
+    expect(screen.getByRole('status')).toHaveTextContent('1 pedido seleccionado')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Deseleccionar' }))
+
+    expect(checkbox).not.toBeChecked()
+    expect(screen.queryByRole('region', { name: 'Acciones de selección' })).not.toBeInTheDocument()
+  })
+
+  // Given an order is selected
+  // When the user clicks the bulk delete button
+  // Then a confirmation with the number of orders should open
+  it('shows the bulk delete button with the count and opens the confirmation', async () => {
+    renderOrdersPage()
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar (1)' }))
+
+    expect(await screen.findByRole('dialog', { name: '¿Eliminar 1 pedido?' })).toBeInTheDocument()
+    expect(api.delete).not.toHaveBeenCalled()
+  })
+
+  // Given the bulk delete confirmation is open
+  // When the user confirms
+  // Then the selected order should be deleted and the selection cleared
+  it('deletes the selected order and clears the selection', async () => {
+    vi.mocked(api.delete).mockResolvedValue(null)
+    renderOrdersPage()
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar (1)' }))
+    await screen.findByRole('dialog', { name: '¿Eliminar 1 pedido?' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith('/orders/order-1'))
+    await waitFor(() => expect(notifySuccess).toHaveBeenCalledWith('Pedido eliminado'))
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Eliminar \(/ })).not.toBeInTheDocument(),
+    )
+  })
+
+  // Given an order is selected
+  // When the user clicks the bulk cancel button
+  // Then a confirmation with the number of orders should open
+  it('shows the bulk cancel button with the count and opens the confirmation', async () => {
+    renderOrdersPage()
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar (1)' }))
+
+    expect(await screen.findByRole('dialog', { name: '¿Cancelar 1 pedido?' })).toBeInTheDocument()
+    expect(api.patch).not.toHaveBeenCalled()
+  })
+
+  // Given the bulk cancel confirmation is open
+  // When the user confirms
+  // Then the selected order should be cancelled and the selection cleared
+  it('cancels the selected order and clears the selection', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ order: mockOrderDetail })
+    renderOrdersPage()
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Seleccionar pedido #1' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar (1)' }))
+    await screen.findByRole('dialog', { name: '¿Cancelar 1 pedido?' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar pedidos' }))
+
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'CANCELLED' }),
+    )
+    await waitFor(() => expect(notifySuccess).toHaveBeenCalledWith('Pedido cancelado'))
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Cancelar \(/ })).not.toBeInTheDocument(),
     )
   })
 })

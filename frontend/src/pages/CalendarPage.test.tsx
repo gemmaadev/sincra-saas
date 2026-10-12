@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
@@ -95,5 +95,27 @@ describe('CalendarPage', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Editar evento' })).toBeInTheDocument()
     expect(screen.getByLabelText('Título del evento')).toHaveValue('Llamar a Juan')
+  })
+
+  // Given the preview of an editable event is open
+  // When the user deletes it and confirms
+  // Then it should disappear from both the calendar grid and "Próximos eventos"
+  it('removes the event from the calendar after deleting it from the preview', async () => {
+    const user = userEvent.setup()
+    let events = [manualEvent]
+    vi.mocked(api.get).mockImplementation(async () => ({ events }))
+    vi.mocked(api.delete).mockImplementation(async () => {
+      events = []
+    })
+
+    renderCalendarPage()
+
+    const [eventChip] = await screen.findAllByText('Llamar a Juan')
+    await user.click(eventChip as Element)
+    await user.click(await screen.findByRole('button', { name: 'Eliminar' }))
+    await user.click(await screen.findByRole('button', { name: 'Eliminar' }))
+
+    expect(api.delete).toHaveBeenCalledWith('/calendar/event-1')
+    await waitFor(() => expect(screen.queryAllByText('Llamar a Juan')).toHaveLength(0))
   })
 })

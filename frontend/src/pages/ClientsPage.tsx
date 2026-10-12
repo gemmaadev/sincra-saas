@@ -19,6 +19,7 @@ import {
   DetailDrawer,
 } from '@/shared/components'
 import { useRowSelection } from '@/shared/hooks'
+import { computePageAfterBulkDelete } from '@/shared/utils'
 
 export default function ClientsPage() {
   const navigate = useNavigate()
@@ -50,10 +51,14 @@ export default function ClientsPage() {
   }
 
   function handleBulkDeleted() {
-    const remainingClients = (data?.pagination.total ?? 0) - bulkDeleteIds.length
-    const pageSize = data?.pagination.limit ?? 1
-    const lastPageAfterDelete = Math.max(1, Math.ceil(remainingClients / pageSize))
-    setPage(Math.min(page, lastPageAfterDelete))
+    setPage(
+      computePageAfterBulkDelete(
+        page,
+        data?.pagination.total ?? 0,
+        bulkDeleteIds.length,
+        data?.pagination.limit ?? 1,
+      ),
+    )
     clear()
   }
 
