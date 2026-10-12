@@ -30,6 +30,7 @@ export interface CalendarItem {
   date: Date
   source: CalendarEventSource
   clientId: string | null
+  clientName: string | null
   orderId: string | null
   editable: boolean
 }

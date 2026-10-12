@@ -15,3 +15,10 @@ export function formatDateTime(date: Date) {
     minute: '2-digit',
   }).format(date)
 }
+
+export function formatTime(date: Date) {
+  return new Intl.DateTimeFormat('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}

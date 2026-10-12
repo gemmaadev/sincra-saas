@@ -14,11 +14,11 @@ import type {
   ListCalendarEventsFilters,
   CalendarItem,
 } from './calendar.types'
-import type { CalendarEvent } from '../../generated/prisma/client'
-
 type OrderWithExpectedDate = NonNullable<
   Awaited<ReturnType<typeof findOrdersWithExpectedDateInRange>>
 >[number]
+
+type CalendarEventWithClient = Awaited<ReturnType<typeof findCalendarEventsInRange>>[number]
 
 function parseRangeDate(value: string, fieldLabel: string): Date {
   const date = new Date(value)
@@ -30,7 +30,7 @@ function parseRangeDate(value: string, fieldLabel: string): Date {
   return date
 }
 
-function toCalendarItemFromEvent(event: CalendarEvent): CalendarItem {
+function toCalendarItemFromEvent(event: CalendarEventWithClient): CalendarItem {
   return {
     id: event.id,
     title: event.title,
@@ -38,6 +38,7 @@ function toCalendarItemFromEvent(event: CalendarEvent): CalendarItem {
     date: event.date,
     source: event.source,
     clientId: event.clientId,
+    clientName: event.client?.name ?? null,
     orderId: event.orderId,
     editable: true,
   }
@@ -51,6 +52,7 @@ function toCalendarItemFromOrder(order: OrderWithExpectedDate): CalendarItem {
     date: order.expectedDate!,
     source: 'ORDER',
     clientId: order.clientId,
+    clientName: order.client.name,
     orderId: order.id,
     editable: false,
   }
