@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi } from 'vitest'
 import { CalendarUpcomingEvents } from './CalendarUpcomingEvents'
 import type { CalendarItem } from '../types/calendar.types'
 
@@ -27,7 +28,7 @@ describe('CalendarUpcomingEvents', () => {
   // When CalendarUpcomingEvents is rendered
   // Then it should show an empty-state message
   it('shows an empty state when there are no events', () => {
-    render(<CalendarUpcomingEvents events={[]} />)
+    render(<CalendarUpcomingEvents events={[]} onEventClick={vi.fn()} />)
     expect(screen.getByText('No hay eventos próximos.')).toBeInTheDocument()
   })
 
@@ -46,7 +47,7 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[pastEvent, futureEvent]} />)
+    render(<CalendarUpcomingEvents events={[pastEvent, futureEvent]} onEventClick={vi.fn()} />)
 
     expect(screen.getByText('Evento futuro')).toBeInTheDocument()
     expect(screen.queryByText('Evento pasado')).not.toBeInTheDocument()
@@ -61,9 +62,23 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[event]} />)
+    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
 
     expect(screen.getByText(/Laura García/)).toBeInTheDocument()
+  })
+
+  // Given an upcoming event
+  // When the user clicks it
+  // Then onEventClick should be called with that event
+  it('calls onEventClick when an event is clicked', async () => {
+    const user = userEvent.setup()
+    const onEventClick = vi.fn()
+    const event = buildEvent({ date: new Date(Date.now() + ONE_DAY_MS).toISOString() })
+
+    render(<CalendarUpcomingEvents events={[event]} onEventClick={onEventClick} />)
+    await user.click(screen.getByRole('button', { name: /Llamar a Juan/ }))
+
+    expect(onEventClick).toHaveBeenCalledWith(event)
   })
 
   // Given an order delivery (orderNumber set)
@@ -76,9 +91,25 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[event]} />)
+    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
 
     expect(screen.getByText('#42')).toBeInTheDocument()
+  })
+
+  // Given an event with no client and no order linked
+  // When CalendarUpcomingEvents is rendered
+  // Then it should not show an initials avatar (misleading, implies a person), just a generic icon
+  it('does not show an initials avatar for an event with no client or order', () => {
+    const event = buildEvent({
+      title: 'Llamar a Juan',
+      clientName: null,
+      orderNumber: null,
+      date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
+    })
+
+    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
+
+    expect(screen.queryByText('LA')).not.toBeInTheDocument()
   })
 
   // Given more than 5 upcoming events
@@ -93,7 +124,7 @@ describe('CalendarUpcomingEvents', () => {
       }),
     )
 
-    render(<CalendarUpcomingEvents events={events} />)
+    render(<CalendarUpcomingEvents events={events} onEventClick={vi.fn()} />)
 
     expect(screen.getAllByRole('listitem')).toHaveLength(5)
   })
