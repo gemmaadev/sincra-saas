@@ -5,7 +5,7 @@ import { SincraButton } from '@/shared/components'
 export default function CalendarPage() {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold text-ink">Calendario</h1>
           <p className="text-ink">

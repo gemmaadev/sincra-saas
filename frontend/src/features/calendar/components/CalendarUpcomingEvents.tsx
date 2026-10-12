@@ -15,7 +15,7 @@ export function CalendarUpcomingEvents({ events }: CalendarUpcomingEventsProps) 
     .slice(0, MAX_UPCOMING_EVENTS)
 
   return (
-    <div className="flex w-80 shrink-0 flex-col gap-4 rounded-card border border-neutral-100 bg-white p-4 shadow-md">
+    <div className="flex w-full flex-col gap-4 rounded-card border border-neutral-100 bg-white p-4 shadow-md lg:w-80 lg:shrink-0">
       <h2 className="text-sm font-semibold text-ink">Próximos eventos</h2>
 
       {upcomingEvents.length === 0 ? (

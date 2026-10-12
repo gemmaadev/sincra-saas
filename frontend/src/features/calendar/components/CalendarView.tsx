@@ -62,10 +62,10 @@ export function CalendarView() {
   const visibleEvents = (events ?? []).filter((item) => visibleSources.has(item.source))
 
   return (
-    <div className="flex gap-4">
+    <div className="flex flex-col gap-4 lg:flex-row">
       <div className="flex flex-1 flex-col gap-4 rounded-card border border-neutral-100 bg-white p-4 shadow-md">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <CalendarMonthSelect currentDate={currentDate} onSelect={handleMonthSelect} />
             <CalendarViewToggle view={view} onViewChange={handleViewChange} />
             <CalendarNavigation
