@@ -308,6 +308,20 @@ describe('listOrders', () => {
     ])
   })
 
+  // Given a search term that is a whole number
+  // When orders are listed
+  // Then it should also match the order's own number
+  it('also searches by order number when the term is a whole number', async () => {
+    await listOrders('business-1', { search: '42' })
+
+    const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
+    expect(where.OR).toEqual([
+      { client: { name: { contains: '42', mode: 'insensitive' } } },
+      { items: { some: { product: { contains: '42', mode: 'insensitive' } } } },
+      { number: 42 },
+    ])
+  })
+
   // Given an unparseable date range
   // When orders are listed
   // Then the invalid dates should be ignored instead of breaking the query
