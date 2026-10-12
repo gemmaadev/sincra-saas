@@ -5,6 +5,7 @@ import { Input, Select, SincraButton, IconButton } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import type { Coordinates } from '@/features/clients/types/client.types'
 import { ClientSearch } from './ClientSearch'
+import { toOrderFormValues, EMPTY_ITEM } from '../utils/toOrderFormValues'
 import type { OrderDetail, OrderFormValues, ClientSearchResult } from '../types/order.types'
 
 const CHANNEL_OPTIONS = CHANNEL_BRANDS.map((brand) => ({
@@ -19,30 +20,6 @@ interface OrderFormProps {
   onCancel: () => void
   isSubmitting?: boolean
   submitError?: string
-}
-
-const EMPTY_ITEM = { product: '', description: '', quantity: 1, unitPrice: 0 }
-
-function toDateInputValue(isoDate: string | null): string {
-  return isoDate ? isoDate.slice(0, 10) : ''
-}
-
-function toFormValues(order?: OrderDetail, initialLocation?: Coordinates): OrderFormValues {
-  return {
-    clientId: order?.client.id ?? '',
-    clientName: order?.client.name ?? '',
-    items: order?.items.map((item) => ({
-      product: item.product,
-      description: item.description ?? '',
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-    })) ?? [EMPTY_ITEM],
-    channel: order?.channel ?? '',
-    zone: order?.zone ?? '',
-    address: order?.address ?? '',
-    expectedDate: toDateInputValue(order?.expectedDate ?? null),
-    ...(!order && initialLocation),
-  }
 }
 
 interface FormSectionProps {
@@ -73,7 +50,7 @@ export function OrderForm({
     setValue,
     control,
     formState: { errors },
-  } = useForm<OrderFormValues>({ defaultValues: toFormValues(order, initialLocation) })
+  } = useForm<OrderFormValues>({ defaultValues: toOrderFormValues(order, initialLocation) })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
   const clientId = useWatch({ control, name: 'clientId' })
