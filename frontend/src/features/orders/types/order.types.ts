@@ -111,6 +111,7 @@ export interface OrderFormValues {
   zone: string
   address: string
   expectedDate: string
+  description: string
   latitude?: number
   longitude?: number
 }
@@ -129,6 +130,7 @@ export interface OrderPayload {
   zone: string | null
   address: string | null
   expectedDate: string | null
+  description: string | null
   latitude?: number
   longitude?: number
 }

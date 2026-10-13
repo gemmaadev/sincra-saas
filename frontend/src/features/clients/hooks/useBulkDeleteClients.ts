@@ -1,27 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api, ApiError } from '@/shared/services'
+import { api } from '@/shared/services'
+import { bulkDelete } from '@/shared/utils'
 import { invalidateClientQueries } from '../utils/invalidateClientQueries'
-
-function isAlreadyDeleted(reason: unknown): boolean {
-  return reason instanceof ApiError && reason.status === 404
-}
 
 export function useBulkDeleteClients() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (clientIds: string[]) => {
-      const results = await Promise.allSettled(
-        clientIds.map((clientId) => api.delete(`/clients/${clientId}`)),
-      )
-
-      const failedIds = clientIds.filter((_clientId, index) => {
-        const result = results[index]
-        return result.status === 'rejected' && !isAlreadyDeleted(result.reason)
-      })
-
-      return { failedIds }
-    },
+    mutationFn: (clientIds: string[]) =>
+      bulkDelete(clientIds, (clientId) => api.delete(`/clients/${clientId}`)),
     onSettled: () => invalidateClientQueries(queryClient),
   })
 }

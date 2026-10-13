@@ -44,6 +44,26 @@ export async function findOrderById(businessId: string, orderId: string) {
   return prisma.order.findUnique({ where: { id: orderId, businessId } })
 }
 
+export async function findOrdersWithExpectedDateInRange(
+  businessId: string,
+  dateFrom: Date,
+  dateTo: Date,
+) {
+  return prisma.order.findMany({
+    where: { businessId, expectedDate: { gte: dateFrom, lte: dateTo } },
+    select: {
+      id: true,
+      number: true,
+      clientId: true,
+      expectedDate: true,
+      status: true,
+      description: true,
+      items: { select: { product: true, quantity: true } },
+      client: { select: { name: true } },
+    },
+  })
+}
+
 export async function findOrderWithDetails(businessId: string, orderId: string) {
   return prisma.order.findUnique({
     where: { id: orderId, businessId },

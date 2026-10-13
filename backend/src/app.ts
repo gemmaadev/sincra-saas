@@ -11,6 +11,7 @@ import clientRoutes from './features/client/client.routes'
 import tagRoutes from './features/tag/tag.routes'
 import noteRoutes from './features/note/note.routes'
 import orderRoutes from './features/order/order.routes'
+import calendarRoutes from './features/calendar/calendar.routes'
 
 const app = express()
 
@@ -31,6 +32,7 @@ app.use(clientRoutes)
 app.use(tagRoutes)
 app.use(noteRoutes)
 app.use(orderRoutes)
+app.use(calendarRoutes)
 
 app.get(
   '/health',

@@ -5,6 +5,7 @@ import {
   insertOrder,
   findOrdersPage,
   countOrdersByStatus,
+  findOrdersWithExpectedDateInRange,
   updateOrderWithItems,
   deleteOrderById,
   findActiveOrderTag,
@@ -50,6 +51,36 @@ describe('findOrdersPage', () => {
       include: {
         client: { select: { id: true, name: true } },
         items: { select: { product: true, quantity: true } },
+      },
+    })
+  })
+})
+
+describe('findOrdersWithExpectedDateInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a date range
+  // When listing orders with an expectedDate in it
+  // Then it should filter by business and expectedDate, selecting only the fields the calendar needs
+  it('filters by business and expectedDate range', async () => {
+    const dateFrom = new Date('2026-10-01')
+    const dateTo = new Date('2026-10-31')
+
+    await findOrdersWithExpectedDateInRange('business-1', dateFrom, dateTo)
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', expectedDate: { gte: dateFrom, lte: dateTo } },
+      select: {
+        id: true,
+        number: true,
+        clientId: true,
+        expectedDate: true,
+        status: true,
+        description: true,
+        items: { select: { product: true, quantity: true } },
+        client: { select: { name: true } },
       },
     })
   })
