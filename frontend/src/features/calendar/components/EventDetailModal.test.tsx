@@ -17,7 +17,8 @@ const manualEvent: CalendarItem = {
   id: 'event-1',
   title: 'Llamar a Juan',
   description: 'Confirmar talla',
-  date: '2026-10-15T10:00:00.000Z',
+  date: '2026-10-15T10:00:00',
+  endDate: '2026-10-15T11:00:00',
   source: 'MANUAL',
   clientId: 'client-1',
   clientName: 'Juan',
@@ -31,7 +32,8 @@ const orderEvent: CalendarItem = {
   id: 'order-1',
   title: '#42 - Laura',
   description: null,
-  date: '2026-10-20T16:00:00.000Z',
+  date: '2026-10-20T16:00:00',
+  endDate: '2026-10-20T16:00:00',
   source: 'ORDER',
   clientId: 'client-2',
   clientName: 'Laura',
@@ -39,6 +41,21 @@ const orderEvent: CalendarItem = {
   orderLabel: 'Pedido #42 - Laura',
   orderNumber: 42,
   editable: false,
+}
+
+const multiDayEvent: CalendarItem = {
+  id: 'event-2',
+  title: 'Viaje a proveedor',
+  description: null,
+  date: '2026-10-15T10:00:00',
+  endDate: '2026-10-17T18:00:00',
+  source: 'MANUAL',
+  clientId: null,
+  clientName: null,
+  orderId: null,
+  orderLabel: null,
+  orderNumber: null,
+  editable: true,
 }
 
 describe('EventDetailModal', () => {
@@ -51,6 +68,33 @@ describe('EventDetailModal', () => {
     expect(screen.getByRole('dialog', { name: 'Llamar a Juan' })).toBeInTheDocument()
     expect(screen.getByText('Confirmar talla')).toBeInTheDocument()
     expect(screen.getByText('Juan')).toBeInTheDocument()
+  })
+
+  // Given a manual event with a start and end time on the same day
+  // When the modal is rendered
+  // Then the date should be shown once, followed by both times
+  it('shows the date once with both times for a same-day event', () => {
+    renderModal({ opened: true, onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), event: manualEvent })
+
+    expect(screen.getByText('15 oct 2026, 10:00 – 11:00')).toBeInTheDocument()
+  })
+
+  // Given an event spanning several days
+  // When the modal is rendered
+  // Then the full date and time should be shown for both the start and the end
+  it('shows the full date and time for both ends of a multi-day event', () => {
+    renderModal({ opened: true, onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), event: multiDayEvent })
+
+    expect(screen.getByText('15 oct 2026, 10:00 – 17 oct 2026, 18:00')).toBeInTheDocument()
+  })
+
+  // Given an order's own expectedDate, which has no real duration
+  // When the modal is rendered
+  // Then just that single moment should be shown, without a dash
+  it('shows a single moment for a zero-duration order event', () => {
+    renderModal({ opened: true, onClose: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn(), event: orderEvent })
+
+    expect(screen.getByText('20 oct 2026, 16:00')).toBeInTheDocument()
   })
 
   // Given an event with no description

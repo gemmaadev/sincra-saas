@@ -6,6 +6,8 @@ const baseValues: CalendarEventFormValues = {
   title: '  Llamar a Juan  ',
   date: '2026-10-15',
   time: '10:00',
+  endDate: '2026-10-15',
+  endTime: '11:00',
   description: '  Confirmar talla  ',
   linkType: 'none',
   clientId: '',
@@ -29,6 +31,24 @@ describe('toCalendarEventPayload', () => {
     const payload = toCalendarEventPayload(baseValues)
 
     expect(payload.date).toBe(new Date('2026-10-15T10:00').toISOString())
+  })
+
+  // Given an end date and an end time
+  // When they are converted to a payload
+  // Then they should be combined into a single ISO datetime
+  it('combines the end date and end time into one ISO datetime', () => {
+    const payload = toCalendarEventPayload(baseValues)
+
+    expect(payload.endDate).toBe(new Date('2026-10-15T11:00').toISOString())
+  })
+
+  // Given an event that spans multiple days
+  // When it is converted to a payload
+  // Then the end date can be a later day than the start
+  it('allows the end date to be on a later day than the start', () => {
+    const payload = toCalendarEventPayload({ ...baseValues, endDate: '2026-10-17', endTime: '18:00' })
+
+    expect(payload.endDate).toBe(new Date('2026-10-17T18:00').toISOString())
   })
 
   // Given an empty description

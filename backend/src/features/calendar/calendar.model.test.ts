@@ -44,15 +44,20 @@ describe('findCalendarEventsInRange', () => {
 
   // Given a business and a date range
   // When listing events in that range
-  // Then it should filter by business and date, sorted ascending by date
-  it('filters by business and date range, sorted by date', async () => {
+  // Then it should filter by business, with the event overlapping the range
+  // (starting on or before it ends, and ending on or after it starts), sorted by date
+  it('filters by business and an overlapping date range, sorted by date', async () => {
     const dateFrom = new Date('2026-10-01')
     const dateTo = new Date('2026-10-31')
 
     await findCalendarEventsInRange('business-1', dateFrom, dateTo)
 
     expect(prisma.calendarEvent.findMany).toHaveBeenCalledWith({
-      where: { businessId: 'business-1', date: { gte: dateFrom, lte: dateTo } },
+      where: {
+        businessId: 'business-1',
+        date: { lte: dateTo },
+        OR: [{ endDate: { gte: dateFrom } }, { endDate: null, date: { gte: dateFrom } }],
+      },
       orderBy: { date: 'asc' },
       include: {
         client: { select: { name: true } },

@@ -22,3 +22,16 @@ export function formatTime(date: Date) {
     minute: '2-digit',
   }).format(date)
 }
+
+export function formatDateRange(start: Date, end: Date) {
+  if (start.getTime() === end.getTime()) {
+    return formatDateTime(start)
+  }
+
+  const sameDay = start.toDateString() === end.toDateString()
+  if (sameDay) {
+    return `${formatDate(start)}, ${formatTime(start)} – ${formatTime(end)}`
+  }
+
+  return `${formatDateTime(start)} – ${formatDateTime(end)}`
+}

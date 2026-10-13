@@ -308,6 +308,7 @@ model CalendarEvent {
   title       String
   description String?
   date        DateTime
+  endDate     DateTime?
   source      CalendarEventSource @default(MANUAL)
   createdBy   String?
   createdAt   DateTime            @default(now())

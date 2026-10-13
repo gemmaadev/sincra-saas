@@ -4,6 +4,7 @@ export interface CreateCalendarEventInput {
   title: string
   description?: string | null
   date: Date
+  endDate?: Date | null
   clientId?: string | null
   orderId?: string | null
 }
@@ -12,6 +13,7 @@ export interface UpdateCalendarEventInput {
   title?: string
   description?: string | null
   date?: Date
+  endDate?: Date | null
   clientId?: string | null
   orderId?: string | null
 }
@@ -28,6 +30,7 @@ export interface CalendarItem {
   title: string
   description: string | null
   date: Date
+  endDate: Date
   source: CalendarEventSource
   clientId: string | null
   clientName: string | null

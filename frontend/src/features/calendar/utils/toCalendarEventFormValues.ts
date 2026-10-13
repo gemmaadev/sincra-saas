@@ -4,6 +4,8 @@ import type {
   CalendarItem,
 } from '../types/calendar.types'
 
+const DEFAULT_DURATION_MS = 60 * 60 * 1000
+
 function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
@@ -27,11 +29,16 @@ export function toCalendarEventFormValues(
   initialDate?: Date,
 ): CalendarEventFormValues {
   const date = event ? new Date(event.date) : (initialDate ?? new Date())
+  const endDate = event
+    ? new Date(event.endDate)
+    : new Date(date.getTime() + DEFAULT_DURATION_MS)
 
   return {
     title: event?.title ?? '',
     date: toDateInputValue(date),
     time: toTimeInputValue(date),
+    endDate: toDateInputValue(endDate),
+    endTime: toTimeInputValue(endDate),
     description: event?.description ?? '',
     linkType: resolveLinkType(event),
     clientId: event?.clientId ?? '',

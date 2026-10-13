@@ -7,7 +7,11 @@ export async function insertCalendarEvent(data: Prisma.CalendarEventUncheckedCre
 
 export async function findCalendarEventsInRange(businessId: string, dateFrom: Date, dateTo: Date) {
   return prisma.calendarEvent.findMany({
-    where: { businessId, date: { gte: dateFrom, lte: dateTo } },
+    where: {
+      businessId,
+      date: { lte: dateTo },
+      OR: [{ endDate: { gte: dateFrom } }, { endDate: null, date: { gte: dateFrom } }],
+    },
     orderBy: { date: 'asc' },
     include: {
       client: { select: { name: true } },

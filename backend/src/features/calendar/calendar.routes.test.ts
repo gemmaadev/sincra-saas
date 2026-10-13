@@ -135,6 +135,7 @@ describe('calendar routes', () => {
         'biz-1',
         'event-1',
         new Date('2026-10-20T00:00:00.000Z'),
+        undefined,
       )
     })
 

@@ -8,6 +8,7 @@ function buildEvent(overrides: Partial<CalendarItem>): CalendarItem {
     title: 'Llamar a Juan',
     description: 'Confirmar talla',
     date: '2026-10-15T10:05:00.000Z',
+    endDate: '2026-10-15T10:05:00.000Z',
     source: 'MANUAL',
     clientId: null,
     clientName: null,
@@ -43,6 +44,16 @@ describe('toCalendarEventFormValues', () => {
     expect(values.time).toBe('09:05')
   })
 
+  // Given an initial date and no event
+  // When building the form values for a new event
+  // Then the end should default to one hour after the start
+  it('defaults the end to one hour after the start when creating', () => {
+    const values = toCalendarEventFormValues(undefined, new Date('2026-10-15T09:05:00'))
+
+    expect(values.endDate).toBe('2026-10-15')
+    expect(values.endTime).toBe('10:05')
+  })
+
   // Given an existing event
   // When building the form values for editing it
   // Then the title, description and date/time should come from the event
@@ -55,6 +66,21 @@ describe('toCalendarEventFormValues', () => {
     expect(values.description).toBe('Confirmar talla')
     expect(values.date).toBe('2026-10-15')
     expect(values.time).toBe('09:05')
+  })
+
+  // Given an existing event with an end date later than its start
+  // When building the form values for editing it
+  // Then the end date and time should come from the event, not default to +1h
+  it('prefills the end date and time from an existing event', () => {
+    const event = buildEvent({
+      date: '2026-10-15T09:05:00',
+      endDate: '2026-10-17T18:00:00',
+    })
+
+    const values = toCalendarEventFormValues(event)
+
+    expect(values.endDate).toBe('2026-10-17')
+    expect(values.endTime).toBe('18:00')
   })
 
   // Given an event linked to a client

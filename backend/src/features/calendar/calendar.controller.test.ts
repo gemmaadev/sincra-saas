@@ -91,6 +91,55 @@ describe('create', () => {
     expect(res.json).toHaveBeenCalledWith({ event: { id: 'event-1' } })
   })
 
+  // Given an endDate alongside the date
+  // When creating a calendar event
+  // Then it should be parsed and passed to the service
+  it('parses and passes the endDate when given', async () => {
+    const createSpy = vi
+      .spyOn(calendarService, 'createEvent')
+      .mockResolvedValue({ id: 'event-1' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: {
+        title: 'Llamar a Juan',
+        date: '2026-10-15T10:00:00.000Z',
+        endDate: '2026-10-15T11:00:00.000Z',
+      },
+    })
+
+    await create(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'biz-1',
+      undefined,
+      expect.objectContaining({ endDate: new Date('2026-10-15T11:00:00.000Z') }),
+    )
+  })
+
+  // Given an endDate that is not a valid date
+  // When creating a calendar event
+  // Then it should throw a 400 AppError without calling the service
+  it('throws a 400 AppError when the endDate is invalid', async () => {
+    const createSpy = vi.spyOn(calendarService, 'createEvent')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: {
+        title: 'Llamar a Juan',
+        date: '2026-10-15T10:00:00.000Z',
+        endDate: 'not-a-date',
+      },
+    })
+    const next = vi.fn()
+
+    await create(req, createMockResponse(), next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_DATE' }),
+    )
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
   // Given a request without a title
   // When creating a calendar event
   // Then it should throw a 400 AppError without calling the service
@@ -175,8 +224,37 @@ describe('reschedule', () => {
 
     await reschedule(req, res, vi.fn() as NextFunction)
 
-    expect(rescheduleSpy).toHaveBeenCalledWith('biz-1', 'event-1', new Date('2026-10-20T00:00:00.000Z'))
+    expect(rescheduleSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'event-1',
+      new Date('2026-10-20T00:00:00.000Z'),
+      undefined,
+    )
     expect(res.json).toHaveBeenCalledWith({ event: { id: 'event-1', date: new Date('2026-10-20') } })
+  })
+
+  // Given a drag that moves both the start and the end
+  // When rescheduling a calendar event
+  // Then both should be parsed and passed to the service
+  it('passes the endDate through when given', async () => {
+    const rescheduleSpy = vi
+      .spyOn(calendarService, 'rescheduleEvent')
+      .mockResolvedValue({ id: 'event-1' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      params: { id: 'event-1' },
+      body: { date: '2026-10-20T10:00:00.000Z', endDate: '2026-10-20T11:00:00.000Z' },
+    })
+
+    await reschedule(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(rescheduleSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'event-1',
+      new Date('2026-10-20T10:00:00.000Z'),
+      new Date('2026-10-20T11:00:00.000Z'),
+    )
   })
 
   // Given a request with an invalid date

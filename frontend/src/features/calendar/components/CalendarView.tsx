@@ -4,9 +4,14 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import esLocale from '@fullcalendar/core/locales/es'
-import type { DatesSetArg } from '@fullcalendar/core'
+import type { DatesSetArg, EventDropArg } from '@fullcalendar/core'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
+import { useRescheduleCalendarEvent } from '../hooks/useRescheduleCalendarEvent'
 import { getInitialRange } from '../utils/getInitialRange'
+import { isMultiDayEvent } from '../utils/isMultiDayEvent'
+import { toAllDayExclusiveEnd } from '../utils/toAllDayExclusiveEnd'
+import { applyCalendarDelta } from '../utils/applyCalendarDelta'
+import { notifyEventRescheduled } from '../utils/notifyEventRescheduled'
 import { CalendarNavigation } from './CalendarNavigation'
 import { CalendarViewToggle } from './CalendarViewToggle'
 import { CalendarMonthSelect } from './CalendarMonthSelect'
@@ -41,6 +46,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
     new Set(DEFAULT_VISIBLE_SOURCES),
   )
   const { data: events } = useCalendarEvents(range)
+  const { mutate: reschedule } = useRescheduleCalendarEvent()
 
   function handleDatesSet(arg: DatesSetArg) {
     setRange({ dateFrom: arg.start.toISOString(), dateTo: arg.end.toISOString() })
@@ -67,6 +73,28 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
 
   const visibleEvents = (events ?? []).filter((item) => visibleSources.has(item.source))
 
+  function handleEventDrop(arg: EventDropArg) {
+    const item = visibleEvents.find((candidate) => candidate.id === arg.event.id)
+    if (!item) return
+
+    const previousDate = item.date
+    const previousEndDate = item.endDate
+    const date = applyCalendarDelta(new Date(item.date), arg.delta)
+    const endDate = applyCalendarDelta(new Date(item.endDate), arg.delta)
+
+    reschedule(
+      { eventId: item.id, date: date.toISOString(), endDate: endDate.toISOString() },
+      {
+        onSuccess: () => {
+          notifyEventRescheduled(date, () =>
+            reschedule({ eventId: item.id, date: previousDate, endDate: previousEndDate }),
+          )
+        },
+        onError: () => arg.revert(),
+      },
+    )
+  }
+
   function handleEventClick(eventId: string) {
     const item = visibleEvents.find((candidate) => candidate.id === eventId)
     if (item) onEventClick(item)
@@ -91,23 +119,32 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           ref={calendarRef}
           plugins={CALENDAR_PLUGINS}
           initialView="dayGridMonth"
+          editable
           headerToolbar={false}
+          dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
           locales={CALENDAR_LOCALES}
           locale="es"
-          height="auto"
+          height={view === 'dayGridMonth' ? 'auto' : 700}
           datesSet={handleDatesSet}
           dateClick={(arg) => onDateClick(arg.date)}
           eventClick={(arg) => handleEventClick(arg.event.id)}
+          eventDrop={handleEventDrop}
           eventContent={CalendarEventContent}
           eventBackgroundColor="transparent"
           eventBorderColor="transparent"
-          events={visibleEvents.map((item) => ({
-            id: item.id,
-            title: item.title,
-            start: item.date,
-            editable: item.editable,
-            extendedProps: { source: item.source, clientId: item.clientId, orderId: item.orderId },
-          }))}
+          events={visibleEvents.map((item) => {
+            const multiDay = isMultiDayEvent(item.date, item.endDate)
+
+            return {
+              id: item.id,
+              title: item.title,
+              start: item.date,
+              end: multiDay ? toAllDayExclusiveEnd(item.endDate) : item.endDate,
+              editable: item.editable,
+              allDay: multiDay,
+              extendedProps: { source: item.source, clientId: item.clientId, orderId: item.orderId },
+            }
+          })}
         />
       </div>
       <CalendarUpcomingEvents events={visibleEvents} onEventClick={onEventClick} />

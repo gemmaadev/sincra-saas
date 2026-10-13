@@ -10,6 +10,15 @@ import type {
   CalendarOrderSearchResult,
 } from '../types/calendar.types'
 
+function validateEnd(_value: string, values: CalendarEventFormValues): string | true {
+  if (!values.endDate || !values.endTime) return 'Obligatorio'
+
+  const start = new Date(`${values.date}T${values.time}`)
+  const end = new Date(`${values.endDate}T${values.endTime}`)
+
+  return end >= start || 'No puede ser anterior al inicio'
+}
+
 interface EventFormProps {
   event?: CalendarItem
   initialDate?: Date
@@ -86,6 +95,18 @@ export function EventForm({
           type="time"
           error={errors.time?.message}
           {...register('time', { validate: (value) => value !== '' || 'Obligatorio' })}
+        />
+        <Input
+          label="Fecha fin"
+          type="date"
+          error={errors.endDate?.message}
+          {...register('endDate', { validate: validateEnd })}
+        />
+        <Input
+          label="Hora fin"
+          type="time"
+          error={errors.endTime?.message}
+          {...register('endTime', { validate: validateEnd })}
         />
       </div>
 
