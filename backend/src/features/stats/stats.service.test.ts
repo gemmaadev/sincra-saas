@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as statsModel from './stats.model'
-import { getOverview } from './stats.service'
+import { getDashboard, getOrdersByStatus, getOverview } from './stats.service'
 
 describe('getOverview', () => {
   beforeEach(() => {
@@ -116,5 +116,93 @@ describe('getOverview', () => {
     await getOverview('business-1', {})
 
     expect(countClients).toHaveBeenCalledWith('business-1', undefined)
+  })
+})
+
+describe('getOrdersByStatus', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given order counts for some, but not all, statuses
+  // When getting the orders-by-status breakdown
+  // Then it should return all 5 statuses in their lifecycle order, zero-count ones included,
+  // each with its share of the total
+  it('returns all statuses in lifecycle order, with zero-count ones included', async () => {
+    vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([
+      { status: 'DELIVERED', _count: 6 },
+      { status: 'PENDING', _count: 3 },
+      { status: 'CANCELLED', _count: 1 },
+    ] as never)
+
+    const result = await getOrdersByStatus('business-1', {})
+
+    expect(result).toEqual({
+      total: 10,
+      statuses: [
+        { status: 'PENDING', count: 3, percentage: 30 },
+        { status: 'PREPARING', count: 0, percentage: 0 },
+        { status: 'SHIPPED', count: 0, percentage: 0 },
+        { status: 'DELIVERED', count: 6, percentage: 60 },
+        { status: 'CANCELLED', count: 1, percentage: 10 },
+      ],
+    })
+  })
+
+  // Given no orders at all in the range
+  // When getting the orders-by-status breakdown
+  // Then every percentage should be 0, not NaN or a division error
+  it('reports 0% for every status when there are no orders', async () => {
+    vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([])
+
+    const result = await getOrdersByStatus('business-1', {})
+
+    expect(result.total).toBe(0)
+    expect(result.statuses.every((entry) => entry.percentage === 0)).toBe(true)
+  })
+
+  // Given dateFrom/dateTo query strings
+  // When getting the orders-by-status breakdown
+  // Then the model function should receive a parsed Date range
+  it('parses dateFrom/dateTo into a Date range before querying', async () => {
+    const countByStatus = vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([])
+
+    await getOrdersByStatus('business-1', { dateFrom: '2026-10-01', dateTo: '2026-10-31' })
+
+    expect(countByStatus).toHaveBeenCalledWith('business-1', {
+      gte: new Date('2026-10-01'),
+      lte: new Date('2026-10-31'),
+    })
+  })
+})
+
+describe('getDashboard', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given the data behind both the overview and the orders-by-status breakdown
+  // When getting the dashboard
+  // Then it should combine both into a single response
+  it('combines the overview and the orders-by-status breakdown into one response', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(5)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(12)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([])
+    vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([
+      { status: 'PENDING', _count: 3 },
+    ] as never)
+
+    const dashboard = await getDashboard('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(dashboard.overview).toEqual({
+      newClients: 5,
+      ordersCreated: 12,
+      averageDeliveryDays: null,
+      revenue: '0',
+    })
+    expect(dashboard.ordersByStatus.total).toBe(3)
   })
 })

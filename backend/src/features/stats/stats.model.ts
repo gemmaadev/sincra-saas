@@ -19,6 +19,17 @@ export async function countOrdersCreatedInRange(
   })
 }
 
+export async function countOrdersByStatusInRange(
+  businessId: string,
+  createdAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.order.groupBy({
+    by: ['status'],
+    where: { businessId, ...(createdAtRange && { createdAt: createdAtRange }) },
+    _count: true,
+  })
+}
+
 export async function findDeliveredOrdersInRange(
   businessId: string,
   createdAtRange?: Prisma.DateTimeFilter,

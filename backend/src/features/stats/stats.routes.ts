@@ -1,9 +1,9 @@
 import { Router } from 'express'
-import { overview } from './stats.controller'
+import { dashboard } from './stats.controller'
 import { verifyAuth } from '../../middleware/verifyAuth'
 
 const router = Router()
 
-router.get('/stats/overview', verifyAuth, overview)
+router.get('/stats/dashboard', verifyAuth, dashboard)
 
 export default router

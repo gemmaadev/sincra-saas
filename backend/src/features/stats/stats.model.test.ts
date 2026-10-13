@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import prisma from '../../config/db'
 import {
   countClientsCreatedInRange,
+  countOrdersByStatusInRange,
   countOrdersCreatedInRange,
   findDeliveredOrdersInRange,
 } from './stats.model'
@@ -9,7 +10,7 @@ import {
 vi.mock('../../config/db', () => ({
   default: {
     client: { count: vi.fn() },
-    order: { count: vi.fn(), findMany: vi.fn() },
+    order: { count: vi.fn(), findMany: vi.fn(), groupBy: vi.fn() },
   },
 }))
 
@@ -56,6 +57,27 @@ describe('countOrdersCreatedInRange', () => {
 
     expect(prisma.order.count).toHaveBeenCalledWith({
       where: { businessId: 'business-1', createdAt: range },
+    })
+  })
+})
+
+describe('countOrdersByStatusInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting orders grouped by status in that range
+  // Then it should group by status, filtered by business and the range
+  it('groups orders by status, filtered by business and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countOrdersByStatusInRange('business-1', range)
+
+    expect(prisma.order.groupBy).toHaveBeenCalledWith({
+      by: ['status'],
+      where: { businessId: 'business-1', createdAt: range },
+      _count: true,
     })
   })
 })

@@ -11,36 +11,42 @@ describe('stats routes', () => {
 
   const employeeCookie = `token=${signToken({ userId: 'emp-1', businessId: 'biz-1', role: 'EMPLOYEE' })}`
 
-  describe('GET /stats/overview', () => {
+  describe('GET /stats/dashboard', () => {
     // Given an authenticated member and a date range in the query string
-    // When requesting the overview
-    // Then it should reach the service with that range and answer 200
-    it('returns the overview for a date range', async () => {
-      const overview = { newClients: 5, ordersCreated: 12, averageDeliveryDays: 2.5, revenue: '150' }
-      vi.spyOn(statsService, 'getOverview').mockResolvedValue(overview)
+    // When requesting the dashboard
+    // Then it should reach the service with that range and answer 200 with the combined result
+    it('returns the combined dashboard for a date range', async () => {
+      const dashboard = {
+        overview: { newClients: 5, ordersCreated: 12, averageDeliveryDays: 2.5, revenue: '150' },
+        ordersByStatus: {
+          total: 10,
+          statuses: [{ status: 'PENDING' as const, count: 3, percentage: 30 }],
+        },
+      }
+      vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboard)
 
       const res = await request(app)
-        .get('/stats/overview?dateFrom=2026-10-01&dateTo=2026-10-31')
+        .get('/stats/dashboard?dateFrom=2026-10-01&dateTo=2026-10-31')
         .set('Cookie', employeeCookie)
 
       expect(res.status).toBe(200)
-      expect(res.body).toEqual({ overview })
-      expect(statsService.getOverview).toHaveBeenCalledWith('biz-1', {
+      expect(res.body).toEqual(dashboard)
+      expect(statsService.getDashboard).toHaveBeenCalledWith('biz-1', {
         dateFrom: '2026-10-01',
         dateTo: '2026-10-31',
       })
     })
 
     // Given no session cookie
-    // When requesting the overview
+    // When requesting the dashboard
     // Then it should answer 401 before reaching the service
     it('answers 401 without a session', async () => {
-      const overviewSpy = vi.spyOn(statsService, 'getOverview')
+      const dashboardSpy = vi.spyOn(statsService, 'getDashboard')
 
-      const res = await request(app).get('/stats/overview')
+      const res = await request(app).get('/stats/dashboard')
 
       expect(res.status).toBe(401)
-      expect(overviewSpy).not.toHaveBeenCalled()
+      expect(dashboardSpy).not.toHaveBeenCalled()
     })
   })
 })
