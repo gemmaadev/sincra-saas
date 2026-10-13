@@ -1,6 +1,6 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { SincraModal, SincraButton } from '@/shared/components'
-import { formatDateTime } from '@/shared/utils'
+import { formatDateRange } from '@/shared/utils'
 import type { CalendarItem } from '../types/calendar.types'
 
 interface EventDetailModalProps {
@@ -31,7 +31,9 @@ export function EventDetailModal({
         <dl className="flex flex-col gap-3 text-sm">
           <div className="flex justify-between gap-4">
             <dt className="text-ink-muted">Fecha</dt>
-            <dd className="text-ink">{formatDateTime(new Date(event.date))}</dd>
+            <dd className="text-ink">
+              {formatDateRange(new Date(event.date), new Date(event.endDate))}
+            </dd>
           </div>
           {linkedTo && (
             <div className="flex justify-between gap-4">

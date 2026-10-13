@@ -91,6 +91,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           ref={calendarRef}
           plugins={CALENDAR_PLUGINS}
           initialView="dayGridMonth"
+          editable
           headerToolbar={false}
           locales={CALENDAR_LOCALES}
           locale="es"
@@ -105,6 +106,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
             id: item.id,
             title: item.title,
             start: item.date,
+            end: item.endDate,
             editable: item.editable,
             extendedProps: { source: item.source, clientId: item.clientId, orderId: item.orderId },
           }))}
