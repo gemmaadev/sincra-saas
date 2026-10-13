@@ -22,6 +22,7 @@ const manualEvent = {
   title: 'Llamar a Juan',
   description: null,
   date: todayAt(10),
+  endDate: todayAt(11),
   source: 'MANUAL',
   clientId: 'client-1',
   clientName: 'Juan',
