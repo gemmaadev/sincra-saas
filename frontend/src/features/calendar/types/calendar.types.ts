@@ -5,6 +5,7 @@ export interface CalendarItem {
   title: string
   description: string | null
   date: string
+  endDate: string
   source: CalendarEventSource
   clientId: string | null
   clientName: string | null
@@ -25,6 +26,8 @@ export interface CalendarEventFormValues {
   title: string
   date: string
   time: string
+  endDate: string
+  endTime: string
   description: string
   linkType: CalendarEventLinkType
   clientId: string

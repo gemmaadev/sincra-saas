@@ -10,6 +10,7 @@ function buildEvent(overrides: Partial<CalendarItem>): CalendarItem {
     title: 'Llamar a Juan',
     description: null,
     date: new Date().toISOString(),
+    endDate: new Date().toISOString(),
     source: 'MANUAL',
     clientId: null,
     clientName: null,

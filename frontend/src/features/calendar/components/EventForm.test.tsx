@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api } from '@/shared/services'
@@ -15,7 +15,8 @@ const mockEvent: CalendarItem = {
   id: 'event-1',
   title: 'Llamar a Juan',
   description: 'Confirmar talla',
-  date: '2026-10-15T10:00:00.000Z',
+  date: '2026-10-15T10:00:00',
+  endDate: '2026-10-15T11:00:00',
   source: 'MANUAL',
   clientId: 'client-1',
   clientName: 'Juan',
@@ -80,6 +81,50 @@ describe('EventForm', () => {
     })
   })
 
+  // Given a title and a start, but no end time
+  // When the user submits the form
+  // Then the end time error should be shown and nothing should be submitted
+  it('requires an end time', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
+    await user.clear(screen.getByLabelText('Hora fin'))
+    await user.click(screen.getByRole('button', { name: 'Crear evento' }))
+
+    expect(await screen.findAllByText('Obligatorio')).not.toHaveLength(0)
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  // Given an end time earlier than the start time, on the same day
+  // When the user submits the form
+  // Then the range error should be shown and nothing should be submitted
+  it('rejects an end earlier than the start', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
+    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '11:00' } })
+    fireEvent.change(screen.getByLabelText('Hora fin'), { target: { value: '10:00' } })
+    await user.click(screen.getByRole('button', { name: 'Crear evento' }))
+
+    expect(await screen.findAllByText('No puede ser anterior al inicio')).not.toHaveLength(0)
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  // Given an end date on a later day than the start
+  // When the user submits the form
+  // Then it should be accepted, since events can span multiple days
+  it('allows the end to be on a later day', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
+    await user.clear(screen.getByLabelText('Fecha fin'))
+    await user.type(screen.getByLabelText('Fecha fin'), '2026-10-20')
+    await user.click(screen.getByRole('button', { name: 'Crear evento' }))
+
+    expect(onSubmit).toHaveBeenCalled()
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ endDate: '2026-10-20' })
+  })
+
   // Given an existing event
   // When the form is rendered
   // Then it should be prefilled and the submit button should say "Guardar cambios"
@@ -89,6 +134,16 @@ describe('EventForm', () => {
     expect(screen.getByLabelText('Título del evento')).toHaveValue('Llamar a Juan')
     expect(screen.getByLabelText('Descripción (opcional)')).toHaveValue('Confirmar talla')
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
+  })
+
+  // Given an existing event with a different end date/time
+  // When the form is rendered
+  // Then the end fields should be prefilled from the event, not from the start
+  it('prefills the end date and time from an existing event', () => {
+    renderForm({ event: mockEvent })
+
+    expect(screen.getByLabelText('Fecha fin')).toHaveValue('2026-10-15')
+    expect(screen.getByLabelText('Hora fin')).toHaveValue('11:00')
   })
 
   // Given an event linked to a client

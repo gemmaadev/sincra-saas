@@ -20,6 +20,7 @@ const mockEvent: CalendarItem = {
   title: 'Llamar a Juan',
   description: null,
   date: '2026-10-15T10:00:00.000Z',
+  endDate: '2026-10-15T11:00:00.000Z',
   source: 'MANUAL',
   clientId: null,
   clientName: null,

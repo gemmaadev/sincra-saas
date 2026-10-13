@@ -13,6 +13,8 @@ const values: CalendarEventFormValues = {
   title: 'Llamar a Juan',
   date: '2026-10-15',
   time: '10:00',
+  endDate: '2026-10-15',
+  endTime: '11:00',
   description: '',
   linkType: 'none',
   clientId: '',
