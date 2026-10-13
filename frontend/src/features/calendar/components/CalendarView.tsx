@@ -4,11 +4,13 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import esLocale from '@fullcalendar/core/locales/es'
-import type { DatesSetArg } from '@fullcalendar/core'
+import type { DatesSetArg, EventDropArg } from '@fullcalendar/core'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
+import { useRescheduleCalendarEvent } from '../hooks/useRescheduleCalendarEvent'
 import { getInitialRange } from '../utils/getInitialRange'
 import { isMultiDayEvent } from '../utils/isMultiDayEvent'
 import { toAllDayExclusiveEnd } from '../utils/toAllDayExclusiveEnd'
+import { applyCalendarDelta } from '../utils/applyCalendarDelta'
 import { CalendarNavigation } from './CalendarNavigation'
 import { CalendarViewToggle } from './CalendarViewToggle'
 import { CalendarMonthSelect } from './CalendarMonthSelect'
@@ -43,6 +45,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
     new Set(DEFAULT_VISIBLE_SOURCES),
   )
   const { data: events } = useCalendarEvents(range)
+  const { mutate: reschedule } = useRescheduleCalendarEvent()
 
   function handleDatesSet(arg: DatesSetArg) {
     setRange({ dateFrom: arg.start.toISOString(), dateTo: arg.end.toISOString() })
@@ -68,6 +71,19 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
   }
 
   const visibleEvents = (events ?? []).filter((item) => visibleSources.has(item.source))
+
+  function handleEventDrop(arg: EventDropArg) {
+    const item = visibleEvents.find((candidate) => candidate.id === arg.event.id)
+    if (!item) return
+
+    const date = applyCalendarDelta(new Date(item.date), arg.delta)
+    const endDate = applyCalendarDelta(new Date(item.endDate), arg.delta)
+
+    reschedule(
+      { eventId: item.id, date: date.toISOString(), endDate: endDate.toISOString() },
+      { onError: () => arg.revert() },
+    )
+  }
 
   function handleEventClick(eventId: string) {
     const item = visibleEvents.find((candidate) => candidate.id === eventId)
@@ -102,6 +118,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           datesSet={handleDatesSet}
           dateClick={(arg) => onDateClick(arg.date)}
           eventClick={(arg) => handleEventClick(arg.event.id)}
+          eventDrop={handleEventDrop}
           eventContent={CalendarEventContent}
           eventBackgroundColor="transparent"
           eventBorderColor="transparent"
