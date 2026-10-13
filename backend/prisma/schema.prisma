@@ -148,6 +148,8 @@ model Client {
   latitude    Float?
   longitude   Float?
   lastContact DateTime?
+  // true when the AI created this client from an email or message
+  aiGenerated Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
