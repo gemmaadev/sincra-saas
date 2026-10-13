@@ -1,0 +1,91 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import prisma from '../../config/db'
+import {
+  countClientsCreatedInRange,
+  countOrdersCreatedInRange,
+  findDeliveredOrdersInRange,
+} from './stats.model'
+
+vi.mock('../../config/db', () => ({
+  default: {
+    client: { count: vi.fn() },
+    order: { count: vi.fn(), findMany: vi.fn() },
+  },
+}))
+
+describe('countClientsCreatedInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting clients created in that range
+  // Then it should filter by business and the range
+  it('counts clients by business and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countClientsCreatedInRange('business-1', range)
+
+    expect(prisma.client.count).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', createdAt: range },
+    })
+  })
+
+  // Given no range
+  // When counting clients
+  // Then it should filter by business only
+  it('counts all of a business clients when no range is given', async () => {
+    await countClientsCreatedInRange('business-1')
+
+    expect(prisma.client.count).toHaveBeenCalledWith({ where: { businessId: 'business-1' } })
+  })
+})
+
+describe('countOrdersCreatedInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting orders created in that range
+  // Then it should filter by business and the range
+  it('counts orders by business and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countOrdersCreatedInRange('business-1', range)
+
+    expect(prisma.order.count).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', createdAt: range },
+    })
+  })
+})
+
+describe('findDeliveredOrdersInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When finding delivered orders in that range
+  // Then it should filter by business, DELIVERED status and the range, including the last DELIVERED status change
+  it('finds delivered orders with their last DELIVERED status change', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await findDeliveredOrdersInRange('business-1', range)
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', status: 'DELIVERED', createdAt: range },
+      select: {
+        id: true,
+        price: true,
+        createdAt: true,
+        statusHistory: {
+          where: { status: 'DELIVERED' },
+          orderBy: { changedAt: 'desc' },
+          take: 1,
+          select: { changedAt: true },
+        },
+      },
+    })
+  })
+})
