@@ -11,6 +11,7 @@ import { getInitialRange } from '../utils/getInitialRange'
 import { isMultiDayEvent } from '../utils/isMultiDayEvent'
 import { toAllDayExclusiveEnd } from '../utils/toAllDayExclusiveEnd'
 import { applyCalendarDelta } from '../utils/applyCalendarDelta'
+import { notifyEventRescheduled } from '../utils/notifyEventRescheduled'
 import { CalendarNavigation } from './CalendarNavigation'
 import { CalendarViewToggle } from './CalendarViewToggle'
 import { CalendarMonthSelect } from './CalendarMonthSelect'
@@ -76,12 +77,21 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
     const item = visibleEvents.find((candidate) => candidate.id === arg.event.id)
     if (!item) return
 
+    const previousDate = item.date
+    const previousEndDate = item.endDate
     const date = applyCalendarDelta(new Date(item.date), arg.delta)
     const endDate = applyCalendarDelta(new Date(item.endDate), arg.delta)
 
     reschedule(
       { eventId: item.id, date: date.toISOString(), endDate: endDate.toISOString() },
-      { onError: () => arg.revert() },
+      {
+        onSuccess: () => {
+          notifyEventRescheduled(date, () =>
+            reschedule({ eventId: item.id, date: previousDate, endDate: previousEndDate }),
+          )
+        },
+        onError: () => arg.revert(),
+      },
     )
   }
 
