@@ -7,6 +7,8 @@ import esLocale from '@fullcalendar/core/locales/es'
 import type { DatesSetArg } from '@fullcalendar/core'
 import { useCalendarEvents } from '../hooks/useCalendarEvents'
 import { getInitialRange } from '../utils/getInitialRange'
+import { isMultiDayEvent } from '../utils/isMultiDayEvent'
+import { toAllDayExclusiveEnd } from '../utils/toAllDayExclusiveEnd'
 import { CalendarNavigation } from './CalendarNavigation'
 import { CalendarViewToggle } from './CalendarViewToggle'
 import { CalendarMonthSelect } from './CalendarMonthSelect'
@@ -93,23 +95,29 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           initialView="dayGridMonth"
           editable
           headerToolbar={false}
+          dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
           locales={CALENDAR_LOCALES}
           locale="es"
-          height="auto"
+          height={view === 'dayGridMonth' ? 'auto' : 700}
           datesSet={handleDatesSet}
           dateClick={(arg) => onDateClick(arg.date)}
           eventClick={(arg) => handleEventClick(arg.event.id)}
           eventContent={CalendarEventContent}
           eventBackgroundColor="transparent"
           eventBorderColor="transparent"
-          events={visibleEvents.map((item) => ({
-            id: item.id,
-            title: item.title,
-            start: item.date,
-            end: item.endDate,
-            editable: item.editable,
-            extendedProps: { source: item.source, clientId: item.clientId, orderId: item.orderId },
-          }))}
+          events={visibleEvents.map((item) => {
+            const multiDay = isMultiDayEvent(item.date, item.endDate)
+
+            return {
+              id: item.id,
+              title: item.title,
+              start: item.date,
+              end: multiDay ? toAllDayExclusiveEnd(item.endDate) : item.endDate,
+              editable: item.editable,
+              allDay: multiDay,
+              extendedProps: { source: item.source, clientId: item.clientId, orderId: item.orderId },
+            }
+          })}
         />
       </div>
       <CalendarUpcomingEvents events={visibleEvents} onEventClick={onEventClick} />
