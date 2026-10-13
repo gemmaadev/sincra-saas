@@ -31,12 +31,23 @@ function parseRangeDate(value: string, fieldLabel: string): Date {
   return date
 }
 
+function assertValidDateRange(date: Date, endDate?: Date | null) {
+  if (endDate && endDate.getTime() < date.getTime()) {
+    throw new AppError(
+      'La fecha de fin no puede ser anterior a la de inicio',
+      400,
+      'INVALID_DATE_RANGE',
+    )
+  }
+}
+
 function toCalendarItemFromEvent(event: CalendarEventWithClient): CalendarItem {
   return {
     id: event.id,
     title: event.title,
     description: event.description,
     date: event.date,
+    endDate: event.endDate ?? event.date,
     source: event.source,
     clientId: event.clientId,
     clientName: event.client?.name ?? null,
@@ -53,6 +64,7 @@ function toCalendarItemFromOrder(order: OrderWithExpectedDate): CalendarItem {
     title: `#${order.number} - ${order.client.name}`,
     description: resolveOrderDescription(order),
     date: order.expectedDate!,
+    endDate: order.expectedDate!,
     source: 'ORDER',
     clientId: order.clientId,
     clientName: order.client.name,
@@ -122,11 +134,14 @@ export async function createEvent(
     await assertOrderExists(businessId, input.orderId)
   }
 
+  assertValidDateRange(input.date, input.endDate)
+
   return insertCalendarEvent({
     businessId,
     title: input.title,
     description: input.description,
     date: input.date,
+    endDate: input.endDate,
     clientId: input.clientId,
     orderId: input.orderId,
     source: 'MANUAL',
@@ -139,7 +154,7 @@ export async function updateEvent(
   eventId: string,
   input: UpdateCalendarEventInput,
 ) {
-  await getExistingEvent(businessId, eventId)
+  const existing = await getExistingEvent(businessId, eventId)
 
   if (input.clientId) {
     await assertClientExists(businessId, input.clientId)
@@ -149,19 +164,31 @@ export async function updateEvent(
     await assertOrderExists(businessId, input.orderId)
   }
 
+  const effectiveDate = input.date ?? existing.date
+  const effectiveEndDate = input.endDate !== undefined ? input.endDate : existing.endDate
+  assertValidDateRange(effectiveDate, effectiveEndDate)
+
   return updateCalendarEventById(eventId, {
     title: input.title,
     description: input.description,
     date: input.date,
+    endDate: input.endDate,
     clientId: input.clientId,
     orderId: input.orderId,
   })
 }
 
-export async function rescheduleEvent(businessId: string, eventId: string, date: Date) {
+export async function rescheduleEvent(
+  businessId: string,
+  eventId: string,
+  date: Date,
+  endDate?: Date | null,
+) {
   await getExistingEvent(businessId, eventId)
 
-  return updateCalendarEventById(eventId, { date })
+  assertValidDateRange(date, endDate)
+
+  return updateCalendarEventById(eventId, { date, endDate })
 }
 
 export async function deleteEvent(businessId: string, eventId: string) {

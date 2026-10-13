@@ -64,6 +64,44 @@ describe('listEvents', () => {
     ])
   })
 
+  // Given a manual event with an explicit endDate
+  // When it is shown on the calendar
+  // Then that endDate should be used as-is
+  it('uses the event own endDate when it has one', async () => {
+    vi.mocked(calendarModel.findCalendarEventsInRange).mockResolvedValue([
+      { ...existingEvent, endDate: new Date('2026-10-10T12:00:00') },
+    ] as never)
+    vi.mocked(orderModel.findOrdersWithExpectedDateInRange).mockResolvedValue([])
+
+    const events = await listEvents('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(events).toEqual([
+      expect.objectContaining({ endDate: new Date('2026-10-10T12:00:00') }),
+    ])
+  })
+
+  // Given a manual event with no explicit endDate
+  // When it is shown on the calendar
+  // Then endDate should fall back to the event's own date (a zero-duration instant)
+  it("falls back to the event's date when there is no endDate", async () => {
+    vi.mocked(calendarModel.findCalendarEventsInRange).mockResolvedValue([
+      { ...existingEvent, endDate: null },
+    ] as never)
+    vi.mocked(orderModel.findOrdersWithExpectedDateInRange).mockResolvedValue([])
+
+    const events = await listEvents('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(events).toEqual([
+      expect.objectContaining({ date: existingEvent.date, endDate: existingEvent.date }),
+    ])
+  })
+
   // Given an order with its own description
   // When it is shown on the calendar
   // Then that description should be used as-is
@@ -218,6 +256,35 @@ describe('createEvent', () => {
       expect.objectContaining({ source: 'MANUAL', orderId: 'order-1' }),
     )
   })
+
+  // Given an event with a valid endDate (on or after its date)
+  // When it is created
+  // Then endDate should be carried over
+  it('carries the endDate over when it is valid', async () => {
+    await createEvent('business-1', 'user-1', {
+      title: 'Llamar a Juan',
+      date: new Date('2026-10-10T10:00:00'),
+      endDate: new Date('2026-10-10T11:00:00'),
+    })
+
+    expect(calendarModel.insertCalendarEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ endDate: new Date('2026-10-10T11:00:00') }),
+    )
+  })
+
+  // Given an endDate earlier than the event's own date
+  // When it is created
+  // Then it should throw a 400 INVALID_DATE_RANGE and not insert anything
+  it('rejects an endDate earlier than the date', async () => {
+    await expect(
+      createEvent('business-1', 'user-1', {
+        title: 'Llamar a Juan',
+        date: new Date('2026-10-10T11:00:00'),
+        endDate: new Date('2026-10-10T10:00:00'),
+      }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_DATE_RANGE' })
+    expect(calendarModel.insertCalendarEvent).not.toHaveBeenCalled()
+  })
 })
 
 describe('updateEvent', () => {
@@ -249,6 +316,45 @@ describe('updateEvent', () => {
       expect.objectContaining({ title: 'Nuevo título' }),
     )
   })
+
+  // Given a valid endDate for the event's existing date
+  // When updating it
+  // Then endDate should be carried over
+  it('carries the endDate over when it is valid', async () => {
+    await updateEvent('business-1', 'event-1', {
+      endDate: new Date('2026-10-10T12:00:00'),
+    })
+
+    expect(calendarModel.updateCalendarEventById).toHaveBeenCalledWith(
+      'event-1',
+      expect.objectContaining({ endDate: new Date('2026-10-10T12:00:00') }),
+    )
+  })
+
+  // Given a new endDate earlier than the event's existing date
+  // When updating it
+  // Then it should throw a 400 INVALID_DATE_RANGE and not update anything
+  it('rejects a new endDate earlier than the existing date', async () => {
+    await expect(
+      updateEvent('business-1', 'event-1', { endDate: new Date('2026-10-01') }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_DATE_RANGE' })
+    expect(calendarModel.updateCalendarEventById).not.toHaveBeenCalled()
+  })
+
+  // Given the event already has an endDate
+  // When updating its date to something later than that endDate
+  // Then it should throw a 400 INVALID_DATE_RANGE, since the existing endDate would become invalid
+  it('rejects a new date later than the existing endDate', async () => {
+    vi.mocked(calendarModel.findCalendarEventById).mockResolvedValue({
+      ...existingEvent,
+      endDate: new Date('2026-10-10T12:00:00'),
+    } as never)
+
+    await expect(
+      updateEvent('business-1', 'event-1', { date: new Date('2026-10-10T13:00:00') }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_DATE_RANGE' })
+    expect(calendarModel.updateCalendarEventById).not.toHaveBeenCalled()
+  })
 })
 
 describe('rescheduleEvent', () => {
@@ -258,7 +364,7 @@ describe('rescheduleEvent', () => {
   })
 
   // Given an existing event
-  // When rescheduling it
+  // When rescheduling it with no endDate
   // Then it should update only the date through the model
   it('updates only the date', async () => {
     const newDate = new Date('2026-10-25')
@@ -266,6 +372,36 @@ describe('rescheduleEvent', () => {
     await rescheduleEvent('business-1', 'event-1', newDate)
 
     expect(calendarModel.updateCalendarEventById).toHaveBeenCalledWith('event-1', { date: newDate })
+  })
+
+  // Given a drag that moves both the start and the end (preserving duration)
+  // When rescheduling it
+  // Then both date and endDate should be updated through the model
+  it('updates both the date and the endDate', async () => {
+    const newDate = new Date('2026-10-25T10:00:00')
+    const newEndDate = new Date('2026-10-25T11:00:00')
+
+    await rescheduleEvent('business-1', 'event-1', newDate, newEndDate)
+
+    expect(calendarModel.updateCalendarEventById).toHaveBeenCalledWith('event-1', {
+      date: newDate,
+      endDate: newEndDate,
+    })
+  })
+
+  // Given an endDate earlier than the new date
+  // When rescheduling it
+  // Then it should throw a 400 INVALID_DATE_RANGE and not update anything
+  it('rejects an endDate earlier than the new date', async () => {
+    await expect(
+      rescheduleEvent(
+        'business-1',
+        'event-1',
+        new Date('2026-10-25T11:00:00'),
+        new Date('2026-10-25T10:00:00'),
+      ),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'INVALID_DATE_RANGE' })
+    expect(calendarModel.updateCalendarEventById).not.toHaveBeenCalled()
   })
 
   // Given an event id that does not belong to the business

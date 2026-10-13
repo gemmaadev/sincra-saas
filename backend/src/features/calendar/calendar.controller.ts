@@ -20,6 +20,18 @@ function parseRequiredDate(value: unknown, fieldLabel: string): Date {
   return date
 }
 
+function parseOptionalDate(value: unknown, fieldLabel: string): Date | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+
+  const date = new Date(value as string)
+  if (Number.isNaN(date.getTime())) {
+    throw new AppError(`${fieldLabel} no es una fecha válida`, 400, 'INVALID_DATE')
+  }
+
+  return date
+}
+
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { dateFrom, dateTo } = req.query as { dateFrom?: string; dateTo?: string }
 
@@ -40,11 +52,13 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const date = parseRequiredDate(req.body.date, 'La fecha')
+  const endDate = parseOptionalDate(req.body.endDate, 'La fecha de fin')
 
   const event = await createEvent(req.businessId!, req.userId, {
     title: title.trim(),
     description,
     date,
+    endDate,
     clientId,
     orderId,
   })
@@ -60,11 +74,13 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const date = req.body.date !== undefined ? parseRequiredDate(req.body.date, 'La fecha') : undefined
+  const endDate = parseOptionalDate(req.body.endDate, 'La fecha de fin')
 
   const event = await updateEvent(req.businessId!, req.params.id as string, {
     title: title?.trim(),
     description,
     date,
+    endDate,
     clientId,
     orderId,
   })
@@ -74,8 +90,9 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 
 export const reschedule = asyncHandler(async (req: Request, res: Response) => {
   const date = parseRequiredDate(req.body.date, 'La fecha')
+  const endDate = parseOptionalDate(req.body.endDate, 'La fecha de fin')
 
-  const event = await rescheduleEvent(req.businessId!, req.params.id as string, date)
+  const event = await rescheduleEvent(req.businessId!, req.params.id as string, date, endDate)
 
   res.json({ event })
 })
