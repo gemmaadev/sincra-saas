@@ -44,7 +44,7 @@ describe('EventForm', () => {
   it('requires a title', async () => {
     const { onSubmit, user } = renderForm()
 
-    await user.type(screen.getByLabelText('Fecha'), '2026-10-15')
+    await user.type(screen.getByLabelText('Fecha inicio'), '2026-10-15')
     await user.click(screen.getByRole('button', { name: 'Crear evento' }))
 
     expect(await screen.findAllByText('Obligatorio')).not.toHaveLength(0)
@@ -58,7 +58,7 @@ describe('EventForm', () => {
     const { onSubmit, user } = renderForm()
 
     await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
-    await user.clear(screen.getByLabelText('Fecha'))
+    await user.clear(screen.getByLabelText('Fecha inicio'))
     await user.click(screen.getByRole('button', { name: 'Crear evento' }))
 
     expect(await screen.findAllByText('Obligatorio')).not.toHaveLength(0)
@@ -102,7 +102,11 @@ describe('EventForm', () => {
     const { onSubmit, user } = renderForm()
 
     await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
-    fireEvent.change(screen.getByLabelText('Hora'), { target: { value: '11:00' } })
+    await user.clear(screen.getByLabelText('Fecha inicio'))
+    await user.type(screen.getByLabelText('Fecha inicio'), '2026-10-15')
+    await user.clear(screen.getByLabelText('Fecha fin'))
+    await user.type(screen.getByLabelText('Fecha fin'), '2026-10-15')
+    fireEvent.change(screen.getByLabelText('Hora inicio'), { target: { value: '11:00' } })
     fireEvent.change(screen.getByLabelText('Hora fin'), { target: { value: '10:00' } })
     await user.click(screen.getByRole('button', { name: 'Crear evento' }))
 

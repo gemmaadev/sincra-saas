@@ -85,13 +85,13 @@ export function EventForm({
 
       <div className="grid grid-cols-2 gap-5">
         <Input
-          label="Fecha"
+          label="Fecha inicio"
           type="date"
           error={errors.date?.message}
           {...register('date', { validate: (value) => value !== '' || 'Obligatorio' })}
         />
         <Input
-          label="Hora"
+          label="Hora inicio"
           type="time"
           error={errors.time?.message}
           {...register('time', { validate: (value) => value !== '' || 'Obligatorio' })}
