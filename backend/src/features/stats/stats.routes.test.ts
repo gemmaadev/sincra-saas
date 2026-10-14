@@ -46,6 +46,29 @@ describe('stats routes', () => {
       })
     })
 
+    // Given a granularity in the query string
+    // When requesting the dashboard
+    // Then it should be read and passed through to the service
+    it('reads granularity from the query string', async () => {
+      vi.spyOn(statsService, 'getDashboard').mockResolvedValue({
+        overview: { newClients: 0, ordersCreated: 0, averageDeliveryDays: null, revenue: '0' },
+        ordersByStatus: { total: 0, statuses: [] },
+        ordersEvolution: { granularity: 'weekly', points: [] },
+        clientsByType: { total: 0, types: [] },
+        aiSummary: { clientsDetected: 0, ordersDetected: 0 },
+      })
+
+      await request(app)
+        .get('/stats/dashboard?dateFrom=2026-10-01&dateTo=2026-10-31&granularity=weekly')
+        .set('Cookie', employeeCookie)
+
+      expect(statsService.getDashboard).toHaveBeenCalledWith('biz-1', {
+        dateFrom: '2026-10-01',
+        dateTo: '2026-10-31',
+        granularity: 'weekly',
+      })
+    })
+
     // Given no session cookie
     // When requesting the dashboard
     // Then it should answer 401 before reaching the service

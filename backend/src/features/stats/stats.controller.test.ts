@@ -55,4 +55,31 @@ describe('dashboard', () => {
     })
     expect(res.json).toHaveBeenCalledWith(dashboardResult)
   })
+
+  // Given a granularity in the query string
+  // When requesting the dashboard
+  // Then it should be read and passed through to the service
+  it('reads granularity from the query string', async () => {
+    const dashboardSpy = vi.spyOn(statsService, 'getDashboard').mockResolvedValue({
+      overview: { newClients: 0, ordersCreated: 0, averageDeliveryDays: null, revenue: '0' },
+      ordersByStatus: { total: 0, statuses: [] },
+      ordersEvolution: { granularity: 'weekly', points: [] },
+      clientsByType: { total: 0, types: [] },
+      aiSummary: { clientsDetected: 0, ordersDetected: 0 },
+    })
+
+    const req = createMockRequest({
+      businessId: 'business-1',
+      query: { dateFrom: '2026-10-01', dateTo: '2026-10-31', granularity: 'weekly' },
+    })
+    const res = createMockResponse()
+
+    await dashboard(req, res, vi.fn() as NextFunction)
+
+    expect(dashboardSpy).toHaveBeenCalledWith('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+      granularity: 'weekly',
+    })
+  })
 })
