@@ -1,5 +1,7 @@
 import { Prisma, type OrderStatus } from '../../generated/prisma/client'
 import {
+  countAiGeneratedClientsInRange,
+  countAiGeneratedOrdersInRange,
   countClientsByTypeInRange,
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
@@ -8,6 +10,7 @@ import {
   findOrderCreatedDatesInRange,
 } from './stats.model'
 import type {
+  AiSummary,
   ClientsByType,
   OrdersByStatus,
   OrdersEvolution,
@@ -225,17 +228,29 @@ export async function getClientsByType(
   return buildClientsByType(groups)
 }
 
+export async function getAiSummary(businessId: string, filters: StatsFilters): Promise<AiSummary> {
+  const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
+
+  const [clientsDetected, ordersDetected] = await Promise.all([
+    countAiGeneratedClientsInRange(businessId, createdAtRange),
+    countAiGeneratedOrdersInRange(businessId, createdAtRange),
+  ])
+
+  return { clientsDetected, ordersDetected }
+}
+
 // Single endpoint to avoid multiple round-trips for each dashboard chart.
 export async function getDashboard(
   businessId: string,
   filters: StatsFilters,
 ): Promise<StatsDashboard> {
-  const [overview, ordersByStatus, ordersEvolution, clientsByType] = await Promise.all([
+  const [overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary] = await Promise.all([
     getOverview(businessId, filters),
     getOrdersByStatus(businessId, filters),
     getOrdersEvolution(businessId, filters),
     getClientsByType(businessId, filters),
+    getAiSummary(businessId, filters),
   ])
 
-  return { overview, ordersByStatus, ordersEvolution, clientsByType }
+  return { overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary }
 }

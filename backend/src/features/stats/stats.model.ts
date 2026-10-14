@@ -74,3 +74,21 @@ export async function findDeliveredOrdersInRange(
     },
   })
 }
+
+export async function countAiGeneratedClientsInRange(
+  businessId: string,
+  createdAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.client.count({
+    where: { businessId, aiGenerated: true, ...(createdAtRange && { createdAt: createdAtRange }) },
+  })
+}
+
+export async function countAiGeneratedOrdersInRange(
+  businessId: string,
+  createdAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.order.count({
+    where: { businessId, aiGenerated: true, ...(createdAtRange && { createdAt: createdAtRange }) },
+  })
+}

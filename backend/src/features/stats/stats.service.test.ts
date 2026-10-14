@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as statsModel from './stats.model'
 import {
+  getAiSummary,
   getClientsByType,
   getDashboard,
   getOrdersByStatus,
@@ -334,6 +335,39 @@ describe('getClientsByType', () => {
   })
 })
 
+describe('getAiSummary', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given AI-generated clients and orders in the range
+  // When getting the AI summary
+  // Then it should report both counts, with no confirmed/pending breakdown
+  it('reports the count of AI-generated clients and orders', async () => {
+    vi.spyOn(statsModel, 'countAiGeneratedClientsInRange').mockResolvedValue(3)
+    vi.spyOn(statsModel, 'countAiGeneratedOrdersInRange').mockResolvedValue(7)
+
+    const summary = await getAiSummary('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-31',
+    })
+
+    expect(summary).toEqual({ clientsDetected: 3, ordersDetected: 7 })
+  })
+
+  // Given no AI-generated records at all
+  // When getting the AI summary
+  // Then both counts should be zero
+  it('reports zero for both when nothing was AI-generated', async () => {
+    vi.spyOn(statsModel, 'countAiGeneratedClientsInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countAiGeneratedOrdersInRange').mockResolvedValue(0)
+
+    const summary = await getAiSummary('business-1', {})
+
+    expect(summary).toEqual({ clientsDetected: 0, ordersDetected: 0 })
+  })
+})
+
 describe('getDashboard', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -355,6 +389,8 @@ describe('getDashboard', () => {
     vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([
       { type: 'particular', _count: 5 },
     ] as never)
+    vi.spyOn(statsModel, 'countAiGeneratedClientsInRange').mockResolvedValue(2)
+    vi.spyOn(statsModel, 'countAiGeneratedOrdersInRange').mockResolvedValue(4)
 
     const dashboard = await getDashboard('business-1', {
       dateFrom: '2026-10-01',
@@ -379,5 +415,6 @@ describe('getDashboard', () => {
       total: 5,
       types: [{ type: 'particular', count: 5, percentage: 100 }],
     })
+    expect(dashboard.aiSummary).toEqual({ clientsDetected: 2, ordersDetected: 4 })
   })
 })

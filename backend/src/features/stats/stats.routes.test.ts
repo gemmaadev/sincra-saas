@@ -30,6 +30,7 @@ describe('stats routes', () => {
           total: 5,
           types: [{ type: 'particular', count: 5, percentage: 100 }],
         },
+        aiSummary: { clientsDetected: 2, ordersDetected: 4 },
       }
       vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboard)
 

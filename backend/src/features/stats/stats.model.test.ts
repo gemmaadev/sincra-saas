@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import prisma from '../../config/db'
 import {
+  countAiGeneratedClientsInRange,
+  countAiGeneratedOrdersInRange,
   countClientsByTypeInRange,
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
@@ -151,6 +153,44 @@ describe('findDeliveredOrdersInRange', () => {
           select: { changedAt: true },
         },
       },
+    })
+  })
+})
+
+describe('countAiGeneratedClientsInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting AI-generated clients in that range
+  // Then it should filter by business, aiGenerated and the range
+  it('counts clients by business, aiGenerated and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countAiGeneratedClientsInRange('business-1', range)
+
+    expect(prisma.client.count).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', aiGenerated: true, createdAt: range },
+    })
+  })
+})
+
+describe('countAiGeneratedOrdersInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting AI-generated orders in that range
+  // Then it should filter by business, aiGenerated and the range
+  it('counts orders by business, aiGenerated and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countAiGeneratedOrdersInRange('business-1', range)
+
+    expect(prisma.order.count).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', aiGenerated: true, createdAt: range },
     })
   })
 })

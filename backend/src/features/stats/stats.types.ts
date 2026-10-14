@@ -43,10 +43,15 @@ export interface ClientTypeCount {
   percentage: number
 }
 
-// TODO: replace with Client.stage once that field is actually assignable somewhere in the app 
+// TODO: replace with Client.stage once that field is actually assignable somewhere in the app
 export interface ClientsByType {
   total: number
   types: ClientTypeCount[]
+}
+
+export interface AiSummary {
+  clientsDetected: number
+  ordersDetected: number
 }
 
 export interface StatsDashboard {
@@ -54,4 +59,5 @@ export interface StatsDashboard {
   ordersByStatus: OrdersByStatus
   ordersEvolution: OrdersEvolution
   clientsByType: ClientsByType
+  aiSummary: AiSummary
 }
