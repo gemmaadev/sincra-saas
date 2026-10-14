@@ -4,10 +4,24 @@ import {
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
   findDeliveredOrdersInRange,
+  findOrderCreatedDatesInRange,
 } from './stats.model'
-import type { OrdersByStatus, StatsDashboard, StatsFilters, StatsOverview } from './stats.types'
+import type {
+  OrdersByStatus,
+  OrdersEvolution,
+  OrdersEvolutionGranularity,
+  StatsDashboard,
+  StatsFilters,
+  StatsOverview,
+} from './stats.types'
 
-const ALL_ORDER_STATUSES: OrderStatus[] = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const ALL_ORDER_STATUSES: OrderStatus[] = [
+  'PENDING',
+  'PREPARING',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+]
 
 interface DeliveredOrderRecord {
   id: string
@@ -80,9 +94,10 @@ function toPercentage(count: number, total: number): number {
 
 // Always returns all 5 statuses, in the order they occur in the order lifecycle, zero-count ones included.
 function buildOrdersByStatus(groups: { status: OrderStatus; _count: number }[]): OrdersByStatus {
-  const counts = Object.fromEntries(
-    ALL_ORDER_STATUSES.map((status) => [status, 0]),
-  ) as Record<OrderStatus, number>
+  const counts = Object.fromEntries(ALL_ORDER_STATUSES.map((status) => [status, 0])) as Record<
+    OrderStatus,
+    number
+  >
 
   for (const group of groups) {
     counts[group.status] = group._count
@@ -110,14 +125,84 @@ export async function getOrdersByStatus(
   return buildOrdersByStatus(groups)
 }
 
-// Every widget on the stats dashboard shares the same date-range filter and is always
-// requested together, so they're served from one endpoint (same pattern as GET /clients/map
-// and GET /orders/map) instead of one round trip per chart.
-export async function getDashboard(businessId: string, filters: StatsFilters): Promise<StatsDashboard> {
-  const [overview, ordersByStatus] = await Promise.all([
+function pad(value: number): string {
+  return value.toString().padStart(2, '0')
+}
+
+function toDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+// Monday start using local date components to prevent DST shift bugs (matches frontend logic).
+function startOfWeek(date: Date): Date {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const day = start.getDay()
+  const diffToMonday = day === 0 ? -6 : 1 - day
+  start.setDate(start.getDate() + diffToMonday)
+  return start
+}
+
+function bucketStart(date: Date, granularity: OrdersEvolutionGranularity): Date {
+  return granularity === 'weekly'
+    ? startOfWeek(date)
+    : new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+// Generates every date/week in range for a continuous chart timeline (filling empty days with 0).
+function buildBucketKeys(
+  dateFrom: Date,
+  dateTo: Date,
+  granularity: OrdersEvolutionGranularity,
+): string[] {
+  const step = granularity === 'weekly' ? 7 : 1
+  const end = bucketStart(dateTo, granularity)
+  const keys: string[] = []
+
+  let cursor = bucketStart(dateFrom, granularity)
+  while (cursor.getTime() <= end.getTime()) {
+    keys.push(toDateKey(cursor))
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() + step)
+  }
+
+  return keys
+}
+
+export async function getOrdersEvolution(
+  businessId: string,
+  filters: StatsFilters,
+): Promise<OrdersEvolution> {
+  const granularity = filters.granularity ?? 'daily'
+  const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
+  const orders = await findOrderCreatedDatesInRange(businessId, createdAtRange)
+
+  const counts = new Map<string, number>()
+  for (const order of orders) {
+    const key = toDateKey(bucketStart(order.createdAt, granularity))
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+
+  // If date range is incomplete, only plot buckets with actual data.
+  const bucketKeys =
+    createdAtRange?.gte && createdAtRange.lte
+      ? buildBucketKeys(createdAtRange.gte as Date, createdAtRange.lte as Date, granularity)
+      : [...counts.keys()].sort()
+
+  return {
+    granularity,
+    points: bucketKeys.map((date) => ({ date, count: counts.get(date) ?? 0 })),
+  }
+}
+
+// Single endpoint to avoid multiple round-trips for each dashboard chart.
+export async function getDashboard(
+  businessId: string,
+  filters: StatsFilters,
+): Promise<StatsDashboard> {
+  const [overview, ordersByStatus, ordersEvolution] = await Promise.all([
     getOverview(businessId, filters),
     getOrdersByStatus(businessId, filters),
+    getOrdersEvolution(businessId, filters),
   ])
 
-  return { overview, ordersByStatus }
+  return { overview, ordersByStatus, ordersEvolution }
 }

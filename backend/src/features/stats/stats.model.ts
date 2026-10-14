@@ -30,6 +30,16 @@ export async function countOrdersByStatusInRange(
   })
 }
 
+export async function findOrderCreatedDatesInRange(
+  businessId: string,
+  createdAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.order.findMany({
+    where: { businessId, ...(createdAtRange && { createdAt: createdAtRange }) },
+    select: { createdAt: true },
+  })
+}
+
 export async function findDeliveredOrdersInRange(
   businessId: string,
   createdAtRange?: Prisma.DateTimeFilter,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as statsModel from './stats.model'
-import { getDashboard, getOrdersByStatus, getOverview } from './stats.service'
+import { getDashboard, getOrdersByStatus, getOrdersEvolution, getOverview } from './stats.service'
 
 describe('getOverview', () => {
   beforeEach(() => {
@@ -176,6 +176,101 @@ describe('getOrdersByStatus', () => {
   })
 })
 
+describe('getOrdersEvolution', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given orders created on specific days within the range, with gaps on days with no orders
+  // When getting the daily evolution
+  // Then it should return one point per day in the range, zero-filling the gaps
+  it('fills in days with no orders when granularity is daily', async () => {
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
+      { createdAt: new Date('2026-10-01T09:00:00') },
+      { createdAt: new Date('2026-10-01T18:00:00') },
+      { createdAt: new Date('2026-10-03T10:00:00') },
+    ] as never)
+
+    const evolution = await getOrdersEvolution('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-03',
+    })
+
+    expect(evolution).toEqual({
+      granularity: 'daily',
+      points: [
+        { date: '2026-10-01', count: 2 },
+        { date: '2026-10-02', count: 0 },
+        { date: '2026-10-03', count: 1 },
+      ],
+    })
+  })
+
+  // Given orders created across two different weeks
+  // When getting the weekly evolution
+  // Then it should group them by the Monday starting their week
+  it('groups orders by week (Monday start) when granularity is weekly', async () => {
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
+      { createdAt: new Date('2026-10-01T09:00:00') }, // Thursday, week of Sep 28
+      { createdAt: new Date('2026-10-06T09:00:00') }, // Tuesday, week of Oct 5
+    ] as never)
+
+    const evolution = await getOrdersEvolution('business-1', {
+      dateFrom: '2026-09-28',
+      dateTo: '2026-10-11',
+      granularity: 'weekly',
+    })
+
+    expect(evolution).toEqual({
+      granularity: 'weekly',
+      points: [
+        { date: '2026-09-28', count: 1 },
+        { date: '2026-10-05', count: 1 },
+      ],
+    })
+  })
+
+  // Given no dateFrom/dateTo at all
+  // When getting the evolution
+  // Then there's no continuous range to fill, so only buckets with actual orders are returned
+  it('falls back to only the buckets with data when no date range is given', async () => {
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
+      { createdAt: new Date('2026-10-03T09:00:00') },
+      { createdAt: new Date('2026-10-01T09:00:00') },
+    ] as never)
+
+    const evolution = await getOrdersEvolution('business-1', {})
+
+    expect(evolution).toEqual({
+      granularity: 'daily',
+      points: [
+        { date: '2026-10-01', count: 1 },
+        { date: '2026-10-03', count: 1 },
+      ],
+    })
+  })
+
+  // Given no orders at all
+  // When getting the daily evolution over a 2-day range
+  // Then every point should be zero, not omitted
+  it('zero-fills every point when there are no orders', async () => {
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([])
+
+    const evolution = await getOrdersEvolution('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-02',
+    })
+
+    expect(evolution).toEqual({
+      granularity: 'daily',
+      points: [
+        { date: '2026-10-01', count: 0 },
+        { date: '2026-10-02', count: 0 },
+      ],
+    })
+  })
+})
+
 describe('getDashboard', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -191,10 +286,13 @@ describe('getDashboard', () => {
     vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([
       { status: 'PENDING', _count: 3 },
     ] as never)
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
+      { createdAt: new Date('2026-10-01T09:00:00') },
+    ] as never)
 
     const dashboard = await getDashboard('business-1', {
       dateFrom: '2026-10-01',
-      dateTo: '2026-10-31',
+      dateTo: '2026-10-02',
     })
 
     expect(dashboard.overview).toEqual({
@@ -204,5 +302,12 @@ describe('getDashboard', () => {
       revenue: '0',
     })
     expect(dashboard.ordersByStatus.total).toBe(3)
+    expect(dashboard.ordersEvolution).toEqual({
+      granularity: 'daily',
+      points: [
+        { date: '2026-10-01', count: 1 },
+        { date: '2026-10-02', count: 0 },
+      ],
+    })
   })
 })

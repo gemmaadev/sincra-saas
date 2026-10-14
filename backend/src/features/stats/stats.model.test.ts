@@ -5,6 +5,7 @@ import {
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
   findDeliveredOrdersInRange,
+  findOrderCreatedDatesInRange,
 } from './stats.model'
 
 vi.mock('../../config/db', () => ({
@@ -78,6 +79,26 @@ describe('countOrdersByStatusInRange', () => {
       by: ['status'],
       where: { businessId: 'business-1', createdAt: range },
       _count: true,
+    })
+  })
+})
+
+describe('findOrderCreatedDatesInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When finding order creation dates in that range
+  // Then it should filter by business and the range, selecting only createdAt
+  it('finds order creation dates by business and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await findOrderCreatedDatesInRange('business-1', range)
+
+    expect(prisma.order.findMany).toHaveBeenCalledWith({
+      where: { businessId: 'business-1', createdAt: range },
+      select: { createdAt: true },
     })
   })
 })

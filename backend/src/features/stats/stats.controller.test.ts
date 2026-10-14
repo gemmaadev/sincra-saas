@@ -29,6 +29,10 @@ describe('dashboard', () => {
         total: 10,
         statuses: [{ status: 'PENDING' as const, count: 3, percentage: 30 }],
       },
+      ordersEvolution: {
+        granularity: 'daily' as const,
+        points: [{ date: '2026-10-01', count: 3 }],
+      },
     }
     const dashboardSpy = vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboardResult)
 
