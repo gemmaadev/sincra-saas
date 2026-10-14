@@ -1,4 +1,4 @@
-import { Input, SincraButton } from '@/shared/components'
+import { DateRangeFilter, SincraButton } from '@/shared/components'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { Channel } from '@/shared/types'
 
@@ -35,27 +35,13 @@ export function MapFilterBar({
           onChange={(value) => onChannelChange(value as Channel | '')}
         />
       </div>
-      <div className="w-44">
-        <Input
-          label="Desde"
-          type="date"
-          size="sm"
-          max={to || undefined}
-          value={from}
-          onChange={(event) => onFromChange(event.target.value)}
-        />
-      </div>
-      <div className="w-44">
-        <Input
-          label="Hasta"
-          type="date"
-          size="sm"
-          min={from || undefined}
-          error={isDateRangeInvalid ? 'Debe ser posterior a la fecha inicial' : undefined}
-          value={to}
-          onChange={(event) => onToChange(event.target.value)}
-        />
-      </div>
+      <DateRangeFilter
+        dateFrom={from}
+        dateTo={to}
+        isDateRangeInvalid={isDateRangeInvalid}
+        onDateFromChange={onFromChange}
+        onDateToChange={onToChange}
+      />
       {hasActiveFilters && (
         <SincraButton type="button" variant="text" size="sm" onClick={onClear}>
           Limpiar filtros
