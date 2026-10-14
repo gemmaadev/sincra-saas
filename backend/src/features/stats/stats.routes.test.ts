@@ -26,6 +26,10 @@ describe('stats routes', () => {
           granularity: 'daily' as const,
           points: [{ date: '2026-10-01', count: 3 }],
         },
+        clientsByType: {
+          total: 5,
+          types: [{ type: 'particular', count: 5, percentage: 100 }],
+        },
       }
       vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboard)
 

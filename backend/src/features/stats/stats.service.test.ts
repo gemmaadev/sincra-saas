@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as statsModel from './stats.model'
-import { getDashboard, getOrdersByStatus, getOrdersEvolution, getOverview } from './stats.service'
+import {
+  getClientsByType,
+  getDashboard,
+  getOrdersByStatus,
+  getOrdersEvolution,
+  getOverview,
+} from './stats.service'
 
 describe('getOverview', () => {
   beforeEach(() => {
@@ -271,15 +277,72 @@ describe('getOrdersEvolution', () => {
   })
 })
 
+describe('getClientsByType', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given clients with different types, sorted here out of count order on purpose
+  // When getting the clients-by-type breakdown
+  // Then it should return them sorted by count descending, with their share of the total
+  it('returns client types sorted by count descending', async () => {
+    vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([
+      { type: 'particular', _count: 2 },
+      { type: 'empresa', _count: 6 },
+      { type: 'autónomo', _count: 2 },
+    ] as never)
+
+    const result = await getClientsByType('business-1', {})
+
+    expect(result).toEqual({
+      total: 10,
+      types: [
+        { type: 'empresa', count: 6, percentage: 60 },
+        { type: 'autónomo', count: 2, percentage: 20 },
+        { type: 'particular', count: 2, percentage: 20 },
+      ],
+    })
+  })
+
+  // Given clients with null, empty and whitespace-only type values
+  // When getting the clients-by-type breakdown
+  // Then they should all be merged into a single "Sin segmento" bucket
+  it('merges null, empty and whitespace-only types into one "Sin segmento" bucket', async () => {
+    vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([
+      { type: null, _count: 2 },
+      { type: '', _count: 1 },
+      { type: '   ', _count: 1 },
+    ] as never)
+
+    const result = await getClientsByType('business-1', {})
+
+    expect(result).toEqual({
+      total: 4,
+      types: [{ type: 'Sin segmento', count: 4, percentage: 100 }],
+    })
+  })
+
+  // Given no clients at all
+  // When getting the clients-by-type breakdown
+  // Then it should report an empty list, not an error
+  it('returns an empty breakdown when there are no clients', async () => {
+    vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([])
+
+    const result = await getClientsByType('business-1', {})
+
+    expect(result).toEqual({ total: 0, types: [] })
+  })
+})
+
 describe('getDashboard', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  // Given the data behind both the overview and the orders-by-status breakdown
+  // Given the data behind every widget
   // When getting the dashboard
-  // Then it should combine both into a single response
-  it('combines the overview and the orders-by-status breakdown into one response', async () => {
+  // Then it should combine all of it into a single response
+  it('combines every widget into one response', async () => {
     vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(5)
     vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(12)
     vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([])
@@ -288,6 +351,9 @@ describe('getDashboard', () => {
     ] as never)
     vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
       { createdAt: new Date('2026-10-01T09:00:00') },
+    ] as never)
+    vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([
+      { type: 'particular', _count: 5 },
     ] as never)
 
     const dashboard = await getDashboard('business-1', {
@@ -308,6 +374,10 @@ describe('getDashboard', () => {
         { date: '2026-10-01', count: 1 },
         { date: '2026-10-02', count: 0 },
       ],
+    })
+    expect(dashboard.clientsByType).toEqual({
+      total: 5,
+      types: [{ type: 'particular', count: 5, percentage: 100 }],
     })
   })
 })

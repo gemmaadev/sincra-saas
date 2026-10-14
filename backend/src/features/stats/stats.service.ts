@@ -1,5 +1,6 @@
 import { Prisma, type OrderStatus } from '../../generated/prisma/client'
 import {
+  countClientsByTypeInRange,
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
@@ -7,6 +8,7 @@ import {
   findOrderCreatedDatesInRange,
 } from './stats.model'
 import type {
+  ClientsByType,
   OrdersByStatus,
   OrdersEvolution,
   OrdersEvolutionGranularity,
@@ -14,6 +16,8 @@ import type {
   StatsFilters,
   StatsOverview,
 } from './stats.types'
+
+const UNSET_CLIENT_TYPE_LABEL = 'Sin segmento'
 
 const ALL_ORDER_STATUSES: OrderStatus[] = [
   'PENDING',
@@ -193,16 +197,45 @@ export async function getOrdersEvolution(
   }
 }
 
+// Groups null/empty/whitespace-only type into a single "Sin segmento" bucket, sorted by count desc 
+function buildClientsByType(groups: { type: string | null; _count: number }[]): ClientsByType {
+  const counts = new Map<string, number>()
+
+  for (const group of groups) {
+    const label = group.type?.trim() || UNSET_CLIENT_TYPE_LABEL
+    counts.set(label, (counts.get(label) ?? 0) + group._count)
+  }
+
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0)
+
+  const types = [...counts.entries()]
+    .map(([type, count]) => ({ type, count, percentage: toPercentage(count, total) }))
+    .sort((first, second) => second.count - first.count || first.type.localeCompare(second.type))
+
+  return { total, types }
+}
+
+export async function getClientsByType(
+  businessId: string,
+  filters: StatsFilters,
+): Promise<ClientsByType> {
+  const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
+  const groups = await countClientsByTypeInRange(businessId, createdAtRange)
+
+  return buildClientsByType(groups)
+}
+
 // Single endpoint to avoid multiple round-trips for each dashboard chart.
 export async function getDashboard(
   businessId: string,
   filters: StatsFilters,
 ): Promise<StatsDashboard> {
-  const [overview, ordersByStatus, ordersEvolution] = await Promise.all([
+  const [overview, ordersByStatus, ordersEvolution, clientsByType] = await Promise.all([
     getOverview(businessId, filters),
     getOrdersByStatus(businessId, filters),
     getOrdersEvolution(businessId, filters),
+    getClientsByType(businessId, filters),
   ])
 
-  return { overview, ordersByStatus, ordersEvolution }
+  return { overview, ordersByStatus, ordersEvolution, clientsByType }
 }

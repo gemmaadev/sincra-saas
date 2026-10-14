@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import prisma from '../../config/db'
 import {
+  countClientsByTypeInRange,
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
@@ -10,7 +11,7 @@ import {
 
 vi.mock('../../config/db', () => ({
   default: {
-    client: { count: vi.fn() },
+    client: { count: vi.fn(), groupBy: vi.fn() },
     order: { count: vi.fn(), findMany: vi.fn(), groupBy: vi.fn() },
   },
 }))
@@ -40,6 +41,27 @@ describe('countClientsCreatedInRange', () => {
     await countClientsCreatedInRange('business-1')
 
     expect(prisma.client.count).toHaveBeenCalledWith({ where: { businessId: 'business-1' } })
+  })
+})
+
+describe('countClientsByTypeInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When counting clients grouped by type in that range
+  // Then it should group by type, filtered by business and the range
+  it('groups clients by type, filtered by business and createdAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await countClientsByTypeInRange('business-1', range)
+
+    expect(prisma.client.groupBy).toHaveBeenCalledWith({
+      by: ['type'],
+      where: { businessId: 'business-1', createdAt: range },
+      _count: true,
+    })
   })
 })
 

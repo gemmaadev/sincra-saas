@@ -37,8 +37,21 @@ export interface OrdersEvolution {
   points: OrdersEvolutionPoint[]
 }
 
+export interface ClientTypeCount {
+  type: string
+  count: number
+  percentage: number
+}
+
+// TODO: replace with Client.stage once that field is actually assignable somewhere in the app 
+export interface ClientsByType {
+  total: number
+  types: ClientTypeCount[]
+}
+
 export interface StatsDashboard {
   overview: StatsOverview
   ordersByStatus: OrdersByStatus
   ordersEvolution: OrdersEvolution
+  clientsByType: ClientsByType
 }
