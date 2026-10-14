@@ -3,16 +3,20 @@ import { useStats } from '@/features/stats/hooks/useStats'
 import { useStatsFilters } from '@/features/stats/hooks/useStatsFilters'
 import { StatsFilterBar } from '@/features/stats/components/StatsFilterBar'
 import { StatsDonutChart } from '@/features/stats/components/StatsDonutChart'
+import { StatsEvolutionChart } from '@/features/stats/components/StatsEvolutionChart'
 import { buildStatsKpiCards } from '@/features/stats/utils/buildStatsKpiCards'
 import { buildOrderStatusSlices } from '@/features/stats/utils/buildOrderStatusSlices'
 import { buildClientTypeSlices } from '@/features/stats/utils/buildClientTypeSlices'
+import { buildOrdersEvolutionChartData } from '@/features/stats/utils/buildOrdersEvolutionChartData'
 
 export default function StatsPage() {
   const {
     dateFrom,
     dateTo,
+    granularity,
     setDateFrom,
     setDateTo,
+    setGranularity,
     filters,
     isDateRangeInvalid,
   } = useStatsFilters()
@@ -54,6 +58,12 @@ export default function StatsPage() {
           emptyMessage="Todavía no hay clientes en este periodo."
         />
       </div>
+
+      <StatsEvolutionChart
+        data={dashboard ? buildOrdersEvolutionChartData(dashboard.ordersEvolution) : []}
+        granularity={granularity}
+        onGranularityChange={setGranularity}
+      />
     </div>
   )
 }
