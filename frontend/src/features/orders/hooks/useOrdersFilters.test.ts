@@ -1,8 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { useFiltersStore } from '@/shared/store'
 import { useOrdersFilters } from './useOrdersFilters'
 
 describe('useOrdersFilters', () => {
+  beforeEach(() => {
+    useFiltersStore.getState().clearFilters()
+  })
+
   // Given the user is on page 3 of the orders list
   // When they change the status filter
   // Then the page goes back to 1 and the status is part of the query params

@@ -12,6 +12,7 @@ import tagRoutes from './features/tag/tag.routes'
 import noteRoutes from './features/note/note.routes'
 import orderRoutes from './features/order/order.routes'
 import calendarRoutes from './features/calendar/calendar.routes'
+import statsRoutes from './features/stats/stats.routes'
 
 const app = express()
 
@@ -33,6 +34,7 @@ app.use(tagRoutes)
 app.use(noteRoutes)
 app.use(orderRoutes)
 app.use(calendarRoutes)
+app.use(statsRoutes)
 
 app.get(
   '/health',

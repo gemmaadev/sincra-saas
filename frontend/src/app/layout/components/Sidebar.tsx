@@ -20,7 +20,7 @@ import { useTags } from '@/features/tags/hooks/useTags'
 import { Link } from 'react-router'
 
 const navItems = [
-  { to: '/inbox', icon: <Inbox size={18} aria-hidden="true" />, label: 'Bandeja', badge: 12 },
+  { to: '/inbox', icon: <Inbox size={18} aria-hidden="true" />, label: 'Bandeja', disabled: true },
   { to: '/clients', icon: <Users size={18} aria-hidden="true" />, label: 'Clientes' },
   {
     to: '/orders',
@@ -35,7 +35,7 @@ const navItems = [
   {
     to: '/automations',
     icon: <Sparkles size={18} aria-hidden="true" />,
-    label: 'Automatizaciones',
+    label: 'Agentes IA',
   },
   { to: '/settings', icon: <Settings size={18} aria-hidden="true" />, label: 'Ajustes' },
 ]
@@ -52,7 +52,7 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-64 flex-col gap-6 overflow-y-auto border-r border-neutral-100 bg-surface-sidebar p-4 max-md:hidden">
-      <Link to="/">
+      <Link to="/stats">
         <SincraLogo size={28} />
       </Link>
       <nav className="flex flex-col gap-1">

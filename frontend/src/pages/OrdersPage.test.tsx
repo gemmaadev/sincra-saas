@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import OrdersPage from './OrdersPage'
 import { api } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import { useFiltersStore } from '@/shared/store'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -87,6 +88,7 @@ function renderOrdersPage() {
 describe('OrdersPage', () => {
   beforeEach(() => {
     mockApiGet()
+    useFiltersStore.getState().clearFilters()
   })
 
   // Given orders returned by the API

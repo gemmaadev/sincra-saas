@@ -136,7 +136,7 @@ describe('LoginPage', () => {
 
   // Given a user who belongs to more than one business
   // When they log in with correct credentials
-  // Then they should be navigated to /select-business instead of /inbox
+  // Then they should be navigated to /select-business instead of /stats
   it('navigates to /select-business when the user has several businesses', async () => {
     vi.mocked(api.post).mockResolvedValue({ needsBusinessSelection: true })
     renderLoginPage()

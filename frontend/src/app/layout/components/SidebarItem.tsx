@@ -6,9 +6,22 @@ interface SidebarItemProps {
   icon: ReactNode
   label: string
   badge?: number
+  disabled?: boolean
 }
 
-export function SidebarItem({ to, icon, label, badge }: SidebarItemProps) {
+export function SidebarItem({ to, icon, label, badge, disabled = false }: SidebarItemProps) {
+  if (disabled) {
+    return (
+      <span
+        aria-disabled="true"
+        className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted/50"
+      >
+        {icon}
+        {label}
+      </span>
+    )
+  }
+
   return (
     <NavLink
       to={to}

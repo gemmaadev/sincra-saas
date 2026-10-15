@@ -9,7 +9,7 @@ export function useSelectBusiness() {
   const mutation = useMutation({
     mutationFn: (businessId: string) =>
       api.post<SuccessResponse>('/auth/select-business', { businessId }),
-    onSuccess: () => navigate('/inbox'),
+    onSuccess: () => navigate('/stats'),
   })
 
   const error = mutation.error
