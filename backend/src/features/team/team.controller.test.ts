@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { invite, accept, listMembers } from './team.controller'
+import { invite, accept, listMembers, updateStatus } from './team.controller'
 import * as teamService from './team.service'
 import { AppError } from '../../shared/AppError'
 
@@ -140,5 +140,79 @@ describe('listMembers', () => {
 
     expect(teamService.listBusinessMembers).toHaveBeenCalledWith('biz-1')
     expect(res.json).toHaveBeenCalledWith({ members })
+  })
+})
+
+describe('updateStatus', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a valid status and an authenticated admin request
+  // When updating a member's status
+  // Then it should call the service with businessId, requester, target and status
+  it('updates the member status and responds with success: true', async () => {
+    const updateSpy = vi.spyOn(teamService, 'updateMemberStatus').mockResolvedValue(undefined)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'admin-1',
+      params: { userId: 'emp-1' },
+      body: { status: 'INACTIVE' },
+    })
+    const res = createMockResponse()
+
+    await updateStatus(req, res, vi.fn() as NextFunction)
+
+    expect(updateSpy).toHaveBeenCalledWith('biz-1', 'admin-1', 'emp-1', 'INACTIVE')
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given a status value that isn't ACTIVE or INACTIVE
+  // When trying to update a member's status
+  // Then it should throw a 400 AppError without touching the service
+  it('throws a 400 AppError when the status is invalid', async () => {
+    const updateSpy = vi.spyOn(teamService, 'updateMemberStatus')
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'admin-1',
+      params: { userId: 'emp-1' },
+      body: { status: 'PENDING' },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await updateStatus(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('INVALID_STATUS')
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  // Given the service rejects the request (e.g. last admin self-deactivation)
+  // When trying to update the status
+  // Then it should propagate the AppError thrown by the service
+  it('propagates the AppError thrown by the service', async () => {
+    vi.spyOn(teamService, 'updateMemberStatus').mockRejectedValue(
+      new AppError('No puedes desactivar tu propio acceso siendo el único administrador del negocio', 400, 'LAST_ADMIN'),
+    )
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'admin-1',
+      params: { userId: 'admin-1' },
+      body: { status: 'INACTIVE' },
+    })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await updateStatus(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.code).toBe('LAST_ADMIN')
   })
 })
