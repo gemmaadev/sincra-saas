@@ -1,4 +1,4 @@
-import { Prisma, type OrderStatus } from '../../generated/prisma/client'
+import { Prisma, type Channel, type OrderStatus } from '../../generated/prisma/client'
 import {
   countAiGeneratedClientsInRange,
   countAiGeneratedOrdersInRange,
@@ -6,11 +6,13 @@ import {
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
+  findDeliveredOrdersByChannelInRange,
   findDeliveredOrdersInRange,
   findOrderCreatedDatesInRange,
 } from './stats.model'
 import type {
   AiSummary,
+  ChannelPerformance,
   ClientsByType,
   OrdersByStatus,
   OrdersEvolution,
@@ -239,18 +241,55 @@ export async function getAiSummary(businessId: string, filters: StatsFilters): P
   return { clientsDetected, ordersDetected }
 }
 
+interface ChannelRevenueGroup {
+  channel: Channel | null
+  _sum: { price: Prisma.Decimal | null }
+  _count: number
+}
+
+// Sorted by revenue descending — the channel that actually earns the most goes first.
+function buildChannelPerformance(groups: ChannelRevenueGroup[]): ChannelPerformance {
+  const entries = groups
+    .map((group) => {
+      const revenue = group._sum.price ?? new Prisma.Decimal(0)
+      const averageTicket = group._count === 0 ? new Prisma.Decimal(0) : revenue.dividedBy(group._count)
+
+      return {
+        channel: group.channel,
+        orderCount: group._count,
+        revenue: revenue.toString(),
+        averageTicket: averageTicket.toString(),
+      }
+    })
+    .sort((first, second) => Number(second.revenue) - Number(first.revenue))
+
+  return { entries }
+}
+
+export async function getChannelPerformance(
+  businessId: string,
+  filters: StatsFilters,
+): Promise<ChannelPerformance> {
+  const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
+  const groups = await findDeliveredOrdersByChannelInRange(businessId, createdAtRange)
+
+  return buildChannelPerformance(groups)
+}
+
 // Single endpoint to avoid multiple round-trips for each dashboard chart.
 export async function getDashboard(
   businessId: string,
   filters: StatsFilters,
 ): Promise<StatsDashboard> {
-  const [overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary] = await Promise.all([
-    getOverview(businessId, filters),
-    getOrdersByStatus(businessId, filters),
-    getOrdersEvolution(businessId, filters),
-    getClientsByType(businessId, filters),
-    getAiSummary(businessId, filters),
-  ])
+  const [overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary, channelPerformance] =
+    await Promise.all([
+      getOverview(businessId, filters),
+      getOrdersByStatus(businessId, filters),
+      getOrdersEvolution(businessId, filters),
+      getClientsByType(businessId, filters),
+      getAiSummary(businessId, filters),
+      getChannelPerformance(businessId, filters),
+    ])
 
-  return { overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary }
+  return { overview, ordersByStatus, ordersEvolution, clientsByType, aiSummary, channelPerformance }
 }

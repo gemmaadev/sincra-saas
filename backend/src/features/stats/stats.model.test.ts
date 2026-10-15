@@ -7,6 +7,7 @@ import {
   countClientsCreatedInRange,
   countOrdersByStatusInRange,
   countOrdersCreatedInRange,
+  findDeliveredOrdersByChannelInRange,
   findDeliveredOrdersInRange,
   findOrderCreatedDatesInRange,
 } from './stats.model'
@@ -123,6 +124,28 @@ describe('findOrderCreatedDatesInRange', () => {
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { businessId: 'business-1', createdAt: range },
       select: { createdAt: true },
+    })
+  })
+})
+
+describe('findDeliveredOrdersByChannelInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a createdAt range
+  // When finding delivered orders grouped by channel in that range
+  // Then it should filter by business, DELIVERED status and the range, summing price and counting orders
+  it('groups delivered orders by channel, summing revenue and counting orders', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await findDeliveredOrdersByChannelInRange('business-1', range)
+
+    expect(prisma.order.groupBy).toHaveBeenCalledWith({
+      by: ['channel'],
+      where: { businessId: 'business-1', status: 'DELIVERED', createdAt: range },
+      _sum: { price: true },
+      _count: true,
     })
   })
 })

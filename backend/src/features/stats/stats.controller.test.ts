@@ -38,6 +38,9 @@ describe('dashboard', () => {
         types: [{ type: 'particular', count: 5, percentage: 100 }],
       },
       aiSummary: { clientsDetected: 2, ordersDetected: 4 },
+      channelPerformance: {
+        entries: [{ channel: 'GMAIL' as const, orderCount: 2, revenue: '100', averageTicket: '50' }],
+      },
     }
     const dashboardSpy = vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboardResult)
 
@@ -66,6 +69,7 @@ describe('dashboard', () => {
       ordersEvolution: { granularity: 'weekly', points: [] },
       clientsByType: { total: 0, types: [] },
       aiSummary: { clientsDetected: 0, ordersDetected: 0 },
+      channelPerformance: { entries: [] },
     })
 
     const req = createMockRequest({

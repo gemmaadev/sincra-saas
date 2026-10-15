@@ -1,4 +1,4 @@
-import type { OrderStatus } from '../../generated/prisma/client'
+import type { Channel, OrderStatus } from '../../generated/prisma/client'
 
 export type OrdersEvolutionGranularity = 'daily' | 'weekly'
 
@@ -54,10 +54,23 @@ export interface AiSummary {
   ordersDetected: number
 }
 
+export interface ChannelPerformanceEntry {
+  channel: Channel | null
+  orderCount: number
+  revenue: string
+  averageTicket: string
+}
+
+// Only delivered orders count — same reasoning as getOverview's revenue.
+export interface ChannelPerformance {
+  entries: ChannelPerformanceEntry[]
+}
+
 export interface StatsDashboard {
   overview: StatsOverview
   ordersByStatus: OrdersByStatus
   ordersEvolution: OrdersEvolution
   clientsByType: ClientsByType
   aiSummary: AiSummary
+  channelPerformance: ChannelPerformance
 }
