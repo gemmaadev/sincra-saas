@@ -10,6 +10,10 @@ export interface AcceptInviteBody {
   newPassword?: string
 }
 
+export interface UpdateMemberStatusBody {
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
 export interface TeamMember {
   id: string
   name: string

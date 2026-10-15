@@ -39,3 +39,18 @@ export async function findMembersWithUser(businessId: string) {
     include: { user: true },
   })
 }
+
+export async function countAdminMembers(businessId: string) {
+  return prisma.businessMember.count({ where: { businessId, role: 'ADMIN' } })
+}
+
+export async function updateMemberStatus(
+  businessId: string,
+  userId: string,
+  status: 'ACTIVE' | 'INACTIVE',
+) {
+  return prisma.businessMember.update({
+    where: { businessId_userId: { businessId, userId } },
+    data: { status },
+  })
+}
