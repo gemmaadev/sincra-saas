@@ -7,6 +7,7 @@ import MapPage from './MapPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
+import { useFiltersStore } from '@/shared/store'
 import type { ClientMapResponse, OrderMapResponse } from '@/features/map/types/map.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
@@ -109,6 +110,7 @@ describe('MapPage', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset()
     stubMapSize()
+    useFiltersStore.getState().clearFilters()
   })
 
   afterEach(() => {

@@ -1,8 +1,13 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { useFiltersStore } from '@/shared/store'
 import { useMapFilters } from './useMapFilters'
 
 describe('useMapFilters', () => {
+  beforeEach(() => {
+    useFiltersStore.getState().clearFilters()
+  })
+
   // Given the hook has just started
   // When its filters are read
   // Then nothing should be filtered

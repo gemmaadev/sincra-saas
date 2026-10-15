@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { useFiltersStore } from '@/shared/store'
 import type { OrdersEvolutionGranularity, StatsFilters } from '../types/stats.types'
 
 export function useStatsFilters() {
-  const [dateFrom, setDateFrom] = useState<string>('')
-  const [dateTo, setDateTo] = useState<string>('')
+  const dateFrom = useFiltersStore((state) => state.dateFrom)
+  const dateTo = useFiltersStore((state) => state.dateTo)
+  const setDateFrom = useFiltersStore((state) => state.setDateFrom)
+  const setDateTo = useFiltersStore((state) => state.setDateTo)
   const [granularity, setGranularity] = useState<OrdersEvolutionGranularity>('daily')
 
   const isDateRangeInvalid = dateFrom !== '' && dateTo !== '' && dateFrom > dateTo

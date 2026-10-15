@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useDebouncedValue } from '@/shared/hooks'
+import { useFiltersStore } from '@/shared/store'
 import type { Channel } from '@/shared/types'
 import type { OrderStatus, UseOrdersParams } from '../types/order.types'
 
@@ -8,9 +9,12 @@ const ORDERS_PAGE_SIZE = 10
 export function useOrdersFilters() {
   const [search, setSearch] = useState<string>('')
   const [status, setStatus] = useState<OrderStatus | ''>('')
-  const [channel, setChannel] = useState<Channel | ''>('')
-  const [dateFrom, setDateFrom] = useState<string>('')
-  const [dateTo, setDateTo] = useState<string>('')
+  const channel = useFiltersStore((state) => state.channel)
+  const dateFrom = useFiltersStore((state) => state.dateFrom)
+  const dateTo = useFiltersStore((state) => state.dateTo)
+  const setChannelInStore = useFiltersStore((state) => state.setChannel)
+  const setDateFromInStore = useFiltersStore((state) => state.setDateFrom)
+  const setDateToInStore = useFiltersStore((state) => state.setDateTo)
   const [page, setPage] = useState<number>(1)
   const debouncedSearch = useDebouncedValue(search)
 
@@ -27,17 +31,17 @@ export function useOrdersFilters() {
   }
 
   function changeChannel(value: Channel | '') {
-    setChannel(value)
+    setChannelInStore(value)
     setPage(1)
   }
 
   function changeDateFrom(value: string) {
-    setDateFrom(value)
+    setDateFromInStore(value)
     setPage(1)
   }
 
   function changeDateTo(value: string) {
-    setDateTo(value)
+    setDateToInStore(value)
     setPage(1)
   }
 
