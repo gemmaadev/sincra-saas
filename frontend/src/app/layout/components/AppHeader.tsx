@@ -4,6 +4,7 @@ import { Search, User, LogOut, ChevronDown } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
+import { ConfirmDeleteModal } from '@/shared/components/modal'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '@/features/profile/hooks/useProfile'
 
@@ -42,6 +43,8 @@ export function AppHeader() {
   const { data: profile } = useProfile()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -61,8 +64,13 @@ export function AppHeader() {
     }
   }, [])
 
-  async function handleLogout() {
+  function handleLogoutClick() {
     setOpen(false)
+    setIsLogoutConfirmOpen(true)
+  }
+
+  async function handleConfirmLogout() {
+    setIsLoggingOut(true)
     await logout()
     navigate('/login')
   }
@@ -94,7 +102,7 @@ export function AppHeader() {
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-[calc(100%+0.5rem)] w-56 rounded-lg border border-neutral-100 bg-surface-card py-1 shadow-lg"
+            className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-56 rounded-lg border border-neutral-100 bg-white py-1 shadow-lg"
           >
             <div className="border-b border-neutral-100 px-4 py-2">
               <p className="truncate text-sm font-medium text-ink">{user.name}</p>
@@ -103,12 +111,22 @@ export function AppHeader() {
             <MenuItem to="/profile" icon={<User size={16} />} onClick={() => setOpen(false)}>
               Mi perfil
             </MenuItem>
-            <MenuItem icon={<LogOut size={16} />} onClick={handleLogout} danger>
+            <MenuItem icon={<LogOut size={16} />} onClick={handleLogoutClick} danger>
               Cerrar sesión
             </MenuItem>
           </div>
         )}
       </div>
+
+      <ConfirmDeleteModal
+        opened={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleConfirmLogout}
+        isLoading={isLoggingOut}
+        title="¿Cerrar sesión?"
+        message="Tendrás que volver a iniciar sesión para acceder a tu cuenta."
+        confirmLabel="Cerrar sesión"
+      />
     </header>
   )
 }
