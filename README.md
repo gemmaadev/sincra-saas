@@ -197,6 +197,7 @@ sincra-saas/
         │   ├── components/
         │   ├── hooks/
         │   ├── services/
+        │   ├── store/
         │   └── utils/
         └── features/
             ├── auth/
@@ -227,6 +228,7 @@ sincra-saas/
 - **`Note` and `Tag` are shared across `Client` and `Order`**, not duplicated per entity — a note or a tag assignment belongs to exactly one of the two, enforced in the service layer. This kept a single notes/tags implementation instead of growing a parallel one for orders
 - **The calendar merges two different sources into one view, not a stored join** — manual follow-ups (a real `CalendarEvent` row) and orders' own expected delivery date are combined into one list for a given date range, with the order-derived entries marked read-only (editing them means editing the order, not the calendar). Multi-day events are rendered as an all-day bar across the days they span, like Google Calendar, instead of being repeated hour-by-hour on every day they touch. Dragging an event to reschedule it updates the UI immediately (optimistic), shows a confirmation toast with an undo action, and reverts automatically if the backend rejects the change
 - **The stats dashboard is one API call, not one per chart** — every widget shares the same date-range filter and is always needed together, so the backend composes all of them (`GET /stats/dashboard`) instead of exposing a route per chart, the same pattern already used by the clients/orders map endpoints. Revenue, average delivery time and channel performance only count delivered orders (clarified with an info tooltip in the UI, since a pending or cancelled order was never actually paid); clients are grouped by their free-text `type` field rather than the cleaner `stage` enum, because `stage` is never actually set anywhere in the product yet; and the AI summary is a plain count with no confirmed/pending split, since the AI pipeline has no confirmation step to count by
+- **The date range and channel filters are synced across Map, Stats and Orders** via a small shared Zustand store, instead of each page keeping its own local state — picking a range on one page keeps it when navigating to another, rather than resetting it. Each page's filter hook still exposes the same shape it did before (so the filter bar components themselves didn't need to change); only the date-range/channel piece moved into the shared store, while page-specific filters (evolution-chart granularity on Stats, search/status/pagination on Orders) stayed local
 
 **Decided, not built yet** (applies once the corresponding epic is picked up):
 
