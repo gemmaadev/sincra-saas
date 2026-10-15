@@ -3,6 +3,7 @@ import { UserPlus } from 'lucide-react'
 import { Input, SincraButton, SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
+import { EMAIL_PATTERN } from '@/shared/utils'
 import { useInviteMember } from '../hooks/useInviteMember'
 import type { InviteMemberFormValues } from '../types/team.types'
 
@@ -60,7 +61,8 @@ export function InviteMemberModal({ opened, onClose }: InviteMemberModalProps) {
           type="email"
           error={errors.email?.message}
           {...register('email', {
-            validate: (value) => value.trim() !== '' || 'Obligatorio',
+            required: 'Obligatorio',
+            pattern: { value: EMAIL_PATTERN, message: 'Introduce un email válido' },
           })}
         />
 
