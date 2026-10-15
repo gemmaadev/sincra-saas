@@ -56,16 +56,16 @@ describe('DoneStep', () => {
     expect(screen.getByRole('button', { name: 'Configurar' })).toBeInTheDocument()
   })
 
-  it('Scenario: going to the inbox', async () => {
+  it('Scenario: going to the stats dashboard', async () => {
     // Given the final step
     // When the user clicks "Ir al panel principal"
-    // Then they are navigated to /inbox
+    // Then they are navigated to /stats
     const user = userEvent.setup()
     render(<DoneStep data={DATA} />)
 
     await user.click(screen.getByRole('button', { name: 'Ir al panel principal' }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/inbox')
+    expect(mockNavigate).toHaveBeenCalledWith('/stats')
   })
 
   it('Scenario: configuring AI agents', async () => {

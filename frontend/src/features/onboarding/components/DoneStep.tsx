@@ -47,7 +47,7 @@ export function DoneStep({ data }: DoneStepProps) {
         />
       </div>
 
-      <SincraButton variant="primary" onClick={() => navigate('/inbox')}>
+      <SincraButton variant="primary" onClick={() => navigate('/stats')}>
         Ir al panel principal
       </SincraButton>
     </div>

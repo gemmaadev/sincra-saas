@@ -29,7 +29,7 @@ export function useSocialLogin() {
       }
 
       await login()
-      navigate('/inbox')
+      navigate('/stats')
     },
   })
 
