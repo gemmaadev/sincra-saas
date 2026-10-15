@@ -3,7 +3,7 @@ import * as userModel from '../user/user.model'
 import * as teamModel from './team.model'
 import * as hash from '../../shared/hash'
 import { signInvitationToken } from '../../shared/jwt'
-import { inviteMember, acceptInvite, listBusinessMembers } from './team.service'
+import { inviteMember, acceptInvite, listBusinessMembers, updateMemberStatus } from './team.service'
 
 const { sendMock } = vi.hoisted(() => ({
   sendMock: vi.fn().mockResolvedValue({ data: {}, error: null }),
@@ -158,5 +158,72 @@ describe('listBusinessMembers', () => {
       { id: 'user-1', name: 'Laura', email: 'laura@test.com', role: 'ADMIN', status: 'ACTIVE' },
       { id: 'user-2', name: 'Nuevo', email: 'nuevo@test.com', role: 'EMPLOYEE', status: 'PENDING' },
     ])
+  })
+})
+
+describe('updateMemberStatus', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given an admin deactivating a different member (an employee)
+  // When updating their status
+  // Then it should update the membership without checking the admin count
+  it('lets an admin deactivate an employee', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ role: 'EMPLOYEE' } as never)
+
+    await updateMemberStatus('biz-1', 'admin-1', 'emp-1', 'INACTIVE')
+
+    expect(teamModel.countAdminMembers).not.toHaveBeenCalled()
+    expect(teamModel.updateMemberStatus).toHaveBeenCalledWith('biz-1', 'emp-1', 'INACTIVE')
+  })
+
+  // Given the target membership doesn't exist in this business
+  // When trying to update its status
+  // Then it should throw a 404 AppError instead of updating anything
+  it('throws a 404 AppError when the member does not belong to this business', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue(null)
+
+    await expect(updateMemberStatus('biz-1', 'admin-1', 'ghost-1', 'INACTIVE')).rejects.toMatchObject(
+      { statusCode: 404, code: 'TEAM_MEMBER_NOT_FOUND' },
+    )
+    expect(teamModel.updateMemberStatus).not.toHaveBeenCalled()
+  })
+
+  // Given an admin trying to deactivate themselves while being the only admin of the business
+  // When updating their own status to INACTIVE
+  // Then it should throw a 400 AppError and never touch the membership
+  it('blocks an admin from deactivating themselves when they are the only admin', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ role: 'ADMIN' } as never)
+    vi.mocked(teamModel.countAdminMembers).mockResolvedValue(1)
+
+    await expect(updateMemberStatus('biz-1', 'admin-1', 'admin-1', 'INACTIVE')).rejects.toMatchObject(
+      { statusCode: 400, code: 'LAST_ADMIN' },
+    )
+    expect(teamModel.updateMemberStatus).not.toHaveBeenCalled()
+  })
+
+  // Given an admin deactivating themselves while another admin also exists
+  // When updating their own status to INACTIVE
+  // Then it should be allowed, since the business keeps at least one admin
+  it('lets an admin deactivate themselves when another admin exists', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ role: 'ADMIN' } as never)
+    vi.mocked(teamModel.countAdminMembers).mockResolvedValue(2)
+
+    await updateMemberStatus('biz-1', 'admin-1', 'admin-1', 'INACTIVE')
+
+    expect(teamModel.updateMemberStatus).toHaveBeenCalledWith('biz-1', 'admin-1', 'INACTIVE')
+  })
+
+  // Given an admin reactivating a previously deactivated employee
+  // When updating their status to ACTIVE
+  // Then it should update the membership without any admin-count check
+  it('lets an admin reactivate a member', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ role: 'EMPLOYEE' } as never)
+
+    await updateMemberStatus('biz-1', 'admin-1', 'emp-1', 'ACTIVE')
+
+    expect(teamModel.countAdminMembers).not.toHaveBeenCalled()
+    expect(teamModel.updateMemberStatus).toHaveBeenCalledWith('biz-1', 'emp-1', 'ACTIVE')
   })
 })

@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
-import { inviteMember, acceptInvite, listBusinessMembers } from './team.service'
-import type { InviteBody, AcceptInviteBody } from './team.types'
+import { inviteMember, acceptInvite, listBusinessMembers, updateMemberStatus } from './team.service'
+import type { InviteBody, AcceptInviteBody, UpdateMemberStatusBody } from './team.types'
 
 export const invite = asyncHandler(async (req: Request, res: Response) => {
   const { email, name } = req.body as InviteBody
@@ -29,4 +29,15 @@ export const accept = asyncHandler(async (req: Request, res: Response) => {
 export const listMembers = asyncHandler(async (req: Request, res: Response) => {
   const members = await listBusinessMembers(req.businessId!)
   res.json({ members })
+})
+
+export const updateStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { status } = req.body as UpdateMemberStatusBody
+
+  if (status !== 'ACTIVE' && status !== 'INACTIVE') {
+    throw new AppError('Estado no válido', 400, 'INVALID_STATUS')
+  }
+
+  await updateMemberStatus(req.businessId!, req.userId!, req.params.userId as string, status)
+  res.json({ success: true })
 })
