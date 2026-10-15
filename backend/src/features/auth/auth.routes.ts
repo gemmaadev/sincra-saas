@@ -14,6 +14,7 @@ import {
   resetPasswordHandler,
 } from './auth.controller'
 import { verifyAuth } from '../../middleware/verifyAuth'
+import { verifyPendingAuth } from '../../middleware/verifyPendingAuth'
 import { authRateLimit } from '../../middleware/rateLimit'
 
 const router = Router()
@@ -22,7 +23,7 @@ router.post('/auth/register', authRateLimit, register)
 router.post('/auth/login', authRateLimit, login)
 router.post('/auth/logout', logout)
 router.get('/auth/me', verifyAuth, me)
-router.get('/users/me/businesses', verifyAuth, getMyBusinesses)
+router.get('/users/me/businesses', verifyPendingAuth, getMyBusinesses)
 router.post('/auth/select-business', selectBusiness)
 
 router.post('/auth/google', loginWithGoogle)

@@ -5,6 +5,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import SelectBusinessPage from './SelectBusinessPage'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { AuthContext } from '@/features/auth/context/AuthContext'
+import type { AuthContextValue } from '@/features/auth/context/AuthContext'
 
 const mockNavigate = vi.fn()
 
@@ -37,6 +39,27 @@ const BUSINESSES = [
   { businessId: 'b2', name: 'Floristería Ana', sector: 'retail', role: 'EMPLOYEE' as const },
 ]
 
+function renderSelectBusinessPage(login: AuthContextValue['login'] = vi.fn()) {
+  const authValue: AuthContextValue = {
+    user: null,
+    business: null,
+    isAuthenticated: false,
+    loading: false,
+    login,
+    logout: async () => {},
+  }
+
+  return render(
+    withQueryClient(
+      <AuthContext.Provider value={authValue}>
+        <MemoryRouter>
+          <SelectBusinessPage />
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    ),
+  )
+}
+
 describe('SelectBusinessPage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
@@ -50,13 +73,7 @@ describe('SelectBusinessPage', () => {
   it('shows each business the user belongs to', async () => {
     vi.mocked(api.get).mockResolvedValue({ businesses: BUSINESSES })
 
-    render(
-      withQueryClient(
-        <MemoryRouter>
-          <SelectBusinessPage />
-        </MemoryRouter>,
-      ),
-    )
+    renderSelectBusinessPage()
 
     expect(await screen.findByText('Tienda Gemma')).toBeInTheDocument()
     expect(screen.getByText('Floristería Ana')).toBeInTheDocument()
@@ -68,20 +85,16 @@ describe('SelectBusinessPage', () => {
   it('selects a business and navigates to /stats', async () => {
     vi.mocked(api.get).mockResolvedValue({ businesses: BUSINESSES })
     vi.mocked(api.post).mockResolvedValue({ success: true })
+    const login = vi.fn().mockResolvedValue(undefined)
     const user = userEvent.setup()
 
-    render(
-      withQueryClient(
-        <MemoryRouter>
-          <SelectBusinessPage />
-        </MemoryRouter>,
-      ),
-    )
+    renderSelectBusinessPage(login)
 
     await user.click(await screen.findByText('Tienda Gemma'))
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/auth/select-business', { businessId: 'b1' })
+      expect(login).toHaveBeenCalled()
       expect(mockNavigate).toHaveBeenCalledWith('/stats')
     })
   })
@@ -92,13 +105,7 @@ describe('SelectBusinessPage', () => {
   it('shows an error when businesses fail to load', async () => {
     vi.mocked(api.get).mockRejectedValue(new Error('network error'))
 
-    render(
-      withQueryClient(
-        <MemoryRouter>
-          <SelectBusinessPage />
-        </MemoryRouter>,
-      ),
-    )
+    renderSelectBusinessPage()
 
     expect(
       await screen.findByText('No se pudieron cargar tus negocios. Inténtalo de nuevo.'),
