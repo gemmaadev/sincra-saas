@@ -12,3 +12,8 @@ export interface TeamMember {
 export interface TeamResponse {
   members: TeamMember[]
 }
+
+export interface InviteMemberFormValues {
+  name: string
+  email: string
+}

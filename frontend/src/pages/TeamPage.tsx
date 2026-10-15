@@ -1,4 +1,6 @@
-import { EmptyState, KpiCardsRow, Table } from '@/shared/components'
+import { useState } from 'react'
+import { UserPlus } from 'lucide-react'
+import { EmptyState, KpiCardsRow, SincraButton, Table } from '@/shared/components'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useTeam } from '@/features/team/hooks/useTeam'
 import { useTeamFilters } from '@/features/team/hooks/useTeamFilters'
@@ -6,6 +8,7 @@ import { buildTeamKpiCards } from '@/features/team/utils/buildTeamKpiCards'
 import { buildTeamTableColumns } from '@/features/team/utils/teamTableColumns'
 import { TeamFilterBar } from '@/features/team/components/TeamFilterBar'
 import { TeamTableSkeleton } from '@/features/team/components/TeamTableSkeleton'
+import { InviteMemberModal } from '@/features/team/components/InviteMemberModal'
 
 export default function TeamPage() {
   const { user } = useAuth()
@@ -14,14 +17,25 @@ export default function TeamPage() {
   const { search, setSearch, role, setRole, status, setStatus, filteredMembers } = useTeamFilters(
     data?.members,
   )
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">Equipo</h1>
-        <p className="text-sm text-ink-muted">
-          Gestiona las personas que tienen acceso a Sincra y sus permisos.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Equipo</h1>
+          <p className="text-sm text-ink-muted">
+            Gestiona las personas que tienen acceso a Sincra y sus permisos.
+          </p>
+        </div>
+        {isAdmin && (
+          <SincraButton
+            icon={<UserPlus size={16} aria-hidden="true" />}
+            onClick={() => setIsInviteModalOpen(true)}
+          >
+            Invitar empleado
+          </SincraButton>
+        )}
       </div>
 
       <KpiCardsRow cards={buildTeamKpiCards(data?.members ?? null)} />
@@ -46,6 +60,10 @@ export default function TeamPage() {
             emptyState={<EmptyState title="No se han encontrado miembros" />}
           />
         </div>
+      )}
+
+      {isAdmin && (
+        <InviteMemberModal opened={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
       )}
     </div>
   )
