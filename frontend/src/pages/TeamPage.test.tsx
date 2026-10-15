@@ -17,6 +17,7 @@ vi.mock('@/shared/services', async (importOriginal) => {
 const mockMembers = [
   { id: 'user-1', name: 'Laura García', email: 'laura@sincra.app', role: 'ADMIN', status: 'ACTIVE' },
   { id: 'user-2', name: 'Carlos Ruiz', email: 'carlos@sincra.app', role: 'EMPLOYEE', status: 'PENDING' },
+  { id: 'user-3', name: 'Marta Soler', email: 'marta@sincra.app', role: 'EMPLOYEE', status: 'ACTIVE' },
 ]
 
 const adminAuth: AuthContextValue = {
@@ -58,19 +59,19 @@ describe('TeamPage', () => {
     renderTeamPage()
 
     await screen.findByText('Laura García')
-    expect(screen.getByText('Miembros').closest('div')?.nextElementSibling).toHaveTextContent('2')
+    expect(screen.getByText('Miembros').closest('div')?.nextElementSibling).toHaveTextContent('3')
     expect(
       screen.getByText('Administradores').closest('div')?.nextElementSibling,
     ).toHaveTextContent('1')
     expect(screen.getByText('Empleados').closest('div')?.nextElementSibling).toHaveTextContent(
-      '1',
+      '2',
     )
   })
 
-  // Given the team members returned by the API
-  // When TeamPage is rendered
-  // Then each member's name, email, role and status should appear in the table
-  it('renders the members returned by the API', async () => {
+  // Given the team members returned by the API, including an inactive-by-default pending one
+  // When TeamPage is rendered with no filter touched
+  // Then only active members' name, email and role should appear in the table
+  it('renders only active members by default', async () => {
     renderTeamPage()
     await screen.findByText('Laura García')
 
@@ -78,7 +79,23 @@ describe('TeamPage', () => {
     expect(table.getByText('Laura García')).toBeInTheDocument()
     expect(table.getByText('laura@sincra.app')).toBeInTheDocument()
     expect(table.getByText('Administrador')).toBeInTheDocument()
-    expect(table.getByText('Carlos Ruiz')).toBeInTheDocument()
+    expect(table.getByText('Marta Soler')).toBeInTheDocument()
+    expect(table.queryByText('Carlos Ruiz')).not.toBeInTheDocument()
+  })
+
+  // Given the status filter defaults to "Activo"
+  // When the user clears it to "Todos los estados"
+  // Then pending members should also appear in the table
+  it('shows pending members once the status filter is cleared', async () => {
+    renderTeamPage()
+    await screen.findByText('Laura García')
+
+    await userEvent
+      .setup()
+      .selectOptions(screen.getByLabelText('Estado'), 'Todos los estados')
+
+    const table = within(screen.getByRole('table'))
+    expect(await table.findByText('Carlos Ruiz')).toBeInTheDocument()
     expect(table.getByText('Pendiente')).toBeInTheDocument()
   })
 
@@ -92,7 +109,7 @@ describe('TeamPage', () => {
     await screen.findByText('Laura García')
     const table = within(screen.getByRole('table'))
     expect(table.getByText('Acciones')).toBeInTheDocument()
-    expect(table.getByRole('button', { name: /Desactivar/ })).toBeInTheDocument()
+    expect(table.getAllByRole('button', { name: /Desactivar/ })).toHaveLength(2)
   })
 
   // Given an employee user
@@ -112,12 +129,12 @@ describe('TeamPage', () => {
   // Then only that member should remain in the table
   it('filters the table when searching', async () => {
     renderTeamPage()
-    await screen.findByText('Carlos Ruiz')
+    await screen.findByText('Marta Soler')
 
-    await userEvent.setup().type(screen.getByLabelText('Buscar'), 'carlos')
+    await userEvent.setup().type(screen.getByLabelText('Buscar'), 'marta')
 
     const table = within(screen.getByRole('table'))
-    expect(table.getByText('Carlos Ruiz')).toBeInTheDocument()
+    expect(table.getByText('Marta Soler')).toBeInTheDocument()
     expect(table.queryByText('Laura García')).not.toBeInTheDocument()
   })
 

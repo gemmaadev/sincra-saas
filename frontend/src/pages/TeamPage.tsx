@@ -2,13 +2,17 @@ import { useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import { EmptyState, KpiCardsRow, SincraButton, Table } from '@/shared/components'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { notifySuccess } from '@/shared/utils/notify'
 import { useTeam } from '@/features/team/hooks/useTeam'
 import { useTeamFilters } from '@/features/team/hooks/useTeamFilters'
+import { useUpdateMemberStatus } from '@/features/team/hooks/useUpdateMemberStatus'
 import { buildTeamKpiCards } from '@/features/team/utils/buildTeamKpiCards'
 import { buildTeamTableColumns } from '@/features/team/utils/teamTableColumns'
 import { TeamFilterBar } from '@/features/team/components/TeamFilterBar'
 import { TeamTableSkeleton } from '@/features/team/components/TeamTableSkeleton'
 import { InviteMemberModal } from '@/features/team/components/InviteMemberModal'
+import { DeactivateMemberModal } from '@/features/team/components/DeactivateMemberModal'
+import type { TeamMember } from '@/features/team/types/team.types'
 
 export default function TeamPage() {
   const { user } = useAuth()
@@ -18,6 +22,17 @@ export default function TeamPage() {
     data?.members,
   )
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [memberToDeactivate, setMemberToDeactivate] = useState<TeamMember | null>(null)
+  const reactivateMember = useUpdateMemberStatus()
+
+  const adminCount = data?.members.filter((member) => member.role === 'ADMIN').length ?? 0
+
+  function handleReactivate(member: TeamMember) {
+    reactivateMember.mutate(
+      { userId: member.id, status: 'ACTIVE' },
+      { onSuccess: () => notifySuccess('Acceso reactivado') },
+    )
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -54,7 +69,13 @@ export default function TeamPage() {
       {!isLoading && !isError && (
         <div className="overflow-x-auto">
           <Table
-            columns={buildTeamTableColumns(isAdmin)}
+            columns={buildTeamTableColumns({
+              isAdmin,
+              currentUserId: user?.id ?? '',
+              isOnlyAdmin: adminCount <= 1,
+              onDeactivate: setMemberToDeactivate,
+              onReactivate: handleReactivate,
+            })}
             data={filteredMembers}
             getRowKey={(member) => member.id}
             emptyState={<EmptyState title="No se han encontrado miembros" />}
@@ -64,6 +85,14 @@ export default function TeamPage() {
 
       {isAdmin && (
         <InviteMemberModal opened={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
+      )}
+
+      {memberToDeactivate && (
+        <DeactivateMemberModal
+          member={memberToDeactivate}
+          opened={!!memberToDeactivate}
+          onClose={() => setMemberToDeactivate(null)}
+        />
       )}
     </div>
   )
