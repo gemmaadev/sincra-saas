@@ -4,7 +4,7 @@ import type { TeamMember, TeamMemberStatus, TeamRole } from '../types/team.types
 export function useTeamFilters(members: TeamMember[] | undefined) {
   const [search, setSearch] = useState<string>('')
   const [role, setRole] = useState<TeamRole | ''>('')
-  const [status, setStatus] = useState<TeamMemberStatus | ''>('')
+  const [status, setStatus] = useState<TeamMemberStatus | ''>('ACTIVE')
 
   const filteredMembers = useMemo(() => {
     if (!members) return []

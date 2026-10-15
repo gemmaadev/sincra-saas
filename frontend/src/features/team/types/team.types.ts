@@ -17,3 +17,5 @@ export interface InviteMemberFormValues {
   name: string
   email: string
 }
+
+export type ToggleableMemberStatus = Extract<TeamMemberStatus, 'ACTIVE' | 'INACTIVE'>

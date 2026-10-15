@@ -18,19 +18,29 @@ describe('useTeamFilters', () => {
     expect(result.current.filteredMembers).toEqual([])
   })
 
-  // Given no filters are set
-  // When reading filteredMembers
-  // Then it should return every member
-  it('returns all members when no filter is set', () => {
+  // Given a business with many past employees
+  // When the page first loads, with no filter touched by the user
+  // Then only active members should show, so inactive people don't clutter the default view
+  it('defaults to showing only active members', () => {
     const { result } = renderHook(() => useTeamFilters(members))
+    expect(result.current.filteredMembers).toEqual([members[0], members[2]])
+  })
+
+  // Given the status filter is explicitly cleared
+  // When reading filteredMembers
+  // Then it should return every member, regardless of status
+  it('returns all members when the status filter is cleared', () => {
+    const { result } = renderHook(() => useTeamFilters(members))
+    act(() => result.current.setStatus(''))
     expect(result.current.filteredMembers).toEqual(members)
   })
 
   // Given a search term
   // When it matches a member's name or email, case-insensitively
-  // Then only matching members should remain
+  // Then only matching members should remain, regardless of the default status filter
   it('filters by name or email, case-insensitively', () => {
     const { result } = renderHook(() => useTeamFilters(members))
+    act(() => result.current.setStatus(''))
 
     act(() => result.current.setSearch('CARLOS'))
     expect(result.current.filteredMembers).toEqual([members[1]])
@@ -41,9 +51,11 @@ describe('useTeamFilters', () => {
 
   // Given a role filter
   // When set to EMPLOYEE
-  // Then only employees should remain
+  // Then only employees should remain, regardless of the default status filter
   it('filters by role', () => {
     const { result } = renderHook(() => useTeamFilters(members))
+    act(() => result.current.setStatus(''))
+
     act(() => result.current.setRole('EMPLOYEE'))
     expect(result.current.filteredMembers).toEqual([members[1], members[2]])
   })
