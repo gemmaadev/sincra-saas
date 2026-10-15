@@ -31,6 +31,9 @@ describe('stats routes', () => {
           types: [{ type: 'particular', count: 5, percentage: 100 }],
         },
         aiSummary: { clientsDetected: 2, ordersDetected: 4 },
+        channelPerformance: {
+          entries: [{ channel: 'GMAIL' as const, orderCount: 2, revenue: '100', averageTicket: '50' }],
+        },
       }
       vi.spyOn(statsService, 'getDashboard').mockResolvedValue(dashboard)
 
@@ -43,6 +46,30 @@ describe('stats routes', () => {
       expect(statsService.getDashboard).toHaveBeenCalledWith('biz-1', {
         dateFrom: '2026-10-01',
         dateTo: '2026-10-31',
+      })
+    })
+
+    // Given a granularity in the query string
+    // When requesting the dashboard
+    // Then it should be read and passed through to the service
+    it('reads granularity from the query string', async () => {
+      vi.spyOn(statsService, 'getDashboard').mockResolvedValue({
+        overview: { newClients: 0, ordersCreated: 0, averageDeliveryDays: null, revenue: '0' },
+        ordersByStatus: { total: 0, statuses: [] },
+        ordersEvolution: { granularity: 'weekly', points: [] },
+        clientsByType: { total: 0, types: [] },
+        aiSummary: { clientsDetected: 0, ordersDetected: 0 },
+        channelPerformance: { entries: [] },
+      })
+
+      await request(app)
+        .get('/stats/dashboard?dateFrom=2026-10-01&dateTo=2026-10-31&granularity=weekly')
+        .set('Cookie', employeeCookie)
+
+      expect(statsService.getDashboard).toHaveBeenCalledWith('biz-1', {
+        dateFrom: '2026-10-01',
+        dateTo: '2026-10-31',
+        granularity: 'weekly',
       })
     })
 

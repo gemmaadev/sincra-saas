@@ -135,8 +135,8 @@ describe('SocialLoginButtons', () => {
 
   // Given Google successfully returns an access token
   // When the backend confirms the user belongs to exactly one business
-  // Then it should log in and navigate to /inbox
-  it('logs in and navigates to /inbox when the Google user has one business', async () => {
+  // Then it should log in and navigate to /stats
+  it('logs in and navigates to /stats when the Google user has one business', async () => {
     vi.mocked(api.post).mockResolvedValue({
       needsOnboarding: false,
       needsBusinessSelection: false,
@@ -148,7 +148,7 @@ describe('SocialLoginButtons', () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalled()
     })
-    expect(mockNavigate).toHaveBeenCalledWith('/inbox')
+    expect(mockNavigate).toHaveBeenCalledWith('/stats')
   })
 
   // Given Google successfully returns an access token

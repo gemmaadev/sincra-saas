@@ -243,7 +243,7 @@ async function handleSocialLogin(
 function socialLoginRedirectPath(result: SocialLoginResult): string {
   if (result.needsOnboarding) return '/onboarding'
   if (result.needsBusinessSelection) return '/select-business'
-  return '/inbox'
+  return '/stats'
 }
 
 export const loginWithGoogle = asyncHandler(async (req: Request, res: Response) => {

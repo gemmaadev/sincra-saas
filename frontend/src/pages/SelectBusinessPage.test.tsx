@@ -64,8 +64,8 @@ describe('SelectBusinessPage', () => {
 
   // Given the businesses are loaded
   // When the user clicks on one
-  // Then it calls select-business and navigates to /inbox
-  it('selects a business and navigates to /inbox', async () => {
+  // Then it calls select-business and navigates to /stats
+  it('selects a business and navigates to /stats', async () => {
     vi.mocked(api.get).mockResolvedValue({ businesses: BUSINESSES })
     vi.mocked(api.post).mockResolvedValue({ success: true })
     const user = userEvent.setup()
@@ -82,7 +82,7 @@ describe('SelectBusinessPage', () => {
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/auth/select-business', { businessId: 'b1' })
-      expect(mockNavigate).toHaveBeenCalledWith('/inbox')
+      expect(mockNavigate).toHaveBeenCalledWith('/stats')
     })
   })
 

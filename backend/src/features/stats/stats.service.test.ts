@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Prisma } from '../../generated/prisma/client'
 import * as statsModel from './stats.model'
 import {
   getAiSummary,
+  getChannelPerformance,
   getClientsByType,
   getDashboard,
   getOrdersByStatus,
@@ -368,6 +370,60 @@ describe('getAiSummary', () => {
   })
 })
 
+describe('getChannelPerformance', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given delivered orders grouped by channel, out of revenue order on purpose
+  // When getting channel performance
+  // Then it should compute revenue and average ticket per channel, sorted by revenue descending
+  it('computes revenue and average ticket per channel, sorted by revenue descending', async () => {
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
+      { channel: 'WHATSAPP', _sum: { price: new Prisma.Decimal(100) }, _count: 2 },
+      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(300) }, _count: 3 },
+    ] as never)
+
+    const result = await getChannelPerformance('business-1', {})
+
+    expect(result).toEqual({
+      entries: [
+        { channel: 'GMAIL', orderCount: 3, revenue: '300', averageTicket: '100' },
+        { channel: 'WHATSAPP', orderCount: 2, revenue: '100', averageTicket: '50' },
+      ],
+    })
+  })
+
+  // Given a channel group with no orders (shouldn't happen from a real groupBy, but a safety net)
+  // When getting channel performance
+  // Then its average ticket should be zero, not a division error
+  it('reports a zero average ticket instead of dividing by zero', async () => {
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
+      { channel: 'GMAIL', _sum: { price: null }, _count: 0 },
+    ] as never)
+
+    const result = await getChannelPerformance('business-1', {})
+
+    expect(result.entries[0]).toEqual({
+      channel: 'GMAIL',
+      orderCount: 0,
+      revenue: '0',
+      averageTicket: '0',
+    })
+  })
+
+  // Given no delivered orders at all
+  // When getting channel performance
+  // Then it should return an empty list
+  it('returns an empty list when there are no delivered orders', async () => {
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([])
+
+    const result = await getChannelPerformance('business-1', {})
+
+    expect(result).toEqual({ entries: [] })
+  })
+})
+
 describe('getDashboard', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -391,6 +447,9 @@ describe('getDashboard', () => {
     ] as never)
     vi.spyOn(statsModel, 'countAiGeneratedClientsInRange').mockResolvedValue(2)
     vi.spyOn(statsModel, 'countAiGeneratedOrdersInRange').mockResolvedValue(4)
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
+      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(100) }, _count: 2 },
+    ] as never)
 
     const dashboard = await getDashboard('business-1', {
       dateFrom: '2026-10-01',
@@ -416,5 +475,8 @@ describe('getDashboard', () => {
       types: [{ type: 'particular', count: 5, percentage: 100 }],
     })
     expect(dashboard.aiSummary).toEqual({ clientsDetected: 2, ordersDetected: 4 })
+    expect(dashboard.channelPerformance).toEqual({
+      entries: [{ channel: 'GMAIL', orderCount: 2, revenue: '100', averageTicket: '50' }],
+    })
   })
 })

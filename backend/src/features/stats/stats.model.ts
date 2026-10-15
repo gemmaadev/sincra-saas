@@ -51,6 +51,22 @@ export async function findOrderCreatedDatesInRange(
   })
 }
 
+export async function findDeliveredOrdersByChannelInRange(
+  businessId: string,
+  createdAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.order.groupBy({
+    by: ['channel'],
+    where: {
+      businessId,
+      status: 'DELIVERED',
+      ...(createdAtRange && { createdAt: createdAtRange }),
+    },
+    _sum: { price: true },
+    _count: true,
+  })
+}
+
 export async function findDeliveredOrdersInRange(
   businessId: string,
   createdAtRange?: Prisma.DateTimeFilter,

@@ -28,4 +28,18 @@ describe('SidebarItem', () => {
     )
     expect(screen.queryByText(/^\d+$/)).not.toBeInTheDocument()
   })
+
+  // Given a disabled SidebarItem
+  // When it is rendered
+  // Then it should show the label but not be a clickable link
+  it('renders a disabled item as non-interactive, without a link', () => {
+    render(
+      <MemoryRouter>
+        <SidebarItem to="/inbox" icon={<span>icon</span>} label="Bandeja" disabled />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Bandeja')).toBeInTheDocument()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
 })

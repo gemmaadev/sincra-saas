@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react'
-import { Input, Select } from '@/shared/components'
+import { DateRangeFilter, Input, Select } from '@/shared/components'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { Channel } from '@/shared/types'
 import { ORDER_STATUS_LABELS } from '../orderStatus.constants'
@@ -68,27 +68,13 @@ export function OrdersFilterBar({
           onChange={(value) => onChannelChange(value as Channel | '')}
         />
       </div>
-      <div className="w-44">
-        <Input
-          label="Desde"
-          type="date"
-          size="sm"
-          max={dateTo || undefined}
-          value={dateFrom}
-          onChange={(event) => onDateFromChange(event.target.value)}
-        />
-      </div>
-      <div className="w-44">
-        <Input
-          label="Hasta"
-          type="date"
-          size="sm"
-          min={dateFrom || undefined}
-          error={isDateRangeInvalid ? 'Debe ser posterior a la fecha inicial' : undefined}
-          value={dateTo}
-          onChange={(event) => onDateToChange(event.target.value)}
-        />
-      </div>
+      <DateRangeFilter
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        isDateRangeInvalid={isDateRangeInvalid}
+        onDateFromChange={onDateFromChange}
+        onDateToChange={onDateToChange}
+      />
     </div>
   )
 }

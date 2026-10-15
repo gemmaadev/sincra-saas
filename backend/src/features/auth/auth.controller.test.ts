@@ -716,8 +716,8 @@ describe('microsoftCallback', () => {
 
   // Given a valid code for a user who already belongs to exactly one business
   // When handling the callback
-  // Then it should set a full session cookie and redirect straight to /inbox
-  it('redirects to /inbox when the Microsoft user belongs to one business', async () => {
+  // Then it should set a full session cookie and redirect straight to /stats
+  it('redirects to /stats when the Microsoft user belongs to one business', async () => {
     vi.spyOn(authService, 'exchangeMicrosoftCode').mockResolvedValue({
       email: 'laura@outlook.com',
       name: 'Laura',
@@ -738,7 +738,7 @@ describe('microsoftCallback', () => {
       expect.any(String),
       expect.objectContaining({ httpOnly: true, secure: true, sameSite: 'none' }),
     )
-    expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173/inbox')
+    expect(res.redirect).toHaveBeenCalledWith('http://localhost:5173/stats')
   })
 
   // Given a valid code for a user who belongs to more than one business
