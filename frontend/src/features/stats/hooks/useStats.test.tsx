@@ -24,6 +24,9 @@ const mockDashboard: StatsDashboard = {
     types: [{ type: 'particular', count: 5, percentage: 100 }],
   },
   aiSummary: { clientsDetected: 2, ordersDetected: 4 },
+  channelPerformance: {
+    entries: [{ channel: 'GMAIL', orderCount: 2, revenue: '100', averageTicket: '50' }],
+  },
 }
 
 function renderUseStats(filters: Parameters<typeof useStats>[0] = {}) {

@@ -4,10 +4,13 @@ import { useStatsFilters } from '@/features/stats/hooks/useStatsFilters'
 import { StatsFilterBar } from '@/features/stats/components/StatsFilterBar'
 import { StatsDonutChart } from '@/features/stats/components/StatsDonutChart'
 import { StatsEvolutionChart } from '@/features/stats/components/StatsEvolutionChart'
+import { StatsAiSummary } from '@/features/stats/components/StatsAiSummary'
+import { StatsChannelPerformance } from '@/features/stats/components/StatsChannelPerformance'
 import { buildStatsKpiCards } from '@/features/stats/utils/buildStatsKpiCards'
 import { buildOrderStatusSlices } from '@/features/stats/utils/buildOrderStatusSlices'
 import { buildClientTypeSlices } from '@/features/stats/utils/buildClientTypeSlices'
 import { buildOrdersEvolutionChartData } from '@/features/stats/utils/buildOrdersEvolutionChartData'
+import { buildChannelPerformanceRows } from '@/features/stats/utils/buildChannelPerformanceRows'
 
 export default function StatsPage() {
   const {
@@ -64,6 +67,13 @@ export default function StatsPage() {
         granularity={granularity}
         onGranularityChange={setGranularity}
       />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <StatsChannelPerformance
+          rows={dashboard ? buildChannelPerformanceRows(dashboard.channelPerformance) : []}
+        />
+        <StatsAiSummary summary={dashboard?.aiSummary ?? null} />
+      </div>
     </div>
   )
 }

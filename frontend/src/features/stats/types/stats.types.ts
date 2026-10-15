@@ -1,4 +1,5 @@
 import type { OrderStatus } from '@/features/orders/types/order.types'
+import type { Channel } from '@/shared/types'
 
 export type OrdersEvolutionGranularity = 'daily' | 'weekly'
 
@@ -52,10 +53,22 @@ export interface AiSummary {
   ordersDetected: number
 }
 
+export interface ChannelPerformanceEntry {
+  channel: Channel | null
+  orderCount: number
+  revenue: string
+  averageTicket: string
+}
+
+export interface ChannelPerformance {
+  entries: ChannelPerformanceEntry[]
+}
+
 export interface StatsDashboard {
   overview: StatsOverview
   ordersByStatus: OrdersByStatus
   ordersEvolution: OrdersEvolution
   clientsByType: ClientsByType
   aiSummary: AiSummary
+  channelPerformance: ChannelPerformance
 }
