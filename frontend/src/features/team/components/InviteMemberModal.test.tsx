@@ -124,4 +124,18 @@ describe('InviteMemberModal', () => {
     expect(await screen.findAllByText('Obligatorio')).toHaveLength(2)
     expect(api.post).not.toHaveBeenCalled()
   })
+
+  // Given an email with an invalid format
+  // When the user submits the form
+  // Then a format error should be shown and nothing sent to the API
+  it('does not call the API when the email format is invalid', async () => {
+    const { user } = renderModal()
+
+    await user.type(screen.getByLabelText('Nombre'), 'Marta Soler')
+    await user.type(screen.getByLabelText('Email'), 'marta-arroba-sincra')
+    await user.click(screen.getByRole('button', { name: 'Enviar invitación' }))
+
+    expect(await screen.findByText('Introduce un email válido')).toBeInTheDocument()
+    expect(api.post).not.toHaveBeenCalled()
+  })
 })
