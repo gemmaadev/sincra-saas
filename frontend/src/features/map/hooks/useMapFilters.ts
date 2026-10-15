@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import type { Channel } from '@/shared/types'
+import { useFiltersStore } from '@/shared/store'
 import type { MapFilters } from '../types/map.types'
 
 export function useMapFilters() {
-  const [channel, setChannel] = useState<Channel | ''>('')
-  const [from, setFrom] = useState<string>('')
-  const [to, setTo] = useState<string>('')
+  const channel = useFiltersStore((state) => state.channel)
+  const from = useFiltersStore((state) => state.dateFrom)
+  const to = useFiltersStore((state) => state.dateTo)
+  const setChannel = useFiltersStore((state) => state.setChannel)
+  const setFrom = useFiltersStore((state) => state.setDateFrom)
+  const setTo = useFiltersStore((state) => state.setDateTo)
+  const clearFilters = useFiltersStore((state) => state.clearFilters)
 
   const isDateRangeInvalid = from !== '' && to !== '' && from > to
   const hasActiveFilters = channel !== '' || from !== '' || to !== ''
@@ -14,12 +17,6 @@ export function useMapFilters() {
     channel: channel || undefined,
     from: isDateRangeInvalid ? undefined : from || undefined,
     to: isDateRangeInvalid ? undefined : to || undefined,
-  }
-
-  function clearFilters() {
-    setChannel('')
-    setFrom('')
-    setTo('')
   }
 
   return {

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AppLayout } from './AppLayout'
@@ -56,17 +57,19 @@ describe('AppLayout', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
 
     render(
-      <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={authValue}>
-          <MemoryRouter initialEntries={['/inbox']}>
-            <Routes>
-              <Route element={<AppLayout />}>
-                <Route path="/inbox" element={<p>Inbox content</p>} />
-              </Route>
-            </Routes>
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </QueryClientProvider>,
+      <MantineProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthContext.Provider value={authValue}>
+            <MemoryRouter initialEntries={['/inbox']}>
+              <Routes>
+                <Route element={<AppLayout />}>
+                  <Route path="/inbox" element={<p>Inbox content</p>} />
+                </Route>
+              </Routes>
+            </MemoryRouter>
+          </AuthContext.Provider>
+        </QueryClientProvider>
+      </MantineProvider>,
     )
     expect(screen.getByText('Sincra')).toBeInTheDocument()
     expect(screen.getByText('Inbox content')).toBeInTheDocument()
