@@ -1,9 +1,12 @@
 import { KpiCardsRow } from '@/shared/components'
 import { useTeam } from '@/features/team/hooks/useTeam'
+import { useTeamFilters } from '@/features/team/hooks/useTeamFilters'
 import { buildTeamKpiCards } from '@/features/team/utils/buildTeamKpiCards'
+import { TeamFilterBar } from '@/features/team/components/TeamFilterBar'
 
 export default function TeamPage() {
   const { data } = useTeam()
+  const { search, setSearch, role, setRole, status, setStatus } = useTeamFilters(data?.members)
 
   return (
     <div className="flex flex-col gap-6">
@@ -15,6 +18,15 @@ export default function TeamPage() {
       </div>
 
       <KpiCardsRow cards={buildTeamKpiCards(data?.members ?? null)} />
+
+      <TeamFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        role={role}
+        onRoleChange={setRole}
+        status={status}
+        onStatusChange={setStatus}
+      />
     </div>
   )
 }
