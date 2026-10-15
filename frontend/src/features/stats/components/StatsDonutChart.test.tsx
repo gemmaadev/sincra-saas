@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi } from 'vitest'
 import { StatsDonutChart } from './StatsDonutChart'
 
@@ -9,20 +10,26 @@ vi.mock('echarts-for-react', () => ({
   default: () => <div data-testid="echarts-mock" />,
 }))
 
+function renderChart(props: React.ComponentProps<typeof StatsDonutChart>) {
+  return render(
+    <MantineProvider>
+      <StatsDonutChart {...props} />
+    </MantineProvider>,
+  )
+}
+
 describe('StatsDonutChart', () => {
   // Given no data (total is zero)
   // When the chart is rendered
   // Then it should show the empty message instead of an empty chart
   it('shows an empty message when total is zero', () => {
-    render(
-      <StatsDonutChart
-        title="Pedidos por estado"
-        total={0}
-        totalLabel="pedidos"
-        slices={[]}
-        emptyMessage="Todavía no hay pedidos en este periodo."
-      />,
-    )
+    renderChart({
+      title: 'Pedidos por estado',
+      total: 0,
+      totalLabel: 'pedidos',
+      slices: [],
+      emptyMessage: 'Todavía no hay pedidos en este periodo.',
+    })
 
     expect(screen.getByText('Pedidos por estado')).toBeInTheDocument()
     expect(screen.getByText('Todavía no hay pedidos en este periodo.')).toBeInTheDocument()
@@ -32,18 +39,16 @@ describe('StatsDonutChart', () => {
   // When the chart is rendered
   // Then it should show the total, the title and each slice's label and percentage
   it('renders the total and each slice when there is data', () => {
-    render(
-      <StatsDonutChart
-        title="Pedidos por estado"
-        total={10}
-        totalLabel="pedidos"
-        slices={[
-          { label: 'Pendiente', value: 3, percentage: 30, color: '#94a3b8' },
-          { label: 'Entregado', value: 7, percentage: 70, color: '#3fa65c' },
-        ]}
-        emptyMessage="Todavía no hay pedidos en este periodo."
-      />,
-    )
+    renderChart({
+      title: 'Pedidos por estado',
+      total: 10,
+      totalLabel: 'pedidos',
+      slices: [
+        { label: 'Pendiente', value: 3, percentage: 30, color: '#94a3b8' },
+        { label: 'Entregado', value: 7, percentage: 70, color: '#3fa65c' },
+      ],
+      emptyMessage: 'Todavía no hay pedidos en este periodo.',
+    })
 
     expect(screen.getByText('10')).toBeInTheDocument()
     expect(screen.getByText('pedidos')).toBeInTheDocument()
@@ -54,5 +59,21 @@ describe('StatsDonutChart', () => {
     expect(
       screen.queryByText('Todavía no hay pedidos en este periodo.'),
     ).not.toBeInTheDocument()
+  })
+
+  // Given an infoTooltip prop
+  // When the chart is rendered
+  // Then an info icon should appear next to the title
+  it('shows an info icon next to the title when infoTooltip is given', () => {
+    const { container } = renderChart({
+      title: 'Clientes por tipo',
+      total: 0,
+      totalLabel: 'clientes',
+      slices: [],
+      emptyMessage: 'Todavía no hay clientes en este periodo.',
+      infoTooltip: 'Agrupado por el campo Tipo del cliente.',
+    })
+
+    expect(container.querySelector('svg')).toBeInTheDocument()
   })
 })

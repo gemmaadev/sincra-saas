@@ -66,6 +66,7 @@ export default function StatsPage() {
         data={dashboard ? buildOrdersEvolutionChartData(dashboard.ordersEvolution) : []}
         granularity={granularity}
         onGranularityChange={setGranularity}
+        infoTooltip="Todos los pedidos creados en el rango, sin importar su estado."
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

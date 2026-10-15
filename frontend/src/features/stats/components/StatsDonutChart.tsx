@@ -1,5 +1,5 @@
 import ReactECharts from 'echarts-for-react'
-import { Card } from '@/shared/components'
+import { Card, InfoTooltip } from '@/shared/components'
 
 export interface StatsDonutSlice {
   label: string
@@ -14,6 +14,7 @@ interface StatsDonutChartProps {
   totalLabel: string
   slices: StatsDonutSlice[]
   emptyMessage: string
+  infoTooltip?: string
 }
 
 export function StatsDonutChart({
@@ -22,6 +23,7 @@ export function StatsDonutChart({
   totalLabel,
   slices,
   emptyMessage,
+  infoTooltip,
 }: StatsDonutChartProps) {
   const option = {
     // appendToBody: otherwise the tooltip can get painted over by a sibling like the sidebar.
@@ -42,7 +44,10 @@ export function StatsDonutChart({
 
   return (
     <Card padding="md" className="flex flex-col gap-4">
-      <h2 className="font-semibold text-ink">{title}</h2>
+      <div className="flex items-center gap-1">
+        <h2 className="font-semibold text-ink">{title}</h2>
+        {infoTooltip && <InfoTooltip label={infoTooltip} />}
+      </div>
       {total === 0 ? (
         <p className="text-sm text-ink-muted">{emptyMessage}</p>
       ) : (

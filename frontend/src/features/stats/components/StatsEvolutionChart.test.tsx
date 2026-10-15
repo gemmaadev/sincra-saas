@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi } from 'vitest'
 import { StatsEvolutionChart } from './StatsEvolutionChart'
 
@@ -8,6 +9,14 @@ import { StatsEvolutionChart } from './StatsEvolutionChart'
 vi.mock('echarts-for-react', () => ({
   default: () => <div data-testid="echarts-mock" />,
 }))
+
+function renderChart(props: React.ComponentProps<typeof StatsEvolutionChart>) {
+  return render(
+    <MantineProvider>
+      <StatsEvolutionChart {...props} />
+    </MantineProvider>,
+  )
+}
 
 describe('StatsEvolutionChart', () => {
   // Given no data points
@@ -53,5 +62,19 @@ describe('StatsEvolutionChart', () => {
     screen.getByRole('button', { name: 'Semanal' }).click()
 
     expect(onGranularityChange).toHaveBeenCalledWith('weekly')
+  })
+
+  // Given an infoTooltip prop
+  // When the chart is rendered
+  // Then an info icon should appear next to the title
+  it('shows an info icon next to the title when infoTooltip is given', () => {
+    const { container } = renderChart({
+      data: [],
+      granularity: 'daily',
+      onGranularityChange: vi.fn(),
+      infoTooltip: 'Cuenta todos los pedidos creados en el rango, sin importar su estado.',
+    })
+
+    expect(container.querySelector('svg')).toBeInTheDocument()
   })
 })

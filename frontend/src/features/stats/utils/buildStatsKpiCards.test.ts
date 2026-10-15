@@ -48,4 +48,26 @@ describe('buildStatsKpiCards', () => {
       ]),
     )
   })
+
+  // Given a loaded overview
+  // When building the KPI cards
+  // Then the ambiguous ones (average delivery time, revenue) should explain their scope
+  it('adds an info tooltip to the ambiguous KPIs', () => {
+    const cards = buildStatsKpiCards({
+      newClients: 5,
+      ordersCreated: 12,
+      averageDeliveryDays: 2.5,
+      revenue: '150',
+    })
+
+    expect(cards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Tiempo medio hasta entrega',
+          infoTooltip: expect.any(String),
+        }),
+        expect.objectContaining({ label: 'Ingresos', infoTooltip: expect.any(String) }),
+      ]),
+    )
+  })
 })

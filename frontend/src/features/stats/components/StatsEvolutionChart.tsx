@@ -1,5 +1,5 @@
 import ReactECharts from 'echarts-for-react'
-import { Card } from '@/shared/components'
+import { Card, InfoTooltip } from '@/shared/components'
 import type { EvolutionChartPoint } from '../utils/buildOrdersEvolutionChartData'
 import type { OrdersEvolutionGranularity } from '../types/stats.types'
 import { StatsGranularityToggle } from './StatsGranularityToggle'
@@ -8,12 +8,14 @@ interface StatsEvolutionChartProps {
   data: EvolutionChartPoint[]
   granularity: OrdersEvolutionGranularity
   onGranularityChange: (value: OrdersEvolutionGranularity) => void
+  infoTooltip?: string
 }
 
 export function StatsEvolutionChart({
   data,
   granularity,
   onGranularityChange,
+  infoTooltip,
 }: StatsEvolutionChartProps) {
   const option = {
     grid: { left: 8, right: 8, top: 16, bottom: 24, containLabel: true },
@@ -37,7 +39,10 @@ export function StatsEvolutionChart({
   return (
     <Card padding="md" className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-ink">Evolución de pedidos</h2>
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold text-ink">Evolución de pedidos</h2>
+          {infoTooltip && <InfoTooltip label={infoTooltip} />}
+        </div>
         <StatsGranularityToggle granularity={granularity} onGranularityChange={onGranularityChange} />
       </div>
       {data.length === 0 ? (

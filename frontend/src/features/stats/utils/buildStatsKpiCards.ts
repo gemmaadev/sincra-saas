@@ -20,7 +20,13 @@ export function buildStatsKpiCards(overview: StatsOverview | null): KpiCardProps
       icon: Clock,
       label: 'Tiempo medio hasta entrega',
       value: overview.averageDeliveryDays === null ? '—' : `${overview.averageDeliveryDays} días`,
+      infoTooltip: 'Días entre la creación del pedido y su última entrega.',
     },
-    { icon: Euro, label: 'Ingresos', value: formatCurrency(Number(overview.revenue)) },
+    {
+      icon: Euro,
+      label: 'Ingresos',
+      value: formatCurrency(Number(overview.revenue)),
+      infoTooltip: 'Suma de pedidos entregados en el periodo.',
+    },
   ]
 }

@@ -1,4 +1,4 @@
-import { Card } from '@/shared/components'
+import { Card, InfoTooltip } from '@/shared/components'
 import { formatCurrency } from '@/shared/utils'
 import type { ChannelPerformanceRow } from '../utils/buildChannelPerformanceRows'
 
@@ -9,7 +9,10 @@ interface StatsChannelPerformanceProps {
 export function StatsChannelPerformance({ rows }: StatsChannelPerformanceProps) {
   return (
     <Card padding="md" className="flex flex-col gap-4">
-      <h2 className="font-semibold text-ink">Rendimiento por canal</h2>
+      <div className="flex items-center gap-1">
+        <h2 className="font-semibold text-ink">Rendimiento por canal</h2>
+        <InfoTooltip label="Ingresos y ticket medio por canal, calculados solo sobre pedidos entregados." />
+      </div>
       {rows.length === 0 ? (
         <p className="text-sm text-ink-muted">
           Todavía no hay pedidos entregados en este periodo.
