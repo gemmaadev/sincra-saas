@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { Ban, RotateCcw, Send } from 'lucide-react'
 import { Avatar, Badge, SincraButton } from '@/shared/components'
 import type { Column } from '@/shared/components'
 import {
@@ -52,17 +52,28 @@ export function buildTeamTableColumns(isAdmin: boolean): Column<TeamMember>[] {
     columns.push({
       key: 'actions',
       header: 'Acciones',
-      render: () => (
-        <div className="flex items-center gap-2">
-          <SincraButton variant="secondary" size="sm" disabled>
-            <Pencil size={14} aria-hidden="true" />
-            Editar
-          </SincraButton>
+      render: (member: TeamMember) => {
+        if (member.status === 'PENDING') {
+          return (
+            <SincraButton variant="secondary" size="sm" disabled>
+              <Send size={14} aria-hidden="true" />
+              Reenviar invitación
+            </SincraButton>
+          )
+        }
+
+        return member.status === 'ACTIVE' ? (
           <SincraButton variant="dangerOutline" size="sm" disabled>
-            <Trash2 size={14} aria-hidden="true" />
+            <Ban size={14} aria-hidden="true" />
+            Desactivar
           </SincraButton>
-        </div>
-      ),
+        ) : (
+          <SincraButton variant="secondary" size="sm" disabled>
+            <RotateCcw size={14} aria-hidden="true" />
+            Reactivar
+          </SincraButton>
+        )
+      },
     })
   }
 
