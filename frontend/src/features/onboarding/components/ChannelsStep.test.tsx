@@ -4,11 +4,14 @@ import userEvent from '@testing-library/user-event'
 import { ChannelsStep } from './ChannelsStep'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { notifyError } from '@/shared/utils/notify'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { post: vi.fn() } }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
 
 function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsStep>> = {}) {
   render(
@@ -27,6 +30,7 @@ function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsS
 describe('ChannelsStep', () => {
   beforeEach(() => {
     vi.mocked(api.post).mockReset().mockResolvedValue({})
+    vi.mocked(notifyError).mockReset()
   })
 
   it('Scenario: no channels connected yet', () => {
@@ -160,5 +164,24 @@ describe('ChannelsStep', () => {
     await user.click(within(whatsappCard).getByRole('button', { name: 'Conectar' }))
 
     expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('Scenario: the backend save fails', async () => {
+    // Given connecting Gmail will fail on the backend
+    // When the user clicks "Conectar"
+    // Then the local check should be reverted back to disconnected and an error toast shown,
+    // so the UI never shows a channel as connected when it wasn't actually saved
+    vi.mocked(api.post).mockRejectedValue(new Error('network down'))
+    const user = userEvent.setup()
+    const handleChange = vi.fn()
+
+    renderChannelsStep({ onChange: handleChange })
+
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    expect(handleChange).toHaveBeenNthCalledWith(1, ['gmail'])
+    expect(handleChange).toHaveBeenNthCalledWith(2, [])
+    expect(notifyError).toHaveBeenCalledWith('No se ha podido guardar el cambio. Inténtalo de nuevo.')
   })
 })

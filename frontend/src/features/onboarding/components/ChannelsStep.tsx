@@ -4,6 +4,7 @@ import type { OnboardingChannel } from '../onboarding.types'
 import type { ChannelId } from '@/shared/channels/channels'
 import { Check } from 'lucide-react'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
+import { notifyError } from '@/shared/utils/notify'
 
 interface ChannelsStepProps {
   connectedChannels: ChannelId[]
@@ -28,7 +29,15 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
     )
 
     if (PERSISTABLE_CHANNELS.includes(channelId)) {
-      toggleChannelConnection.mutate({ channel: channelId, connect: !isConnected })
+      toggleChannelConnection.mutate(
+        { channel: channelId, connect: !isConnected },
+        {
+          onError: () => {
+            onChange(connectedChannels)
+            notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+          },
+        },
+      )
     }
   }
 
