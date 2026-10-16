@@ -3,6 +3,8 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import OnboardingPage from './OnboardingPage'
 import { TOTAL_CHANNELS_COUNT } from '@/features/onboarding/onboarding.constants'
+import { api } from '@/shared/services'
+import { withQueryClient } from '@/shared/test/withQueryClient'
 
 const mockNavigate = vi.fn()
 const mockRegisterBusiness = vi.fn()
@@ -23,18 +25,28 @@ vi.mock('@/features/auth/hooks/useRegisterBusiness', () => ({
   }),
 }))
 
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { post: vi.fn() } }
+})
+
+function renderOnboardingPage() {
+  return render(withQueryClient(<OnboardingPage />))
+}
+
 describe('OnboardingPage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     mockRegisterBusiness.mockClear()
     mockRegisterBusiness.mockResolvedValue(true)
+    vi.mocked(api.post).mockReset().mockResolvedValue({})
   })
 
   it('Scenario: the flow starts on the business step', () => {
     // Given the onboarding page just mounted
     // When it renders
     // Then the business step is shown, and the stepper marks step 1 as current
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     expect(screen.getByText('Configuración del negocio')).toBeInTheDocument()
   })
@@ -44,7 +56,7 @@ describe('OnboardingPage', () => {
     // When they click "Salir"
     // Then they are navigated to /login
     const user = userEvent.setup()
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     await user.click(screen.getByRole('button', { name: /salir del proceso/i }))
 
@@ -56,7 +68,7 @@ describe('OnboardingPage', () => {
     // When they fill in the business name and submit
     // Then the channels step is shown next
     const user = userEvent.setup()
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
@@ -69,7 +81,7 @@ describe('OnboardingPage', () => {
     // When they click "Volver"
     // Then they land back on the business step
     const user = userEvent.setup()
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
@@ -83,7 +95,7 @@ describe('OnboardingPage', () => {
     // When they click "Siguiente" (with or without connecting channels)
     // Then the final summary step is shown
     const user = userEvent.setup()
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
@@ -97,7 +109,7 @@ describe('OnboardingPage', () => {
     // When they reach the final step
     // Then the summary reflects both the business name and the channel count
     const user = userEvent.setup()
-    render(<OnboardingPage />)
+    renderOnboardingPage()
 
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
