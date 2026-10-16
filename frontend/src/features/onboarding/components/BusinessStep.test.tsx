@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BusinessStep } from './BusinessStep'
-import { SECTOR_OPTIONS, COUNTRY_OPTIONS } from '../onboarding.constants'
+import { COUNTRY_OPTIONS } from '../onboarding.constants'
+import { SECTOR_OPTIONS } from '@/shared/sectorOptions.constants'
 import type { OnboardingData } from '../onboarding.types'
 
 const EMPTY_DATA: OnboardingData = {
