@@ -1,5 +1,4 @@
 import { Radio } from 'lucide-react'
-import { Card } from '@/shared/components'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
 import { ONBOARDING_CHANNELS } from '@/features/onboarding/onboarding.constants'
 import { useConnectedChannels } from '../hooks/useConnectedChannels'
@@ -28,7 +27,7 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
   }
 
   return (
-    <Card className="flex flex-col gap-4">
+    <section aria-label="Canales conectados" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Radio size={24} aria-hidden="true" />}
         title="Canales conectados"
@@ -62,6 +61,6 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
           })}
         </div>
       )}
-    </Card>
+    </section>
   )
 }

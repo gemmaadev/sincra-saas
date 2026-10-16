@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Pencil, Phone } from 'lucide-react'
-import { Input, SincraButton, Card } from '@/shared/components'
+import { Input, SincraButton } from '@/shared/components'
 import { InfoField } from '@/shared/components/field'
 import { notifySuccess } from '@/shared/utils/notify'
 import { ApiError } from '@/shared/services'
@@ -19,7 +19,7 @@ interface ContactInfoCardProps {
 
 export function ContactInfoCard({ business, canEdit }: ContactInfoCardProps) {
   return (
-    <Card className="flex flex-col gap-4">
+    <section aria-label="Datos de contacto" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Phone size={24} aria-hidden="true" />}
         title="Datos de contacto"
@@ -46,7 +46,7 @@ export function ContactInfoCard({ business, canEdit }: ContactInfoCardProps) {
           canEdit={canEdit}
         />
       </div>
-    </Card>
+    </section>
   )
 }
 

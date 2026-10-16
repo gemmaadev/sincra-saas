@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Pencil, Building2 } from 'lucide-react'
-import { Input, Select, SincraButton, Card } from '@/shared/components'
+import { Input, Select, SincraButton } from '@/shared/components'
 import { InfoField } from '@/shared/components/field'
 import { notifySuccess } from '@/shared/utils/notify'
 import { ApiError } from '@/shared/services'
@@ -66,7 +66,7 @@ export function BusinessInfoCard({ business, canEdit }: BusinessInfoCardProps) {
     : undefined
 
   return (
-    <Card className="flex flex-col gap-4">
+    <section aria-label="Información del negocio" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Building2 size={24} aria-hidden="true" />}
         title="Información del negocio"
@@ -123,6 +123,6 @@ export function BusinessInfoCard({ business, canEdit }: BusinessInfoCardProps) {
           <InfoField label="Dirección" value={business.address ?? 'Sin definir'} />
         </div>
       )}
-    </Card>
+    </section>
   )
 }
