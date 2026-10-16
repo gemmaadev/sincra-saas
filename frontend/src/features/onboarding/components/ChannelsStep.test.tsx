@@ -1,16 +1,43 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChannelsStep } from './ChannelsStep'
+import { api } from '@/shared/services'
+import { withQueryClient } from '@/shared/test/withQueryClient'
+import { notifyError } from '@/shared/utils/notify'
+
+vi.mock('@/shared/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services')>()
+  return { ...actual, api: { post: vi.fn() } }
+})
+
+vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
+
+function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsStep>> = {}) {
+  render(
+    withQueryClient(
+      <ChannelsStep
+        connectedChannels={[]}
+        onChange={vi.fn()}
+        onBack={vi.fn()}
+        onNext={vi.fn()}
+        {...props}
+      />,
+    ),
+  )
+}
 
 describe('ChannelsStep', () => {
+  beforeEach(() => {
+    vi.mocked(api.post).mockReset().mockResolvedValue({})
+    vi.mocked(notifyError).mockReset()
+  })
+
   it('Scenario: no channels connected yet', () => {
     // Given no channel has been connected
     // When the step renders
     // Then every channel shows a "Conectar" button
-    render(
-      <ChannelsStep connectedChannels={[]} onChange={vi.fn()} onBack={vi.fn()} onNext={vi.fn()} />,
-    )
+    renderChannelsStep()
 
     const connectButtons = screen.getAllByRole('button', { name: 'Conectar' })
     expect(connectButtons).toHaveLength(5)
@@ -21,9 +48,7 @@ describe('ChannelsStep', () => {
     // When the step renders without the user connecting anything
     // Then it must not appear as connected — mocked and real channels
     // behave identically until the user explicitly clicks "Conectar"
-    render(
-      <ChannelsStep connectedChannels={[]} onChange={vi.fn()} onBack={vi.fn()} onNext={vi.fn()} />,
-    )
+    renderChannelsStep()
 
     expect(screen.queryByLabelText('Desconectar WhatsApp')).not.toBeInTheDocument()
   })
@@ -35,14 +60,7 @@ describe('ChannelsStep', () => {
     const user = userEvent.setup()
     const handleChange = vi.fn()
 
-    render(
-      <ChannelsStep
-        connectedChannels={[]}
-        onChange={handleChange}
-        onBack={vi.fn()}
-        onNext={vi.fn()}
-      />,
-    )
+    renderChannelsStep({ onChange: handleChange })
 
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     const connectButton = within(gmailCard).getByRole('button', { name: 'Conectar' })
@@ -58,14 +76,7 @@ describe('ChannelsStep', () => {
     const user = userEvent.setup()
     const handleChange = vi.fn()
 
-    render(
-      <ChannelsStep
-        connectedChannels={['gmail', 'outlook']}
-        onChange={handleChange}
-        onBack={vi.fn()}
-        onNext={vi.fn()}
-      />,
-    )
+    renderChannelsStep({ connectedChannels: ['gmail', 'outlook'], onChange: handleChange })
 
     const disconnectButton = screen.getByRole('button', { name: 'Desconectar Gmail' })
     await user.click(disconnectButton)
@@ -78,14 +89,7 @@ describe('ChannelsStep', () => {
     // When the step renders
     // Then it shows a "disconnect" control instead of a "Conectar" button,
     // and the other four channels still show "Conectar"
-    render(
-      <ChannelsStep
-        connectedChannels={['gmail']}
-        onChange={vi.fn()}
-        onBack={vi.fn()}
-        onNext={vi.fn()}
-      />,
-    )
+    renderChannelsStep({ connectedChannels: ['gmail'] })
 
     expect(screen.getByRole('button', { name: 'Desconectar Gmail' })).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Conectar' })).toHaveLength(4)
@@ -98,14 +102,7 @@ describe('ChannelsStep', () => {
     const user = userEvent.setup()
     const handleBack = vi.fn()
 
-    render(
-      <ChannelsStep
-        connectedChannels={[]}
-        onChange={vi.fn()}
-        onBack={handleBack}
-        onNext={vi.fn()}
-      />,
-    )
+    renderChannelsStep({ onBack: handleBack })
 
     await user.click(screen.getByRole('button', { name: /volver/i }))
 
@@ -119,17 +116,72 @@ describe('ChannelsStep', () => {
     const user = userEvent.setup()
     const handleNext = vi.fn()
 
-    render(
-      <ChannelsStep
-        connectedChannels={[]}
-        onChange={vi.fn()}
-        onBack={vi.fn()}
-        onNext={handleNext}
-      />,
-    )
+    renderChannelsStep({ onNext: handleNext })
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 
     expect(handleNext).toHaveBeenCalledOnce()
+  })
+
+  it('Scenario: connecting Gmail persists it to the backend', async () => {
+    // Given a disconnected channel with a real integration (Gmail)
+    // When the user clicks "Conectar"
+    // Then it should POST to /channels/connect with the uppercase channel name
+    const user = userEvent.setup()
+
+    renderChannelsStep()
+
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'GMAIL' })
+  })
+
+  it('Scenario: disconnecting Outlook persists it to the backend', async () => {
+    // Given a connected real channel (Outlook)
+    // When the user clicks to disconnect it
+    // Then it should POST to /channels/disconnect
+    const user = userEvent.setup()
+
+    renderChannelsStep({ connectedChannels: ['outlook'] })
+
+    await user.click(screen.getByRole('button', { name: 'Desconectar Outlook' }))
+
+    expect(api.post).toHaveBeenCalledWith('/channels/disconnect', { channel: 'OUTLOOK' })
+  })
+
+  it('Scenario: toggling a mocked channel does not call the backend', async () => {
+    // Given a mocked channel (WhatsApp) with no real integration
+    // When the user clicks "Conectar"
+    // Then no request should be sent — the status is always MOCKED regardless
+    const user = userEvent.setup()
+
+    renderChannelsStep()
+
+    const whatsappCard = screen
+      .getByText('WhatsApp')
+      .closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(whatsappCard).getByRole('button', { name: 'Conectar' }))
+
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('Scenario: the backend save fails', async () => {
+    // Given connecting Gmail will fail on the backend
+    // When the user clicks "Conectar"
+    // Then the local check should be reverted back to disconnected and an error toast shown,
+    // so the UI never shows a channel as connected when it wasn't actually saved
+    vi.mocked(api.post).mockRejectedValue(new Error('network down'))
+    const user = userEvent.setup()
+    const handleChange = vi.fn()
+
+    renderChannelsStep({ onChange: handleChange })
+
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    expect(handleChange).toHaveBeenNthCalledWith(1, ['gmail'])
+    expect(handleChange).toHaveBeenNthCalledWith(2, [])
+    expect(notifyError).toHaveBeenCalledWith('No se ha podido guardar el cambio. Inténtalo de nuevo.')
   })
 })

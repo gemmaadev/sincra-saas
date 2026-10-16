@@ -3,6 +3,8 @@ import { ONBOARDING_CHANNELS } from '../onboarding.constants'
 import type { OnboardingChannel } from '../onboarding.types'
 import type { ChannelId } from '@/shared/channels/channels'
 import { Check } from 'lucide-react'
+import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
+import { notifyError } from '@/shared/utils/notify'
 
 interface ChannelsStepProps {
   connectedChannels: ChannelId[]
@@ -11,8 +13,13 @@ interface ChannelsStepProps {
   onNext: () => void
 }
 
+// WhatsApp/Instagram/Messenger always report MOCKED regardless of what's stored, so skip persisting them
+const PERSISTABLE_CHANNELS: ChannelId[] = ['gmail', 'outlook']
+
 export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
   // TODO: para Gmail/Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
+  const toggleChannelConnection = useToggleChannelConnection()
+
   const toggleConnection = (channelId: ChannelId) => {
     const isConnected = connectedChannels.includes(channelId)
     onChange(
@@ -20,6 +27,18 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
         ? connectedChannels.filter((id) => id !== channelId)
         : [...connectedChannels, channelId],
     )
+
+    if (PERSISTABLE_CHANNELS.includes(channelId)) {
+      toggleChannelConnection.mutate(
+        { channel: channelId, connect: !isConnected },
+        {
+          onError: () => {
+            onChange(connectedChannels)
+            notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+          },
+        },
+      )
+    }
   }
 
   return (
