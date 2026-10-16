@@ -30,6 +30,10 @@ export async function updateBusinessSettings(
   return updateBusiness(businessId, { ...data, updatedBy: userId })
 }
 
+export async function deleteAccount(businessId: string, userId: string) {
+  await updateBusiness(businessId, { deletedAt: new Date(), updatedBy: userId })
+}
+
 // No real integration yet — always MOCKED
 const MOCKED_CHANNELS: Channel[] = ['WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 const ALL_CHANNELS: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']

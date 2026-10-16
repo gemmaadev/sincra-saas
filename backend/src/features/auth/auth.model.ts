@@ -4,12 +4,15 @@ import { DEFAULT_TAGS } from '../../shared/defaultTags'
 import type { NewBusinessData, SocialProfile } from './auth.types'
 
 const ACTIVE_MEMBERSHIPS_WITH_BUSINESS = {
-  memberships: { where: { status: 'ACTIVE' }, include: { business: true } },
+  memberships: {
+    where: { status: 'ACTIVE', business: { deletedAt: null } },
+    include: { business: true },
+  },
 } satisfies Prisma.UserInclude
 
 export async function findActiveMembershipsWithBusiness(userId: string) {
   return prisma.businessMember.findMany({
-    where: { userId, status: 'ACTIVE' },
+    where: { userId, status: 'ACTIVE', business: { deletedAt: null } },
     include: { business: true },
   })
 }
@@ -23,13 +26,21 @@ export async function findUserWithBusinesses(email: string) {
 
 export async function findActiveMembership(userId: string, businessId: string) {
   return prisma.businessMember.findUnique({
-    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
+    where: {
+      businessId_userId: { businessId, userId },
+      status: 'ACTIVE',
+      business: { deletedAt: null },
+    },
   })
 }
 
 export async function findActiveMembershipWithDetails(userId: string, businessId: string) {
   return prisma.businessMember.findUnique({
-    where: { businessId_userId: { businessId, userId }, status: 'ACTIVE' },
+    where: {
+      businessId_userId: { businessId, userId },
+      status: 'ACTIVE',
+      business: { deletedAt: null },
+    },
     include: { user: true, business: true },
   })
 }

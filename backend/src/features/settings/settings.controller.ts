@@ -7,6 +7,7 @@ import {
   getBusinessSettings,
   updateBusinessSettings,
   getConnectedChannelsStatus,
+  deleteAccount,
 } from './settings.service'
 import type { ChannelActionBody, UpdateBusinessSettingsBody } from './settings.types'
 
@@ -48,4 +49,9 @@ export const updateBusiness = asyncHandler(async (req: Request, res: Response) =
 export const getChannelsStatus = asyncHandler(async (req: Request, res: Response) => {
   const channels = await getConnectedChannelsStatus(req.businessId!)
   res.json({ channels })
+})
+
+export const deleteAccountHandler = asyncHandler(async (req: Request, res: Response) => {
+  await deleteAccount(req.businessId!, req.userId!)
+  res.json({ success: true })
 })

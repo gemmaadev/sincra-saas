@@ -83,6 +83,7 @@ model Business {
   timezone    String   @default("Europe/Madrid")
   language    String   @default("es")
   stripeId    String?
+  deletedAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String?
