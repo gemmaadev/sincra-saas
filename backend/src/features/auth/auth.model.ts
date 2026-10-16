@@ -137,3 +137,11 @@ export async function findBusinessCountry(businessId: string): Promise<string | 
 
   return business?.country ?? null
 }
+
+export async function findBusinessById(businessId: string) {
+  return prisma.business.findUnique({ where: { id: businessId } })
+}
+
+export async function updateBusiness(businessId: string, data: Prisma.BusinessUpdateInput) {
+  return prisma.business.update({ where: { id: businessId }, data })
+}
