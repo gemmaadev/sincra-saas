@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { Prisma } from '../generated/prisma/client'
 import prisma from './db'
 import { hashPassword } from '../shared/hash'
+import { upsertConnectedChannel, findConnectedChannels } from '../features/settings/settings.model'
 
 describe('Business and User models', () => {
   // Given valid business and user data
@@ -263,6 +264,51 @@ describe('Client and Tag models', () => {
           data: { businessId: business.id, clientId: client.id, number: 1001 },
         }),
       ).rejects.toThrow()
+    } finally {
+      await prisma.business.delete({ where: { id: business.id } })
+    }
+  })
+})
+
+describe('ConnectedChannel model', () => {
+  // Given a business with no stored channel status yet
+  // When upserting a channel's status
+  // Then it should create a new row with that status
+  it('creates a ConnectedChannel row on first upsert', async () => {
+    const business = await prisma.business.create({ data: { name: 'Negocio canales' } })
+    try {
+      const connectedChannel = await upsertConnectedChannel(
+        business.id,
+        'GMAIL',
+        'CONNECTED',
+        'user-1',
+      )
+
+      expect(connectedChannel.status).toBe('CONNECTED')
+      expect(connectedChannel.createdBy).toBe('user-1')
+
+      const channels = await findConnectedChannels(business.id)
+      expect(channels).toHaveLength(1)
+    } finally {
+      await prisma.business.delete({ where: { id: business.id } })
+    }
+  })
+
+  // Given a channel already connected
+  // When upserting it again with a different status
+  // Then it should update that same row instead of creating a second one —
+  // (businessId, channel) stays unique
+  it('updates the existing row on a second upsert, instead of duplicating it', async () => {
+    const business = await prisma.business.create({ data: { name: 'Negocio canales' } })
+    try {
+      await upsertConnectedChannel(business.id, 'OUTLOOK', 'CONNECTED', 'user-1')
+      const updated = await upsertConnectedChannel(business.id, 'OUTLOOK', 'DISCONNECTED', 'user-2')
+
+      expect(updated.status).toBe('DISCONNECTED')
+      expect(updated.updatedBy).toBe('user-2')
+
+      const channels = await findConnectedChannels(business.id)
+      expect(channels).toHaveLength(1)
     } finally {
       await prisma.business.delete({ where: { id: business.id } })
     }
