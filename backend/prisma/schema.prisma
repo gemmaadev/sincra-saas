@@ -63,6 +63,12 @@ enum CalendarEventSource {
   OUTLOOK
 }
 
+enum ChannelConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  MOCKED
+}
+
 model Business {
   id          String   @id @default(uuid())
   name        String
@@ -74,17 +80,20 @@ model Business {
   schedule    String?
   nif         String?
   email       String?
+  timezone    String   @default("Europe/Madrid")
+  language    String   @default("es")
   stripeId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String?
   updatedBy   String?
 
-  memberships    BusinessMember[]
-  clients        Client[]
-  tags           Tag[]
-  orders         Order[]
-  calendarEvents CalendarEvent[]
+  memberships       BusinessMember[]
+  clients           Client[]
+  tags              Tag[]
+  orders            Order[]
+  calendarEvents    CalendarEvent[]
+  connectedChannels ConnectedChannel[]
 }
 
 model User {
@@ -120,6 +129,22 @@ model BusinessMember {
   @@unique([businessId, userId])
   @@index([businessId])
   @@index([userId])
+}
+
+model ConnectedChannel {
+  id         String                  @id @default(uuid())
+  businessId String
+  channel    Channel
+  status     ChannelConnectionStatus
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+  createdBy  String?
+  updatedBy  String?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, channel])
+  @@index([businessId])
 }
 
 model PasswordResetToken {
