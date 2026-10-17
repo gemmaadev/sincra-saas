@@ -2,14 +2,9 @@ import { useNavigate } from 'react-router'
 import { Building2 } from 'lucide-react'
 import { useUserBusinesses } from '@/features/auth/hooks/useUserBusinesses'
 import { useSelectBusiness } from '@/features/auth/hooks/useSelectBusiness'
-import { SECTOR_OPTIONS } from '@/features/onboarding/onboarding.constants'
+import { sectorLabel } from '@/shared/utils'
 import { ExitHeader } from '@/shared/components/exit-header/ExitHeader'
 import { Card } from '@/shared/components/card'
-
-function sectorLabel(sector?: string) {
-  if (!sector) return null
-  return SECTOR_OPTIONS.find((option) => option.value === sector)?.label ?? sector
-}
 
 export default function SelectBusinessPage() {
   const navigate = useNavigate()
