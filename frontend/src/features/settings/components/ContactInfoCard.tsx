@@ -19,7 +19,7 @@ interface ContactInfoCardProps {
 
 export function ContactInfoCard({ business, canEdit }: ContactInfoCardProps) {
   return (
-    <section aria-label="Datos de contacto" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
+    <section aria-label="Datos de contacto" className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Phone size={24} aria-hidden="true" />}
         title="Datos de contacto"

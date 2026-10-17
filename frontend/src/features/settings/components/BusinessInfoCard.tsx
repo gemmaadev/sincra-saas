@@ -66,7 +66,7 @@ export function BusinessInfoCard({ business, canEdit }: BusinessInfoCardProps) {
     : undefined
 
   return (
-    <section aria-label="Información del negocio" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
+    <section aria-label="Información del negocio" className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Building2 size={24} aria-hidden="true" />}
         title="Información del negocio"

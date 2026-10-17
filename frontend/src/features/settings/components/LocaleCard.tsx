@@ -31,7 +31,7 @@ export function LocaleCard({ business, canEdit }: LocaleCardProps) {
   return (
     <section
       aria-label="Zona horaria e idioma"
-      className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0"
+      className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0"
     >
       <SectionHeader
         icon={<Clock size={24} aria-hidden="true" />}

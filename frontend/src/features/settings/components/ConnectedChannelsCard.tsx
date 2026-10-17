@@ -27,7 +27,7 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
   }
 
   return (
-    <section aria-label="Canales conectados" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
+    <section aria-label="Canales conectados" className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<Radio size={24} aria-hidden="true" />}
         title="Canales conectados"

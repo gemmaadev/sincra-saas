@@ -34,7 +34,7 @@ export function DangerZoneCard() {
     : undefined
 
   return (
-    <section aria-label="Eliminar negocio" className="flex flex-col gap-4 py-6 first:pt-0 last:pb-0">
+    <section aria-label="Eliminar negocio" className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0">
       <SectionHeader
         icon={<CloudOff size={24} aria-hidden="true" />}
         title="Eliminar negocio"
