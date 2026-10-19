@@ -125,4 +125,33 @@ describe('HeaderApp', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(logout).not.toHaveBeenCalled()
   })
+
+  // Given the AppHeader component
+  // When the user clicks the mobile menu button
+  // Then the Sidebar Drawer should open, showing the nav content
+  it('opens the mobile Sidebar Drawer when the menu button is clicked', async () => {
+    renderHeader()
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }))
+
+    expect(await screen.findByRole('link', { name: /Clientes/ })).toBeInTheDocument()
+  })
+
+  // Given the mobile Sidebar Drawer is open
+  // When the user closes it
+  // Then its content should no longer be visible
+  it('closes the mobile Sidebar Drawer when dismissed', async () => {
+    renderHeader()
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    await screen.findByRole('link', { name: /Clientes/ })
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar menú' }))
+
+    await waitFor(() =>
+      expect(screen.queryByRole('link', { name: /Clientes/ })).not.toBeInTheDocument(),
+    )
+  })
 })
