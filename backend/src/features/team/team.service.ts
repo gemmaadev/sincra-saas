@@ -9,6 +9,8 @@ import {
   setInvitationCode,
   activateInvitedMember,
   findMembersWithUser,
+  countAdminMembers,
+  updateMemberStatus as updateMemberStatusInDb,
 } from './team.model'
 import type { TeamMember } from './team.types'
 
@@ -75,4 +77,31 @@ export async function listBusinessMembers(businessId: string): Promise<TeamMembe
     role: membership.role,
     status: membership.status,
   }))
+}
+
+export async function updateMemberStatus(
+  businessId: string,
+  requestingUserId: string,
+  targetUserId: string,
+  status: 'ACTIVE' | 'INACTIVE',
+) {
+  const membership = await findMembership(businessId, targetUserId)
+
+  if (!membership) {
+    throw new AppError('Este miembro no pertenece a este negocio', 404, 'TEAM_MEMBER_NOT_FOUND')
+  }
+
+  if (status === 'INACTIVE' && targetUserId === requestingUserId && membership.role === 'ADMIN') {
+    const adminCount = await countAdminMembers(businessId)
+
+    if (adminCount <= 1) {
+      throw new AppError(
+        'No puedes desactivar tu propio acceso siendo el único administrador del negocio',
+        400,
+        'LAST_ADMIN',
+      )
+    }
+  }
+
+  await updateMemberStatusInDb(businessId, targetUserId, status)
 }

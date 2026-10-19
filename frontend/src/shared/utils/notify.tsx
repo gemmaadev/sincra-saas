@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { notifications } from '@mantine/notifications'
-import { Check } from 'lucide-react'
+import { Check, AlertCircle } from 'lucide-react'
 
 const SUCCESS_AUTO_CLOSE_MS = 4000
+const ERROR_AUTO_CLOSE_MS = 5000
 const UNDO_AUTO_CLOSE_MS = 6000
 
 export function notifySuccess(message: string) {
@@ -11,6 +12,15 @@ export function notifySuccess(message: string) {
     color: 'var(--color-success)',
     icon: <Check size={16} aria-hidden="true" />,
     autoClose: SUCCESS_AUTO_CLOSE_MS,
+  })
+}
+
+export function notifyError(message: string) {
+  notifications.show({
+    message,
+    color: 'var(--color-error)',
+    icon: <AlertCircle size={16} aria-hidden="true" />,
+    autoClose: ERROR_AUTO_CLOSE_MS,
   })
 }
 

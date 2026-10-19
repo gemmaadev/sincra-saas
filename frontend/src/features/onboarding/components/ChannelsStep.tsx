@@ -1,8 +1,9 @@
 import { SincraButton } from '@/shared/components/button'
 import { ONBOARDING_CHANNELS } from '../onboarding.constants'
-import type { OnboardingChannel } from '../onboarding.types'
 import type { ChannelId } from '@/shared/channels/channels'
-import { Check } from 'lucide-react'
+import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
+import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
+import { notifyError } from '@/shared/utils/notify'
 
 interface ChannelsStepProps {
   connectedChannels: ChannelId[]
@@ -11,8 +12,13 @@ interface ChannelsStepProps {
   onNext: () => void
 }
 
+// WhatsApp/Instagram/Messenger always report MOCKED regardless of what's stored, so skip persisting them
+const PERSISTABLE_CHANNELS: ChannelId[] = ['gmail', 'outlook']
+
 export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
   // TODO: para Gmail/Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
+  const toggleChannelConnection = useToggleChannelConnection()
+
   const toggleConnection = (channelId: ChannelId) => {
     const isConnected = connectedChannels.includes(channelId)
     onChange(
@@ -20,6 +26,18 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
         ? connectedChannels.filter((id) => id !== channelId)
         : [...connectedChannels, channelId],
     )
+
+    if (PERSISTABLE_CHANNELS.includes(channelId)) {
+      toggleChannelConnection.mutate(
+        { channel: channelId, connect: !isConnected },
+        {
+          onError: () => {
+            onChange(connectedChannels)
+            notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+          },
+        },
+      )
+    }
   }
 
   return (
@@ -33,10 +51,11 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
 
       <div className="flex flex-col gap-3">
         {ONBOARDING_CHANNELS.map((channel) => (
-          <ChannelCard
+          <ChannelConnectionRow
             key={channel.id}
             channel={channel}
-            isConnected={connectedChannels.includes(channel.id)}
+            description={channel.description}
+            status={connectedChannels.includes(channel.id) ? 'connected' : 'disconnected'}
             onToggle={() => toggleConnection(channel.id)}
           />
         ))}
@@ -50,51 +69,6 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
           Siguiente →
         </SincraButton>
       </div>
-    </div>
-  )
-}
-
-interface ChannelCardProps {
-  channel: OnboardingChannel
-  isConnected: boolean
-  onToggle: () => void
-}
-
-function ChannelCard({ channel, isConnected, onToggle }: ChannelCardProps) {
-  const Icon = channel.icon
-
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-neutral-100 p-4">
-      <div className="flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-neutral-50">
-          <Icon size={22} className={channel.colorClassName} />
-        </span>
-        <div className="flex flex-col gap-0.5">
-          <span className="font-semibold text-ink">{channel.name}</span>
-          <p className="text-sm text-ink-muted">{channel.description}</p>
-        </div>
-      </div>
-
-      {isConnected ? (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-pressed={isConnected}
-          aria-label={`Desconectar ${channel.name}`}
-          className="shrink-0 rounded-full p-1 text-success transition-colors hover:bg-success/10"
-        >
-          <Check size={26} />
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-pressed={isConnected}
-          className="shrink-0 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/5"
-        >
-          Conectar
-        </button>
-      )}
     </div>
   )
 }

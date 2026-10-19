@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import app from '../../app'
-import { signToken } from '../../shared/jwt'
+import { signToken, signPendingToken } from '../../shared/jwt'
 import * as authService from './auth.service'
 
 describe('auth routes', () => {
@@ -10,6 +10,7 @@ describe('auth routes', () => {
   })
 
   const validCookie = `token=${signToken({ userId: 'user-1', businessId: 'biz-1', role: 'ADMIN' })}`
+  const pendingCookie = `token=${signPendingToken({ userId: 'user-1', pending: true })}`
 
   describe('GET /auth/me (protected)', () => {
     // Given a request with no session cookie
@@ -41,10 +42,10 @@ describe('auth routes', () => {
     })
   })
 
-  describe('GET /users/me/businesses (protected)', () => {
+  describe('GET /users/me/businesses (protected by a pending token)', () => {
     // Given a request with no session cookie
     // When hitting /users/me/businesses
-    // Then verifyAuth should reject it before it ever reaches the service
+    // Then verifyPendingAuth should reject it before it ever reaches the service
     it('returns 401 without a session cookie', async () => {
       const businessesSpy = vi.spyOn(authService, 'getUserBusinesses')
 
@@ -54,18 +55,32 @@ describe('auth routes', () => {
       expect(businessesSpy).not.toHaveBeenCalled()
     })
 
-    // Given a request with a valid session cookie
+    // Given a request with a pending token (issued mid multi-business login,
+    // before the user has picked a business) — this route's actual use case
     // When hitting /users/me/businesses
     // Then it should reach the service and return 200
-    it('reaches the service when the session cookie is valid', async () => {
+    it('reaches the service when the pending cookie is valid', async () => {
       vi.spyOn(authService, 'getUserBusinesses').mockResolvedValue([
         { businessId: 'biz-1', name: 'Tienda', sector: null, role: 'ADMIN' },
       ] as never)
 
-      const res = await request(app).get('/users/me/businesses').set('Cookie', validCookie)
+      const res = await request(app).get('/users/me/businesses').set('Cookie', pendingCookie)
 
       expect(res.status).toBe(200)
       expect(authService.getUserBusinesses).toHaveBeenCalledWith('user-1')
+    })
+
+    // Given a request with a full session cookie instead of a pending one
+    // When hitting /users/me/businesses
+    // Then it should be rejected — this route only accepts the pending token issued
+    // before a business is chosen, not a cookie that already has one selected
+    it('returns 401 with a full session cookie instead of a pending one', async () => {
+      const businessesSpy = vi.spyOn(authService, 'getUserBusinesses')
+
+      const res = await request(app).get('/users/me/businesses').set('Cookie', validCookie)
+
+      expect(res.status).toBe(401)
+      expect(businessesSpy).not.toHaveBeenCalled()
     })
   })
 

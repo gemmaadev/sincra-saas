@@ -3,6 +3,7 @@ import request from 'supertest'
 import app from '../../app'
 import { signToken, signInvitationToken } from '../../shared/jwt'
 import * as teamService from './team.service'
+import { AppError } from '../../shared/AppError'
 
 describe('team routes', () => {
   beforeEach(() => {
@@ -133,6 +134,76 @@ describe('team routes', () => {
 
       expect(res.status).toBe(200)
       expect(teamService.listBusinessMembers).toHaveBeenCalledWith('biz-1')
+    })
+  })
+
+  describe('PATCH /team/:userId/status', () => {
+    // Given a request from an authenticated admin deactivating an employee
+    // When updating that employee's status
+    // Then it should reach the service and return 200
+    it('deactivates an employee when the requester is an admin', async () => {
+      vi.spyOn(teamService, 'updateMemberStatus').mockResolvedValue(undefined)
+
+      const res = await request(app)
+        .patch('/team/emp-1/status')
+        .set('Cookie', adminCookie)
+        .send({ status: 'INACTIVE' })
+
+      expect(res.status).toBe(200)
+      expect(teamService.updateMemberStatus).toHaveBeenCalledWith(
+        'biz-1',
+        'admin-1',
+        'emp-1',
+        'INACTIVE',
+      )
+    })
+
+    // Given the requester is the only admin of the business, trying to deactivate themselves
+    // When the service rejects that self-deactivation
+    // Then the route should surface the service's 400 AppError
+    it('returns 400 when the only admin tries to deactivate themselves', async () => {
+      vi.spyOn(teamService, 'updateMemberStatus').mockRejectedValue(
+        new AppError(
+          'No puedes desactivar tu propio acceso siendo el único administrador del negocio',
+          400,
+          'LAST_ADMIN',
+        ),
+      )
+
+      const res = await request(app)
+        .patch('/team/admin-1/status')
+        .set('Cookie', adminCookie)
+        .send({ status: 'INACTIVE' })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('LAST_ADMIN')
+    })
+
+    // Given a request from an authenticated employee (not an admin)
+    // When trying to update a member's status
+    // Then requireRole should reject it with 403 before it ever reaches the service
+    it('returns 403 when the requester is an employee, not an admin', async () => {
+      const updateSpy = vi.spyOn(teamService, 'updateMemberStatus')
+
+      const res = await request(app)
+        .patch('/team/emp-1/status')
+        .set('Cookie', employeeCookie)
+        .send({ status: 'INACTIVE' })
+
+      expect(res.status).toBe(403)
+      expect(updateSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a request with no session cookie at all
+    // When trying to update a member's status
+    // Then verifyAuth should reject it before it ever reaches requireRole or the service
+    it('returns 401 without a session cookie', async () => {
+      const updateSpy = vi.spyOn(teamService, 'updateMemberStatus')
+
+      const res = await request(app).patch('/team/emp-1/status').send({ status: 'INACTIVE' })
+
+      expect(res.status).toBe(401)
+      expect(updateSpy).not.toHaveBeenCalled()
     })
   })
 })

@@ -1,7 +1,8 @@
 import { Input } from '@/shared/components/input'
 import { Select } from '@/shared/components/select'
 import { SincraButton } from '@/shared/components/button'
-import { SECTOR_OPTIONS, COUNTRY_OPTIONS, DESCRIPTION_MAX_LENGTH } from '../onboarding.constants'
+import { COUNTRY_OPTIONS, DESCRIPTION_MAX_LENGTH } from '../onboarding.constants'
+import { SECTOR_OPTIONS } from '@/shared/sectorOptions.constants'
 import type { OnboardingData } from '../onboarding.types'
 
 interface BusinessStepProps {

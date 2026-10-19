@@ -2,14 +2,19 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { api, ApiError } from '@/shared/services'
 import type { SuccessResponse } from '@/shared/types'
+import { useAuth } from './useAuth'
 
 export function useSelectBusiness() {
+  const { login } = useAuth()
   const navigate = useNavigate()
 
   const mutation = useMutation({
     mutationFn: (businessId: string) =>
       api.post<SuccessResponse>('/auth/select-business', { businessId }),
-    onSuccess: () => navigate('/stats'),
+    onSuccess: async () => {
+      await login()
+      navigate('/stats')
+    },
   })
 
   const error = mutation.error
