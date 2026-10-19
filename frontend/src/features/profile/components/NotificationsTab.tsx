@@ -3,6 +3,7 @@ import { Bell, MessageSquare, ShoppingCart, CalendarClock, FileText } from 'luci
 import { Card } from '@/shared/components/card'
 import { SincraButton } from '@/shared/components/button'
 import { Toggle } from '@/shared/components/toggle'
+import { Spinner } from '@/shared/components/spinner'
 import { SectionHeader } from './SectionHeader'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
@@ -91,7 +92,9 @@ export function NotificationsTab() {
           icon={<Bell size={24} aria-hidden="true" />}
           title="Preferencias de notificación"
         />
-        <p className="text-sm text-ink-muted">Cargando preferencias…</p>
+        <div className="flex justify-center py-6">
+          <Spinner label="Cargando preferencias" />
+        </div>
       </Card>
     )
   }

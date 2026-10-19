@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { SincraButton, ConfirmDeleteModal } from '@/shared/components'
+import { Spinner } from '../spinner'
 import { ApiError } from '@/shared/services'
 import { formatDateTime } from '@/shared/utils/date'
 import { notifySuccess } from '@/shared/utils/notify'
@@ -71,7 +72,11 @@ export function NotesTab({ notesQuery, createNote, deleteNote, placeholder, empt
         </div>
       </div>
 
-      {isLoading && <p className="text-sm text-ink-muted">Cargando notas...</p>}
+      {isLoading && (
+        <div className="flex justify-center py-6">
+          <Spinner label="Cargando notas" />
+        </div>
+      )}
       {isError && <p className="text-sm text-error">No se han podido cargar las notas.</p>}
       {!isLoading && !isError && notes.length === 0 && (
         <p className="text-sm text-ink-muted">{emptyMessage}</p>

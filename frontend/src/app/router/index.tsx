@@ -4,6 +4,7 @@ import { AppLayout } from '@/app/layout/AppLayout'
 import { SiteLayout } from '@/app/layout/SiteLayout'
 import { ProtectedRoute } from './ProtectedRoute'
 import { ErrorFallback } from '../../shared/components/error-fallback/ErrorFallback'
+import { PageSpinner } from '@/shared/components/spinner'
 
 type PageModule = { default: ComponentType }
 
@@ -16,7 +17,7 @@ function lazyPage(loadPage: () => Promise<PageModule>) {
 export const router = createBrowserRouter([
   {
     errorElement: <ErrorFallback />,
-    hydrateFallbackElement: <p className="p-6 text-ink-muted">Cargando...</p>,
+    hydrateFallbackElement: <PageSpinner />,
     children: [
       // Public site: navbar + footer (Landing and 404 share this shell)
       {

@@ -5,6 +5,7 @@ import { useSelectBusiness } from '@/features/auth/hooks/useSelectBusiness'
 import { sectorLabel } from '@/shared/utils'
 import { ExitHeader } from '@/shared/components/exit-header/ExitHeader'
 import { Card } from '@/shared/components/card'
+import { PageSpinner } from '@/shared/components/spinner'
 
 export default function SelectBusinessPage() {
   const navigate = useNavigate()
@@ -28,7 +29,7 @@ export default function SelectBusinessPage() {
         {error && <p className="text-sm text-error">{error}</p>}
 
         {isLoading ? (
-          <p className="text-ink-muted">Cargando tus negocios...</p>
+          <PageSpinner label="Cargando tus negocios" />
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {businesses.map((business) => (
