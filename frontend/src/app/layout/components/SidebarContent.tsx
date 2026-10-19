@@ -98,6 +98,7 @@ export function SidebarContent() {
         <SincraButton
           variant="text"
           size="sm"
+          className="self-start"
           icon={<MoveRight size={16} aria-hidden="true" />}
           onClick={() => navigate('/automations')}
         >
