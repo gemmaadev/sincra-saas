@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Search, User, LogOut, ChevronDown } from 'lucide-react'
-import { Link, useNavigate } from 'react-router'
+import { Search, User, LogOut, ChevronDown, Menu } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router'
+import { Drawer } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 import { ConfirmDeleteModal } from '@/shared/components/modal'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '@/features/profile/hooks/useProfile'
+import { SidebarContent } from './SidebarContent'
 
 interface MenuItemProps {
   icon: ReactNode
@@ -42,10 +45,16 @@ export function AppHeader() {
   const { user, logout } = useAuth()
   const { data: profile } = useProfile()
   const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(false)
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false)
+
+  useEffect(() => {
+    closeDrawer()
+  }, [location.pathname, closeDrawer])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,6 +88,15 @@ export function AppHeader() {
 
   return (
     <header className="flex items-center justify-between border-b border-neutral-100 px-6 py-3 gap-3">
+      <button
+        type="button"
+        onClick={openDrawer}
+        aria-label="Abrir menú"
+        className="flex shrink-0 items-center justify-center rounded-lg p-2 text-ink-muted hover:bg-surface-hover hover:text-ink md:hidden"
+      >
+        <Menu size={20} aria-hidden="true" />
+      </button>
+
       <div className="max-w-2xl flex-1">
         <Input
           placeholder="Buscar conversaciones, clientes, pedidos..."
@@ -117,6 +135,17 @@ export function AppHeader() {
           </div>
         )}
       </div>
+
+      <Drawer
+        opened={drawerOpened}
+        onClose={closeDrawer}
+        position="left"
+        size="18rem"
+        padding={0}
+        closeButtonProps={{ 'aria-label': 'Cerrar menú' }}
+      >
+        <SidebarContent />
+      </Drawer>
 
       <ConfirmDeleteModal
         opened={isLogoutConfirmOpen}
