@@ -15,6 +15,7 @@ import {
   markClientTagRemoved,
 } from './client.model'
 import { resolveOrderDescription } from '../order/order.service'
+import { countOrdersByClientId } from '../order/order.model'
 import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
@@ -198,6 +199,15 @@ export async function updateClient(businessId: string, clientId: string, input: 
 
 export async function deleteClient(businessId: string, clientId: string) {
   await assertClientExists(businessId, clientId)
+
+  const orderCount = await countOrdersByClientId(clientId)
+  if (orderCount > 0) {
+    throw new AppError(
+      'No se puede eliminar un cliente con pedidos asociados. Elimina o reasigna sus pedidos primero.',
+      409,
+      'CLIENT_HAS_ORDERS',
+    )
+  }
 
   await deleteClientById(clientId)
 }

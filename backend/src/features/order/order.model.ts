@@ -18,6 +18,10 @@ export async function findMaxOrderNumber(businessId: string) {
   return result._max.number ?? 0
 }
 
+export async function countOrdersByClientId(clientId: string) {
+  return prisma.order.count({ where: { clientId } })
+}
+
 export async function insertOrder(data: Prisma.OrderUncheckedCreateInput) {
   return prisma.order.create({ data, include: ORDER_DETAIL_INCLUDE })
 }
