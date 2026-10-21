@@ -43,6 +43,8 @@ export default function OrdersPage() {
     changeDateFrom,
     changeDateTo,
     isDateRangeInvalid,
+    hasActiveFilters,
+    clearFilters,
     queryParams,
   } = useOrdersFilters()
 
@@ -185,7 +187,21 @@ export default function OrdersPage() {
                 onToggleAll: toggleAll,
                 getRowLabel: (order) => `Seleccionar pedido #${order.number}`,
               }}
-              emptyState={<EmptyState title="Todavía no tienes pedidos" />}
+              emptyState={
+                hasActiveFilters ? (
+                  <EmptyState
+                    title="No se han encontrado pedidos"
+                    description="Prueba a cambiar la búsqueda o los filtros."
+                    action={
+                      <SincraButton variant="text" size="sm" onClick={clearFilters}>
+                        Limpiar filtros
+                      </SincraButton>
+                    }
+                  />
+                ) : (
+                  <EmptyState title="Todavía no tienes pedidos" />
+                )
+              }
             />
           </div>
           <Pagination

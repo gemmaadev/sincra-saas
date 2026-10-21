@@ -33,6 +33,8 @@ export default function ClientsPage() {
     changeSearch,
     changeChannel,
     changeTagId,
+    hasActiveFilters,
+    clearFilters,
     queryParams,
   } = useClientsFilters()
 
@@ -160,7 +162,21 @@ export default function ClientsPage() {
                 onToggleAll: toggleAll,
                 getRowLabel: (client) => `Seleccionar ${client.name}`,
               }}
-              emptyState={<EmptyState title="Todavía no tienes clientes" />}
+              emptyState={
+                hasActiveFilters ? (
+                  <EmptyState
+                    title="No se han encontrado clientes"
+                    description="Prueba a cambiar la búsqueda o los filtros."
+                    action={
+                      <SincraButton variant="text" size="sm" onClick={clearFilters}>
+                        Limpiar filtros
+                      </SincraButton>
+                    }
+                  />
+                ) : (
+                  <EmptyState title="Todavía no tienes clientes" />
+                )
+              }
             />
           </div>
           <Pagination
