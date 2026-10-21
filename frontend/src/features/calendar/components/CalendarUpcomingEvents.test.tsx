@@ -25,11 +25,21 @@ function buildEvent(overrides: Partial<CalendarItem>): CalendarItem {
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
 describe('CalendarUpcomingEvents', () => {
+  // Given events are still loading
+  // When CalendarUpcomingEvents is rendered
+  // Then it should show a loading spinner, not the "no events" empty state
+  it('shows a loading spinner instead of the empty state while loading', () => {
+    render(<CalendarUpcomingEvents events={[]} isLoading onEventClick={vi.fn()} />)
+
+    expect(screen.getByRole('status', { name: 'Cargando eventos' })).toBeInTheDocument()
+    expect(screen.queryByText('No hay eventos próximos.')).not.toBeInTheDocument()
+  })
+
   // Given no events at all
   // When CalendarUpcomingEvents is rendered
   // Then it should show an empty-state message
   it('shows an empty state when there are no events', () => {
-    render(<CalendarUpcomingEvents events={[]} onEventClick={vi.fn()} />)
+    render(<CalendarUpcomingEvents events={[]} isLoading={false} onEventClick={vi.fn()} />)
     expect(screen.getByText('No hay eventos próximos.')).toBeInTheDocument()
   })
 
@@ -48,7 +58,13 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[pastEvent, futureEvent]} onEventClick={vi.fn()} />)
+    render(
+      <CalendarUpcomingEvents
+        events={[pastEvent, futureEvent]}
+        isLoading={false}
+        onEventClick={vi.fn()}
+      />,
+    )
 
     expect(screen.getByText('Evento futuro')).toBeInTheDocument()
     expect(screen.queryByText('Evento pasado')).not.toBeInTheDocument()
@@ -63,7 +79,7 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
+    render(<CalendarUpcomingEvents events={[event]} isLoading={false} onEventClick={vi.fn()} />)
 
     expect(screen.getByText(/Laura García/)).toBeInTheDocument()
   })
@@ -76,7 +92,9 @@ describe('CalendarUpcomingEvents', () => {
     const onEventClick = vi.fn()
     const event = buildEvent({ date: new Date(Date.now() + ONE_DAY_MS).toISOString() })
 
-    render(<CalendarUpcomingEvents events={[event]} onEventClick={onEventClick} />)
+    render(
+      <CalendarUpcomingEvents events={[event]} isLoading={false} onEventClick={onEventClick} />,
+    )
     await user.click(screen.getByRole('button', { name: /Llamar a Juan/ }))
 
     expect(onEventClick).toHaveBeenCalledWith(event)
@@ -92,7 +110,7 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
+    render(<CalendarUpcomingEvents events={[event]} isLoading={false} onEventClick={vi.fn()} />)
 
     expect(screen.getByText('#42')).toBeInTheDocument()
   })
@@ -108,7 +126,7 @@ describe('CalendarUpcomingEvents', () => {
       date: new Date(Date.now() + ONE_DAY_MS).toISOString(),
     })
 
-    render(<CalendarUpcomingEvents events={[event]} onEventClick={vi.fn()} />)
+    render(<CalendarUpcomingEvents events={[event]} isLoading={false} onEventClick={vi.fn()} />)
 
     expect(screen.queryByText('LA')).not.toBeInTheDocument()
   })
@@ -125,7 +143,7 @@ describe('CalendarUpcomingEvents', () => {
       }),
     )
 
-    render(<CalendarUpcomingEvents events={events} onEventClick={vi.fn()} />)
+    render(<CalendarUpcomingEvents events={events} isLoading={false} onEventClick={vi.fn()} />)
 
     expect(screen.getAllByRole('listitem')).toHaveLength(5)
   })

@@ -1,4 +1,4 @@
-import { Avatar } from '@/shared/components'
+import { Avatar, Spinner } from '@/shared/components'
 import { formatTime } from '@/shared/utils'
 import { CALENDAR_SOURCE_ICONS } from '../calendarSource.constants'
 import type { CalendarItem } from '../types/calendar.types'
@@ -7,10 +7,15 @@ const MAX_UPCOMING_EVENTS = 5
 
 interface CalendarUpcomingEventsProps {
   events: CalendarItem[]
+  isLoading: boolean
   onEventClick: (event: CalendarItem) => void
 }
 
-export function CalendarUpcomingEvents({ events, onEventClick }: CalendarUpcomingEventsProps) {
+export function CalendarUpcomingEvents({
+  events,
+  isLoading,
+  onEventClick,
+}: CalendarUpcomingEventsProps) {
   const now = new Date()
   const upcomingEvents = events
     .filter((item) => new Date(item.date) >= now)
@@ -20,7 +25,11 @@ export function CalendarUpcomingEvents({ events, onEventClick }: CalendarUpcomin
     <div className="flex w-full flex-col gap-4 rounded-card border border-neutral-100 bg-white p-4 shadow-md lg:w-80 lg:shrink-0">
       <h2 className="text-sm font-semibold text-ink">Próximos eventos</h2>
 
-      {upcomingEvents.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center py-6">
+          <Spinner label="Cargando eventos" />
+        </div>
+      ) : upcomingEvents.length === 0 ? (
         <p className="text-sm text-ink-muted">No hay eventos próximos.</p>
       ) : (
         <ul className="flex flex-col gap-3">
