@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { TAG_COLOR_PALETTE } from '@/features/tags/utils/pickTagColor'
-import type { Tag } from '@/features/tags/types/tag.types'
+import { TAG_COLOR_PALETTE } from '../utils/pickTagColor'
+import type { Tag } from '../types/tag.types'
 
 const MAX_TAG_NAME_LENGTH = 30
 
@@ -17,6 +17,26 @@ export function TagRow({ tag, onRename, onRecolor, onDeleteRequest, disabled }: 
   const [isEditingName, setIsEditingName] = useState(false)
   const [name, setName] = useState(tag.name)
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
+  const paletteRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isPaletteOpen) return
+
+    function handleClickOutside(event: MouseEvent) {
+      if (paletteRef.current && !paletteRef.current.contains(event.target as Node)) {
+        setIsPaletteOpen(false)
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsPaletteOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isPaletteOpen])
 
   function commitName() {
     setIsEditingName(false)
@@ -30,7 +50,7 @@ export function TagRow({ tag, onRename, onRecolor, onDeleteRequest, disabled }: 
 
   return (
     <li className="flex items-center gap-3 py-2">
-      <div className="relative">
+      <div className="relative" ref={paletteRef}>
         <button
           type="button"
           aria-label={`Cambiar color de ${tag.name}`}

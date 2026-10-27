@@ -4,7 +4,7 @@ import { BusinessInfoCard } from '@/features/settings/components/BusinessInfoCar
 import { ContactInfoCard } from '@/features/settings/components/ContactInfoCard'
 import { ConnectedChannelsCard } from '@/features/settings/components/ConnectedChannelsCard'
 import { LocaleCard } from '@/features/settings/components/LocaleCard'
-import { TagManagementCard } from '@/features/settings/components/TagManagementCard'
+import { TagManagementCard } from '@/features/tags/components/TagManagementCard'
 import { DangerZoneCard } from '@/features/settings/components/DangerZoneCard'
 import { PageSpinner } from '@/shared/components/spinner'
 

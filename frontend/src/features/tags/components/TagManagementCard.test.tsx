@@ -74,6 +74,22 @@ describe('TagManagementCard', () => {
     )
   })
 
+  // Given the color palette is open
+  // When the user clicks outside it
+  // Then the palette should close without changing the color
+  it('closes the color palette when clicking outside', async () => {
+    const { user } = renderCard()
+    await screen.findByText('Urgente')
+
+    await user.click(screen.getByRole('button', { name: 'Cambiar color de Urgente' }))
+    expect(screen.getByRole('button', { name: 'Color #8b5cf6' })).toBeInTheDocument()
+
+    await user.click(document.body)
+
+    expect(screen.queryByRole('button', { name: 'Color #8b5cf6' })).not.toBeInTheDocument()
+    expect(api.patch).not.toHaveBeenCalled()
+  })
+
   // Given an admin wants to remove a tag
   // When they click delete and confirm
   // Then it should DELETE the tag
