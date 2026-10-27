@@ -206,4 +206,62 @@ describe('team routes', () => {
       expect(updateSpy).not.toHaveBeenCalled()
     })
   })
+
+  describe('POST /team/:userId/resend-invite', () => {
+    // Given a request from an authenticated admin for a pending member
+    // When resending their invite
+    // Then it should reach the service and return 200
+    it('resends the invite when the requester is an admin', async () => {
+      vi.spyOn(teamService, 'resendInvite').mockResolvedValue(undefined)
+
+      const res = await request(app)
+        .post('/team/emp-1/resend-invite')
+        .set('Cookie', adminCookie)
+
+      expect(res.status).toBe(200)
+      expect(teamService.resendInvite).toHaveBeenCalledWith('biz-1', 'emp-1')
+    })
+
+    // Given the target member already accepted their invite
+    // When the service rejects the resend
+    // Then the route should surface the service's 409 AppError
+    it('returns 409 when the member already accepted the invite', async () => {
+      vi.spyOn(teamService, 'resendInvite').mockRejectedValue(
+        new AppError('Este miembro ya ha aceptado la invitación', 409, 'INVITE_ALREADY_ACCEPTED'),
+      )
+
+      const res = await request(app)
+        .post('/team/emp-1/resend-invite')
+        .set('Cookie', adminCookie)
+
+      expect(res.status).toBe(409)
+      expect(res.body.error.code).toBe('INVITE_ALREADY_ACCEPTED')
+    })
+
+    // Given a request from an authenticated employee (not an admin)
+    // When trying to resend an invite
+    // Then requireRole should reject it with 403 before it ever reaches the service
+    it('returns 403 when the requester is an employee, not an admin', async () => {
+      const resendSpy = vi.spyOn(teamService, 'resendInvite')
+
+      const res = await request(app)
+        .post('/team/emp-1/resend-invite')
+        .set('Cookie', employeeCookie)
+
+      expect(res.status).toBe(403)
+      expect(resendSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a request with no session cookie at all
+    // When trying to resend an invite
+    // Then verifyAuth should reject it before it ever reaches requireRole or the service
+    it('returns 401 without a session cookie', async () => {
+      const resendSpy = vi.spyOn(teamService, 'resendInvite')
+
+      const res = await request(app).post('/team/emp-1/resend-invite')
+
+      expect(res.status).toBe(401)
+      expect(resendSpy).not.toHaveBeenCalled()
+    })
+  })
 })

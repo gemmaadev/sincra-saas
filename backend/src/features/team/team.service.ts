@@ -16,6 +16,21 @@ import type { TeamMember } from './team.types'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+async function sendInviteEmail(email: string, name: string, invitationToken: string) {
+  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invitationToken}`
+
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to: email,
+    subject: 'Te han invitado a un equipo en Sincra',
+    html: `
+      <p>Hola${name ? ` ${name}` : ''},</p>
+      <p>Te han invitado a unirte a un equipo en Sincra. Este enlace caduca en 7 días:</p>
+      <p><a href="${inviteLink}">${inviteLink}</a></p>
+    `,
+  })
+}
+
 export async function inviteMember(businessId: string, email: string, name: string) {
   const existingUser = await findUserByEmail(email)
 
@@ -34,18 +49,34 @@ export async function inviteMember(businessId: string, email: string, name: stri
   const invitationToken = signInvitationToken({ userId: user.id, businessId, invite: true })
   await setInvitationCode(user.id, invitationToken)
 
-  const inviteLink = `${process.env.FRONTEND_URL}/accept-invite?token=${invitationToken}`
+  await sendInviteEmail(email, name, invitationToken)
+}
 
-  await resend.emails.send({
-    from: 'onboarding@resend.dev',
-    to: email,
-    subject: 'Te han invitado a un equipo en Sincra',
-    html: `
-      <p>Hola${name ? ` ${name}` : ''},</p>
-      <p>Te han invitado a unirte a un equipo en Sincra. Este enlace caduca en 7 días:</p>
-      <p><a href="${inviteLink}">${inviteLink}</a></p>
-    `,
-  })
+export async function resendInvite(businessId: string, targetUserId: string) {
+  const membership = await findMembership(businessId, targetUserId)
+
+  if (!membership) {
+    throw new AppError('Este miembro no pertenece a este negocio', 404, 'TEAM_MEMBER_NOT_FOUND')
+  }
+
+  if (membership.status !== 'PENDING') {
+    throw new AppError(
+      'Este miembro ya ha aceptado la invitación',
+      409,
+      'INVITE_ALREADY_ACCEPTED',
+    )
+  }
+
+  const user = await findUserById(targetUserId)
+
+  if (!user) {
+    throw new AppError('Este miembro no pertenece a este negocio', 404, 'TEAM_MEMBER_NOT_FOUND')
+  }
+
+  const invitationToken = signInvitationToken({ userId: user.id, businessId, invite: true })
+  await setInvitationCode(user.id, invitationToken)
+
+  await sendInviteEmail(user.email, user.name, invitationToken)
 }
 
 export async function acceptInvite(token: string, newPassword?: string) {
