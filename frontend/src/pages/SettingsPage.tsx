@@ -4,6 +4,7 @@ import { BusinessInfoCard } from '@/features/settings/components/BusinessInfoCar
 import { ContactInfoCard } from '@/features/settings/components/ContactInfoCard'
 import { ConnectedChannelsCard } from '@/features/settings/components/ConnectedChannelsCard'
 import { LocaleCard } from '@/features/settings/components/LocaleCard'
+import { TagManagementCard } from '@/features/settings/components/TagManagementCard'
 import { DangerZoneCard } from '@/features/settings/components/DangerZoneCard'
 import { PageSpinner } from '@/shared/components/spinner'
 
@@ -29,6 +30,7 @@ export default function SettingsPage() {
           <ContactInfoCard business={business} canEdit={isAdmin} />
           <ConnectedChannelsCard canEdit={isAdmin} />
           <LocaleCard business={business} canEdit={isAdmin} />
+          {isAdmin && <TagManagementCard />}
           {isAdmin && <DangerZoneCard />}
         </div>
       )}
