@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Pencil, Building2 } from 'lucide-react'
-import { Input, Select, SincraButton } from '@/shared/components'
+import { Input, Select, SincraButton, SectionHeader } from '@/shared/components'
 import { InfoField } from '@/shared/components/field'
 import { notifySuccess } from '@/shared/utils/notify'
 import { ApiError } from '@/shared/services'
 import { sectorLabel } from '@/shared/utils'
 import { SECTOR_OPTIONS } from '@/shared/sectorOptions.constants'
 import { useUpdateBusinessSettings } from '../hooks/useUpdateBusinessSettings'
-import { SectionHeader } from './SectionHeader'
 import type { BusinessSettings } from '../types/settings.types'
 
 interface BusinessInfoForm {

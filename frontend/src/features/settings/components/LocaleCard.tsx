@@ -1,9 +1,8 @@
 import { Clock } from 'lucide-react'
-import { Select } from '@/shared/components'
+import { Select, SectionHeader } from '@/shared/components'
 import { notifySuccess } from '@/shared/utils/notify'
 import { TIMEZONE_OPTIONS, LANGUAGE_OPTIONS } from '../settings.constants'
 import { useUpdateBusinessSettings } from '../hooks/useUpdateBusinessSettings'
-import { SectionHeader } from './SectionHeader'
 import type { BusinessSettings } from '../types/settings.types'
 
 interface LocaleCardProps {

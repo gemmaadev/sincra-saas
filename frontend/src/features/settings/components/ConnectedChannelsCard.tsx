@@ -1,10 +1,9 @@
 import { Radio } from 'lucide-react'
-import { Spinner } from '@/shared/components'
+import { Spinner, SectionHeader } from '@/shared/components'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
 import { ONBOARDING_CHANNELS } from '@/features/onboarding/onboarding.constants'
 import { useConnectedChannels } from '../hooks/useConnectedChannels'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
-import { SectionHeader } from './SectionHeader'
 import type { ChannelConnectionStatus } from '../types/settings.types'
 import type { Channel } from '@/shared/types'
 
