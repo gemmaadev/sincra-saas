@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { Input } from './Input'
 
 describe('Input', () => {
@@ -38,5 +38,26 @@ describe('Input', () => {
     const input = screen.getByLabelText('Nombre')
     await user.type(input, 'Laura')
     expect(input).toHaveValue('Laura')
+  })
+
+  // Given an Input with a rightIcon
+  // When it is rendered
+  // Then the icon should be shown and stay clickable
+  it('renders a clickable rightIcon', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(
+      <Input
+        label="Contraseña"
+        rightIcon={
+          <button type="button" onClick={onClick}>
+            Mostrar
+          </button>
+        }
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Mostrar' }))
+    expect(onClick).toHaveBeenCalledOnce()
   })
 })
