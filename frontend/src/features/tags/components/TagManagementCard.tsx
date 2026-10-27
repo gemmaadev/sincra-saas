@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Tags } from 'lucide-react'
-import { ConfirmDeleteModal } from '@/shared/components'
+import { ConfirmDeleteModal, SectionHeader } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import { useTags } from '../hooks/useTags'
 import { useUpdateTag } from '../hooks/useUpdateTag'
 import { useDeleteTag } from '../hooks/useDeleteTag'
 import type { Tag } from '../types/tag.types'
-import { SectionHeader } from '@/features/settings/components/SectionHeader'
 import { TagRow } from './TagRow'
 
 export function TagManagementCard() {

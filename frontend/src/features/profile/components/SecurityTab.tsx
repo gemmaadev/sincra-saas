@@ -9,7 +9,7 @@ import { PasswordInput } from '@/shared/components/input/PasswordInput'
 import { ApiError } from '@/shared/services'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useChangePassword } from '../hooks/useChangePassword'
-import { SectionHeader } from './SectionHeader'
+import { SectionHeader } from '@/shared/components/section-header'
 import { notifySuccess } from '@/shared/utils/notify'
 
 interface ChangePasswordForm {

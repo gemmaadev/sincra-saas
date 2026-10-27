@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { CloudOff } from 'lucide-react'
-import { SincraButton, ConfirmDeleteModal } from '@/shared/components'
+import { SincraButton, ConfirmDeleteModal, SectionHeader } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useDeleteAccount } from '../hooks/useDeleteAccount'
-import { SectionHeader } from './SectionHeader'
 
 export function DangerZoneCard() {
   const { logout } = useAuth()

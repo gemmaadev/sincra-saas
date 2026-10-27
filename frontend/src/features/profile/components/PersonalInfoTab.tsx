@@ -12,7 +12,7 @@ import type { User } from '@/features/auth/context/AuthContext'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
-import { SectionHeader } from './SectionHeader'
+import { SectionHeader } from '@/shared/components/section-header'
 import { PHONE_PATTERN } from '@/shared/utils'
 import { notifySuccess } from '@/shared/utils/notify'
 
