@@ -1,7 +1,13 @@
 import type { Request, Response } from 'express'
 import { asyncHandler } from '../../shared/handlers/asyncHandler'
 import { AppError } from '../../shared/AppError'
-import { inviteMember, acceptInvite, listBusinessMembers, updateMemberStatus } from './team.service'
+import {
+  inviteMember,
+  acceptInvite,
+  listBusinessMembers,
+  updateMemberStatus,
+  resendInvite,
+} from './team.service'
 import type { InviteBody, AcceptInviteBody, UpdateMemberStatusBody } from './team.types'
 
 export const invite = asyncHandler(async (req: Request, res: Response) => {
@@ -39,5 +45,10 @@ export const updateStatus = asyncHandler(async (req: Request, res: Response) => 
   }
 
   await updateMemberStatus(req.businessId!, req.userId!, req.params.userId as string, status)
+  res.json({ success: true })
+})
+
+export const resend = asyncHandler(async (req: Request, res: Response) => {
+  await resendInvite(req.businessId!, req.params.userId as string)
   res.json({ success: true })
 })

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Request, Response, NextFunction } from 'express'
-import { invite, accept, listMembers, updateStatus } from './team.controller'
+import { invite, accept, listMembers, updateStatus, resend } from './team.controller'
 import * as teamService from './team.service'
 import { AppError } from '../../shared/AppError'
 
@@ -214,5 +214,45 @@ describe('updateStatus', () => {
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.code).toBe('LAST_ADMIN')
+  })
+})
+
+describe('resend', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given an authenticated admin request for a pending member
+  // When resending their invite
+  // Then it should call the service and respond with success: true
+  it('resends the invite and responds with success: true', async () => {
+    const resendSpy = vi.spyOn(teamService, 'resendInvite').mockResolvedValue(undefined)
+
+    const req = createMockRequest({ businessId: 'biz-1', params: { userId: 'emp-1' } })
+    const res = createMockResponse()
+
+    await resend(req, res, vi.fn() as NextFunction)
+
+    expect(resendSpy).toHaveBeenCalledWith('biz-1', 'emp-1')
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given the service rejects the request (e.g. member already accepted the invite)
+  // When resending the invite
+  // Then it should propagate the AppError thrown by the service
+  it('propagates the AppError thrown by the service', async () => {
+    vi.spyOn(teamService, 'resendInvite').mockRejectedValue(
+      new AppError('Este miembro ya ha aceptado la invitación', 409, 'INVITE_ALREADY_ACCEPTED'),
+    )
+
+    const req = createMockRequest({ businessId: 'biz-1', params: { userId: 'emp-1' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await resend(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.code).toBe('INVITE_ALREADY_ACCEPTED')
   })
 })
