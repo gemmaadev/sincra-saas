@@ -10,6 +10,7 @@ export function Input({
   label,
   error,
   icon,
+  rightIcon,
   size = 'md',
   className = '',
   id,
@@ -28,7 +29,9 @@ export function Input({
       )}
       <div className="relative">
         {icon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">{icon}</span>
+          <span className="absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-ink-muted">
+            {icon}
+          </span>
         )}
         <input
           ref={ref}
@@ -40,11 +43,17 @@ export function Input({
             transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30
             ${inputSizes[size]}
             ${icon ? 'pl-9' : ''}
+            ${rightIcon ? 'pr-9' : ''}
             ${error ? 'border-error focus:border-error' : 'border-neutral-200 focus:border-primary'}
             ${className}
           `}
           {...props}
         />
+        {rightIcon && (
+          <span className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-ink-muted">
+            {rightIcon}
+          </span>
+        )}
       </div>
       {error && (
         <span id={`${inputId}-error`} className="text-xs text-error">

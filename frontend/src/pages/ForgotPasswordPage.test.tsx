@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ForgotPasswordPage from './ForgotPasswordPage'
-import { api } from '@/shared/services'
+import { api, ApiError } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 
 vi.mock('@/shared/services', async (importOriginal) => {
@@ -94,5 +94,30 @@ describe('ForgotPasswordPage', () => {
         state: { email: 'laura@tienda.com' },
       })
     })
+  })
+
+  // Given the API call fails
+  // When the form is submitted
+  // Then an error message should be shown and it should not navigate away
+  it('shows an error and does not navigate when the request fails', async () => {
+    vi.mocked(api.post).mockRejectedValue(new ApiError('No existe esa cuenta', 404, 'NOT_FOUND'))
+
+    render(
+      withQueryClient(
+        <MemoryRouter>
+          <ForgotPasswordPage />
+        </MemoryRouter>,
+      ),
+    )
+
+    fireEvent.change(screen.getByLabelText('Correo electrónico'), {
+      target: { value: 'laura@tienda.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar enlace' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('No existe esa cuenta')).toBeInTheDocument()
+    })
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })
