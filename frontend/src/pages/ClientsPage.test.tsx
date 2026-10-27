@@ -340,6 +340,25 @@ describe('ClientsPage', () => {
     expect(await screen.findByText('Todavía no tienes clientes')).toBeInTheDocument()
   })
 
+  // Given there are no results while a filter is active
+  // When ClientsPage is rendered
+  // Then it should show the "no results" empty state instead of "no clients yet",
+  // and clearing filters should bring back the "no clients yet" wording
+  it('shows a different empty state when filters are active, with a way to clear them', async () => {
+    mockApiGet({ data: [] })
+    renderClientsPage()
+    await screen.findByText('Todavía no tienes clientes')
+
+    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'laura' } })
+
+    expect(await screen.findByText('No se han encontrado clientes')).toBeInTheDocument()
+    expect(screen.queryByText('Todavía no tienes clientes')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(await screen.findByText('Todavía no tienes clientes')).toBeInTheDocument()
+  })
+
   // Given the API call fails
   // When ClientsPage is rendered
   // Then an error message should be shown

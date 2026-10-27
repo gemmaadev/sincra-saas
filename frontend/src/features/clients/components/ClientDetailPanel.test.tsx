@@ -129,11 +129,11 @@ describe('ClientDetailPanel', () => {
 
   // Given the client request has not resolved yet
   // When ClientDetailPanel is rendered
-  // Then a loading message should be shown
-  it('shows a loading message while the client is being fetched', () => {
+  // Then a loading spinner should be shown
+  it('shows a loading spinner while the client is being fetched', () => {
     vi.mocked(api.get).mockImplementation(() => new Promise(() => {}))
     renderPanel()
-    expect(screen.getByText('Cargando cliente...')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando cliente' })).toBeInTheDocument()
   })
 
   // Given the client request fails

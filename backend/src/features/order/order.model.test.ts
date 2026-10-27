@@ -5,6 +5,7 @@ import {
   insertOrder,
   findOrdersPage,
   countOrdersByStatus,
+  countOrdersByClientId,
   findOrdersWithExpectedDateInRange,
   updateOrderWithItems,
   deleteOrderById,
@@ -20,6 +21,7 @@ vi.mock('../../config/db', () => ({
       create: vi.fn(),
       findMany: vi.fn(),
       groupBy: vi.fn(),
+      count: vi.fn(),
       update: vi.fn(),
       findUniqueOrThrow: vi.fn(),
       delete: vi.fn(),
@@ -130,6 +132,22 @@ describe('findMaxOrderNumber', () => {
       where: { businessId: 'business-1' },
       _max: { number: true },
     })
+  })
+})
+
+describe('countOrdersByClientId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a client with orders
+  // When counting its orders
+  // Then it should return the real count, scoped to that client
+  it('returns how many orders belong to the client', async () => {
+    vi.mocked(prisma.order.count).mockResolvedValue(3)
+
+    expect(await countOrdersByClientId('client-1')).toBe(3)
+    expect(prisma.order.count).toHaveBeenCalledWith({ where: { clientId: 'client-1' } })
   })
 })
 

@@ -15,10 +15,19 @@ export function useOrdersFilters() {
   const setChannelInStore = useFiltersStore((state) => state.setChannel)
   const setDateFromInStore = useFiltersStore((state) => state.setDateFrom)
   const setDateToInStore = useFiltersStore((state) => state.setDateTo)
+  const clearFiltersInStore = useFiltersStore((state) => state.clearFilters)
   const [page, setPage] = useState<number>(1)
   const debouncedSearch = useDebouncedValue(search)
 
   const isDateRangeInvalid = dateFrom !== '' && dateTo !== '' && dateFrom > dateTo
+  const hasActiveFilters = search !== '' || status !== '' || channel !== '' || dateFrom !== '' || dateTo !== ''
+
+  function clearFilters() {
+    setSearch('')
+    setStatus('')
+    clearFiltersInStore()
+    setPage(1)
+  }
 
   function changeSearch(value: string) {
     setSearch(value)
@@ -69,6 +78,8 @@ export function useOrdersFilters() {
     changeDateFrom,
     changeDateTo,
     isDateRangeInvalid,
+    hasActiveFilters,
+    clearFilters,
     queryParams,
   }
 }

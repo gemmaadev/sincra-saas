@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Avatar, IconButton, Tabs } from '@/shared/components'
+import { Avatar, IconButton, Tabs, Spinner } from '@/shared/components'
 import { useOrderDetail } from '../hooks/useOrderDetail'
 import { OrderFormModal } from './OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
@@ -24,7 +24,11 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
 
   if (isLoading) {
-    return <p className="text-ink-muted">Cargando pedido...</p>
+    return (
+      <div className="flex justify-center py-10">
+        <Spinner size="lg" label="Cargando pedido" />
+      </div>
+    )
   }
 
   if (isError || !order) {

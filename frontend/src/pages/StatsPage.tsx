@@ -1,4 +1,4 @@
-import { KpiCardsRow } from '@/shared/components'
+import { KpiCardsRow, PageSpinner } from '@/shared/components'
 import { useStats } from '@/features/stats/hooks/useStats'
 import { useStatsFilters } from '@/features/stats/hooks/useStatsFilters'
 import { StatsFilterBar } from '@/features/stats/components/StatsFilterBar'
@@ -23,7 +23,7 @@ export default function StatsPage() {
     filters,
     isDateRangeInvalid,
   } = useStatsFilters()
-  const { data: dashboard } = useStats(filters)
+  const { data: dashboard, isLoading } = useStats(filters)
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,38 +43,44 @@ export default function StatsPage() {
         />
       </div>
 
-      <KpiCardsRow cards={buildStatsKpiCards(dashboard?.overview ?? null)} />
+      {isLoading ? (
+        <PageSpinner label="Cargando estadísticas" />
+      ) : (
+        <>
+          <KpiCardsRow cards={buildStatsKpiCards(dashboard?.overview ?? null)} />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StatsDonutChart
-          title="Pedidos por estado"
-          total={dashboard?.ordersByStatus.total ?? 0}
-          totalLabel="pedidos"
-          slices={dashboard ? buildOrderStatusSlices(dashboard.ordersByStatus) : []}
-          emptyMessage="Todavía no hay pedidos en este periodo."
-        />
-        <StatsDonutChart
-          title="Clientes por tipo"
-          total={dashboard?.clientsByType.total ?? 0}
-          totalLabel="clientes"
-          slices={dashboard ? buildClientTypeSlices(dashboard.clientsByType) : []}
-          emptyMessage="Todavía no hay clientes en este periodo."
-        />
-      </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <StatsDonutChart
+              title="Pedidos por estado"
+              total={dashboard?.ordersByStatus.total ?? 0}
+              totalLabel="pedidos"
+              slices={dashboard ? buildOrderStatusSlices(dashboard.ordersByStatus) : []}
+              emptyMessage="Todavía no hay pedidos en este periodo."
+            />
+            <StatsDonutChart
+              title="Clientes por tipo"
+              total={dashboard?.clientsByType.total ?? 0}
+              totalLabel="clientes"
+              slices={dashboard ? buildClientTypeSlices(dashboard.clientsByType) : []}
+              emptyMessage="Todavía no hay clientes en este periodo."
+            />
+          </div>
 
-      <StatsEvolutionChart
-        data={dashboard ? buildOrdersEvolutionChartData(dashboard.ordersEvolution) : []}
-        granularity={granularity}
-        onGranularityChange={setGranularity}
-        infoTooltip="Todos los pedidos creados en el rango, sin importar su estado."
-      />
+          <StatsEvolutionChart
+            data={dashboard ? buildOrdersEvolutionChartData(dashboard.ordersEvolution) : []}
+            granularity={granularity}
+            onGranularityChange={setGranularity}
+            infoTooltip="Todos los pedidos creados en el rango, sin importar su estado."
+          />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <StatsChannelPerformance
-          rows={dashboard ? buildChannelPerformanceRows(dashboard.channelPerformance) : []}
-        />
-        <StatsAiSummary summary={dashboard?.aiSummary ?? null} />
-      </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <StatsChannelPerformance
+              rows={dashboard ? buildChannelPerformanceRows(dashboard.channelPerformance) : []}
+            />
+            <StatsAiSummary summary={dashboard?.aiSummary ?? null} />
+          </div>
+        </>
+      )}
     </div>
   )
 }

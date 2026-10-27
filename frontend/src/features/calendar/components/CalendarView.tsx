@@ -45,7 +45,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
   const [visibleSources, setVisibleSources] = useState<Set<CalendarEventSource>>(
     new Set(DEFAULT_VISIBLE_SOURCES),
   )
-  const { data: events } = useCalendarEvents(range)
+  const { data: events, isLoading } = useCalendarEvents(range)
   const { mutate: reschedule } = useRescheduleCalendarEvent()
 
   function handleDatesSet(arg: DatesSetArg) {
@@ -147,7 +147,11 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           })}
         />
       </div>
-      <CalendarUpcomingEvents events={visibleEvents} onEventClick={onEventClick} />
+      <CalendarUpcomingEvents
+        events={visibleEvents}
+        isLoading={isLoading}
+        onEventClick={onEventClick}
+      />
     </div>
   )
 }

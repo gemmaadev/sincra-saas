@@ -72,12 +72,12 @@ describe('OrderDetailPanel', () => {
 
   // Given the order is still loading
   // When the panel is rendered
-  // Then it should show a loading message
-  it('shows a loading message while the order is loading', () => {
+  // Then it should show a loading spinner
+  it('shows a loading spinner while the order is loading', () => {
     vi.mocked(api.get).mockReturnValue(new Promise(() => {}))
     renderPanel()
 
-    expect(screen.getByText('Cargando pedido...')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando pedido' })).toBeInTheDocument()
   })
 
   // Given the order fails to load

@@ -12,6 +12,15 @@ export function useClientsFilters() {
   const [page, setPage] = useState<number>(1)
   const debouncedSearch = useDebouncedValue(search)
 
+  const hasActiveFilters = search !== '' || channel !== '' || tagId !== ''
+
+  function clearFilters() {
+    setSearch('')
+    setChannel('')
+    setTagId('')
+    setPage(1)
+  }
+
   function changeSearch(value: string) {
     setSearch(value)
     setPage(1)
@@ -44,6 +53,8 @@ export function useClientsFilters() {
     changeSearch,
     changeChannel,
     changeTagId,
+    hasActiveFilters,
+    clearFilters,
     queryParams,
   }
 }

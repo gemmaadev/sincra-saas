@@ -4,6 +4,7 @@ import * as clientModel from './client.model'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
 import * as tagModel from '../tag/tag.model'
 import * as authModel from '../auth/auth.model'
+import * as orderModel from '../order/order.model'
 import { geocodeAddress, searchAddresses } from '../../shared/services/geocoding.service'
 import {
   listClients,
@@ -19,6 +20,7 @@ import {
 vi.mock('./client.model')
 vi.mock('../tag/tag.model')
 vi.mock('../auth/auth.model')
+vi.mock('../order/order.model')
 vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
 
@@ -282,17 +284,32 @@ describe('updateClient / deleteClient', () => {
     expect(clientModel.deleteClientById).not.toHaveBeenCalled()
   })
 
-  // Given an existing client
+  // Given an existing client with no orders
   // When it is updated and deleted
   // Then the model writes are called with the client id
   it('writes through the model when the client exists', async () => {
     vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(orderModel.countOrdersByClientId).mockResolvedValue(0)
 
     await updateClient('business-1', 'client-1', { name: 'Ana' })
     await deleteClient('business-1', 'client-1')
 
     expect(clientModel.updateClientById).toHaveBeenCalledWith('client-1', { name: 'Ana' })
     expect(clientModel.deleteClientById).toHaveBeenCalledWith('client-1')
+  })
+
+  // Given a client that still has orders
+  // When it is deleted
+  // Then a 409 CLIENT_HAS_ORDERS is thrown and nothing is deleted
+  it('throws CLIENT_HAS_ORDERS when the client still has orders', async () => {
+    vi.mocked(clientModel.findClientById).mockResolvedValue({ id: 'client-1' } as never)
+    vi.mocked(orderModel.countOrdersByClientId).mockResolvedValue(2)
+
+    await expect(deleteClient('business-1', 'client-1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CLIENT_HAS_ORDERS',
+    })
+    expect(clientModel.deleteClientById).not.toHaveBeenCalled()
   })
 })
 

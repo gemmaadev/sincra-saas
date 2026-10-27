@@ -25,4 +25,12 @@ describe('EmptyState', () => {
     expect(screen.getByText('Cuando tengas tu primer cliente, aparecerá aquí.')).toBeInTheDocument()
     expect(screen.getByText('+ Nuevo cliente')).toBeInTheDocument()
   })
+
+  // Given an EmptyState
+  // When it is rendered
+  // Then it should show the default illustration instead of a plain message
+  it('shows the default illustration', () => {
+    const { container } = render(<EmptyState title="Sin clientes todavía" />)
+    expect(container.querySelector('img[src="/empty-states-img.png"]')).toBeInTheDocument()
+  })
 })

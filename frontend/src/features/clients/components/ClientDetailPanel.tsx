@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Tabs } from '@/shared/components'
+import { Tabs, Spinner } from '@/shared/components'
 import { useClientDetail } from '../hooks/useClientDetail'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import { ClientFormModal } from './ClientFormModal'
@@ -20,7 +20,11 @@ export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
 
   if (isLoading) {
-    return <p className="text-ink-muted">Cargando cliente...</p>
+    return (
+      <div className="flex justify-center py-10">
+        <Spinner size="lg" label="Cargando cliente" />
+      </div>
+    )
   }
 
   if (isError || !client) {

@@ -19,7 +19,7 @@ import { OrderFormModal } from '@/features/orders/components/OrderFormModal'
 import { EditOrderModal } from '@/features/orders/components/EditOrderModal'
 import { CancelOrderModal } from '@/features/orders/components/CancelOrderModal'
 import { DeleteOrderModal } from '@/features/orders/components/DeleteOrderModal'
-import { KpiCardsRow } from '@/shared/components'
+import { KpiCardsRow, PageSpinner } from '@/shared/components'
 import type { Coordinates } from '@/features/clients/types/client.types'
 import type { MapClient, MapLayer, MapOrder } from '@/features/map/types/map.types'
 
@@ -74,7 +74,7 @@ export default function MapPage() {
         onToChange={mapFilters.setTo}
         onClear={mapFilters.clearFilters}
       />
-      {isLoading && <p className="text-ink-muted">Cargando mapa...</p>}
+      {isLoading && <PageSpinner label="Cargando mapa" />}
       {isError && <p className="text-error">No se ha podido cargar el mapa.</p>}
       {data && (
         <>
