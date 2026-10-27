@@ -119,14 +119,17 @@ describe('EventForm', () => {
   // Then it should be accepted, since events can span multiple days
   it('allows the end to be on a later day', async () => {
     const { onSubmit, user } = renderForm()
+    const laterDay = new Date()
+    laterDay.setDate(laterDay.getDate() + 5)
+    const laterDayValue = laterDay.toISOString().slice(0, 10)
 
     await user.type(screen.getByLabelText('Título del evento'), 'Llamar a Juan')
     await user.clear(screen.getByLabelText('Fecha fin'))
-    await user.type(screen.getByLabelText('Fecha fin'), '2026-10-20')
+    await user.type(screen.getByLabelText('Fecha fin'), laterDayValue)
     await user.click(screen.getByRole('button', { name: 'Crear evento' }))
 
     expect(onSubmit).toHaveBeenCalled()
-    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ endDate: '2026-10-20' })
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ endDate: laterDayValue })
   })
 
   // Given an existing event
