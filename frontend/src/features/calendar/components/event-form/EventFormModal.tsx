@@ -2,9 +2,9 @@ import { Calendar } from 'lucide-react'
 import { SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useSaveCalendarEvent } from '../hooks/useSaveCalendarEvent'
+import { useSaveCalendarEvent } from '../../hooks/useSaveCalendarEvent'
 import { EventForm } from './EventForm'
-import type { CalendarEventFormValues, CalendarItem } from '../types/calendar.types'
+import type { CalendarEventFormValues, CalendarItem } from '../../types/calendar.types'
 
 interface EventFormModalProps {
   opened: boolean

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { OrderItemsList } from './OrderItemsList'
-import type { OrderItem } from '../types/order.types'
+import type { OrderItem } from '../../types/order.types'
 
 const mockItems: OrderItem[] = [
   { id: 'item-1', product: 'Chaqueta oversize', description: 'Talla M - Beige', quantity: 1, unitPrice: '89.90' },

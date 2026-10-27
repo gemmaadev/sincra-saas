@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi } from 'vitest'
 import { EventDetailModal } from './EventDetailModal'
-import type { CalendarItem } from '../types/calendar.types'
+import type { CalendarItem } from '../../types/calendar.types'
 
 function renderModal(props: React.ComponentProps<typeof EventDetailModal>) {
   return render(

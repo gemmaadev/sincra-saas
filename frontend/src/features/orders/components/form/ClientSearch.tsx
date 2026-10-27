@@ -3,8 +3,8 @@ import { UserRound, Search } from 'lucide-react'
 import { Input } from '@/shared/components'
 import { useDebouncedValue } from '@/shared/hooks'
 import { ApiError } from '@/shared/services'
-import { useSearchClients } from '../hooks/useSearchClients'
-import type { ClientSearchResult } from '../types/order.types'
+import { useSearchClients } from '../../hooks/useSearchClients'
+import type { ClientSearchResult } from '../../types/order.types'
 
 const MIN_QUERY_LENGTH = 2
 

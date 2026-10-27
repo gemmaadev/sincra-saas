@@ -3,8 +3,8 @@ import { Package, Search } from 'lucide-react'
 import { Input } from '@/shared/components'
 import { useDebouncedValue } from '@/shared/hooks'
 import { ApiError } from '@/shared/services'
-import { useSearchOrders } from '../hooks/useSearchOrders'
-import type { CalendarOrderSearchResult } from '../types/calendar.types'
+import { useSearchOrders } from '../../hooks/useSearchOrders'
+import type { CalendarOrderSearchResult } from '../../types/calendar.types'
 
 const MIN_QUERY_LENGTH = 2
 

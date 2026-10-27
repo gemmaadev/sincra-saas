@@ -3,7 +3,7 @@ import { ArrowRight, MapPin, Pencil, Trash2 } from 'lucide-react'
 import { Avatar, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
-import type { MapClient } from '../types/map.types'
+import type { MapClient } from '../../types/map.types'
 
 interface ClientPopupCardProps {
   client: MapClient

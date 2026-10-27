@@ -1,5 +1,5 @@
 import { Card } from '@/shared/components'
-import type { ZoneSummary } from '../types/map.types'
+import type { ZoneSummary } from '../../types/map.types'
 
 const MAX_ZONES_SHOWN = 5
 

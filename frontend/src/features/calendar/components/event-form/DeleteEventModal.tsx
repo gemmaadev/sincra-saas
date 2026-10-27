@@ -1,7 +1,7 @@
 import { ConfirmDeleteModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useDeleteCalendarEvent } from '../hooks/useDeleteCalendarEvent'
+import { useDeleteCalendarEvent } from '../../hooks/useDeleteCalendarEvent'
 
 interface DeleteEventModalProps {
   eventId: string

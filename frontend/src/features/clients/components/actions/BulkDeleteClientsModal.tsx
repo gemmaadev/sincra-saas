@@ -1,6 +1,6 @@
 import { ConfirmDeleteModal } from '@/shared/components'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useBulkDeleteClients } from '../hooks/useBulkDeleteClients'
+import { useBulkDeleteClients } from '../../hooks/useBulkDeleteClients'
 
 interface BulkDeleteClientsModalProps {
   opened: boolean

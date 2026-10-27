@@ -3,8 +3,8 @@ import type { KeyboardEvent } from 'react'
 import { MapPin, Search } from 'lucide-react'
 import { Input, SincraButton } from '@/shared/components'
 import { ApiError } from '@/shared/services'
-import { useAddressSearch } from '../hooks/useAddressSearch'
-import type { AddressCandidate } from '../types/client.types'
+import { useAddressSearch } from '../../hooks/useAddressSearch'
+import type { AddressCandidate } from '../../types/client.types'
 
 const MIN_QUERY_LENGTH = 3
 

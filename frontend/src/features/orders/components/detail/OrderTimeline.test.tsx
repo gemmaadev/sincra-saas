@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { OrderTimeline } from './OrderTimeline'
 import { api } from '@/shared/services'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

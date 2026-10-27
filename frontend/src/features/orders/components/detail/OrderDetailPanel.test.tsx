@@ -5,7 +5,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { OrderDetailPanel } from './OrderDetailPanel'
 import { api } from '@/shared/services'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

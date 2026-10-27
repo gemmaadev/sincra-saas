@@ -1,14 +1,14 @@
 import { useForm, useWatch } from 'react-hook-form'
 import { Input, SincraButton } from '@/shared/components'
 import { CalendarEventLinkField } from './CalendarEventLinkField'
-import { toCalendarEventFormValues } from '../utils/toCalendarEventFormValues'
+import { toCalendarEventFormValues } from '../../utils/toCalendarEventFormValues'
 import type {
   CalendarClientSearchResult,
   CalendarEventFormValues,
   CalendarEventLinkType,
   CalendarItem,
   CalendarOrderSearchResult,
-} from '../types/calendar.types'
+} from '../../types/calendar.types'
 
 function validateEnd(_value: string, values: CalendarEventFormValues): string | true {
   if (!values.endDate || !values.endTime) return 'Obligatorio'

@@ -6,7 +6,7 @@ import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { OrderFormModal } from './OrderFormModal'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

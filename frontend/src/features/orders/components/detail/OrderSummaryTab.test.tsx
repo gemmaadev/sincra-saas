@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { OrderSummaryTab } from './OrderSummaryTab'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 const mockOrder: OrderDetail = {
   id: 'order-1',

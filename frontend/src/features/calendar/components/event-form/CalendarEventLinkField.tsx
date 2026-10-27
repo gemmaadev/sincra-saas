@@ -5,7 +5,7 @@ import type {
   CalendarClientSearchResult,
   CalendarEventLinkType,
   CalendarOrderSearchResult,
-} from '../types/calendar.types'
+} from '../../types/calendar.types'
 
 const LINK_TYPES: { value: CalendarEventLinkType; label: string }[] = [
   { value: 'client', label: 'Cliente' },

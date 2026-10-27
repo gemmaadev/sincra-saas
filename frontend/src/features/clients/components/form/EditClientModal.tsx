@@ -1,4 +1,4 @@
-import { useClientDetail } from '../hooks/useClientDetail'
+import { useClientDetail } from '../../hooks/useClientDetail'
 import { ClientFormModal } from './ClientFormModal'
 
 interface EditClientModalProps {

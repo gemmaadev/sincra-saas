@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api, ApiError } from '@/shared/services'
 import { OrderTagsTab } from './OrderTagsTab'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 const mockOrder: OrderDetail = {
   id: 'order-1',

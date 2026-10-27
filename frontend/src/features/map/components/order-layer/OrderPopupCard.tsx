@@ -8,7 +8,7 @@ import {
   ORDER_STATUS_COLORS,
   ORDER_STATUS_ICONS,
 } from '@/features/orders/orderStatus.constants'
-import type { MapOrder } from '../types/map.types'
+import type { MapOrder } from '../../types/map.types'
 
 interface OrderPopupCardProps {
   order: MapOrder

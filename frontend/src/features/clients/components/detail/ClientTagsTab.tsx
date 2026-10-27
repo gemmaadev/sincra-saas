@@ -1,7 +1,7 @@
 import { TagsTab } from '@/features/tags/components/TagsTab'
-import { useAssignClientTag } from '../hooks/useAssignClientTag'
-import { useRemoveClientTag } from '../hooks/useRemoveClientTag'
-import type { ClientDetail } from '../types/client.types'
+import { useAssignClientTag } from '../../hooks/useAssignClientTag'
+import { useRemoveClientTag } from '../../hooks/useRemoveClientTag'
+import type { ClientDetail } from '../../types/client.types'
 
 interface ClientTagsTabProps {
   client: ClientDetail

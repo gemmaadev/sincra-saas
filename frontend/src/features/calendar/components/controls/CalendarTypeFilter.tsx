@@ -1,8 +1,8 @@
 import { useDisclosure, useClickOutside } from '@mantine/hooks'
 import { ListFilter, ChevronDown } from 'lucide-react'
 import { Checkbox } from '@/shared/components'
-import { CALENDAR_SOURCE_LABELS } from '../calendarSource.constants'
-import type { CalendarEventSource } from '../types/calendar.types'
+import { CALENDAR_SOURCE_LABELS } from '../../calendarSource.constants'
+import type { CalendarEventSource } from '../../types/calendar.types'
 
 const FILTERABLE_SOURCES: CalendarEventSource[] = ['MANUAL', 'ORDER', 'AI']
 

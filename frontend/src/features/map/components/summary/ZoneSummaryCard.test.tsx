@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { ZoneSummaryCard } from './ZoneSummaryCard'
-import type { ZoneSummary } from '../types/map.types'
+import type { ZoneSummary } from '../../types/map.types'
 
 function zoneSummary(zone: string, count: number, percentage: number): ZoneSummary {
   return { zone, count, percentage }

@@ -1,4 +1,4 @@
-import { useOrderDetail } from '../hooks/useOrderDetail'
+import { useOrderDetail } from '../../hooks/useOrderDetail'
 import { OrderFormModal } from './OrderFormModal'
 
 interface EditOrderModalProps {

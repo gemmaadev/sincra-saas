@@ -6,7 +6,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { OrderMarker } from './OrderMarker'
-import type { MapOrder } from '../types/map.types'
+import type { MapOrder } from '../../types/map.types'
 
 const mockOrder: MapOrder = {
   id: 'order-1',

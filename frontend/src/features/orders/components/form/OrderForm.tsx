@@ -5,8 +5,8 @@ import { Input, Select, SincraButton, IconButton } from '@/shared/components'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import type { Coordinates } from '@/features/clients/types/client.types'
 import { ClientSearch } from './ClientSearch'
-import { toOrderFormValues, EMPTY_ITEM } from '../utils/toOrderFormValues'
-import type { OrderDetail, OrderFormValues, ClientSearchResult } from '../types/order.types'
+import { toOrderFormValues, EMPTY_ITEM } from '../../utils/toOrderFormValues'
+import type { OrderDetail, OrderFormValues, ClientSearchResult } from '../../types/order.types'
 
 const CHANNEL_OPTIONS = CHANNEL_BRANDS.map((brand) => ({
   value: brand.id.toUpperCase(),

@@ -6,7 +6,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { stubMapSize, waitOutDoubleClickWindow } from '@/shared/test/leaflet'
 import { ClientMarker } from './ClientMarker'
-import type { MapClient } from '../types/map.types'
+import type { MapClient } from '../../types/map.types'
 
 const mockClient: MapClient = {
   id: 'client-1',

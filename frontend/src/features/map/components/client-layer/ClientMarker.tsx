@@ -3,7 +3,7 @@ import { divIcon } from 'leaflet'
 import { Marker, Popup, useMap } from 'react-leaflet'
 import { getInitials } from '@/shared/utils'
 import { ClientPopupCard } from './ClientPopupCard'
-import type { MapClient } from '../types/map.types'
+import type { MapClient } from '../../types/map.types'
 
 function buildClientIcon(name: string) {
   return divIcon({

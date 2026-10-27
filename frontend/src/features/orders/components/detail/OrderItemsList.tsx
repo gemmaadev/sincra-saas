@@ -1,6 +1,6 @@
 import { Card } from '@/shared/components'
 import { formatCurrency } from '@/shared/utils'
-import type { OrderItem } from '../types/order.types'
+import type { OrderItem } from '../../types/order.types'
 
 interface OrderItemsListProps {
   items: OrderItem[]

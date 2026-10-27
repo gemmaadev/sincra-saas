@@ -1,5 +1,5 @@
 import { Card } from '@/shared/components'
-import type { MapClient } from '../types/map.types'
+import type { MapClient } from '../../types/map.types'
 
 interface ApproximateClientsCardProps {
   clients: MapClient[]

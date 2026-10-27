@@ -3,9 +3,9 @@ import { formatDateTime } from '@/shared/utils'
 import { SincraButton } from '@/shared/components'
 import type { BadgeColor } from '@/shared/components'
 import { ApiError } from '@/shared/services'
-import { ORDER_STATUS_ICONS, ORDER_STATUS_COLORS } from '../orderStatus.constants'
-import { useUpdateOrderStatus } from '../hooks/useUpdateOrderStatus'
-import type { OrderDetail, OrderStatus } from '../types/order.types'
+import { ORDER_STATUS_ICONS, ORDER_STATUS_COLORS } from '../../orderStatus.constants'
+import { useUpdateOrderStatus } from '../../hooks/useUpdateOrderStatus'
+import type { OrderDetail, OrderStatus } from '../../types/order.types'
 
 const TIMELINE_STEPS: { status: OrderStatus; label: string }[] = [
   { status: 'PENDING', label: 'Pedido recibido' },

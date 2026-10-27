@@ -5,9 +5,9 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_ICONS,
-} from '../orderStatus.constants'
+} from '../../orderStatus.constants'
 import { OrderItemsList } from './OrderItemsList'
-import type { OrderDetail } from '../types/order.types'
+import type { OrderDetail } from '../../types/order.types'
 
 interface OrderSummaryTabProps {
   order: OrderDetail

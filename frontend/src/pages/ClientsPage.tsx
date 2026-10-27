@@ -5,9 +5,9 @@ import { useClients } from '@/features/clients/hooks/useClients'
 import { useClientsFilters } from '@/features/clients/hooks/useClientsFilters'
 import { ClientsFilterBar } from '@/features/clients/components/ClientsFilterBar'
 import { ClientsTableSkeleton } from '@/features/clients/components/ClientsTableSkeleton'
-import { ClientDetailPanel } from '@/features/clients/components/ClientDetailPanel'
-import { ClientFormModal } from '@/features/clients/components/ClientFormModal'
-import { BulkDeleteClientsModal } from '@/features/clients/components/BulkDeleteClientsModal'
+import { ClientDetailPanel } from '@/features/clients/components/detail/ClientDetailPanel'
+import { ClientFormModal } from '@/features/clients/components/form/ClientFormModal'
+import { BulkDeleteClientsModal } from '@/features/clients/components/actions/BulkDeleteClientsModal'
 import { clientsTableColumns } from '@/features/clients/utils/clientsTableColumns'
 import {
   Table,

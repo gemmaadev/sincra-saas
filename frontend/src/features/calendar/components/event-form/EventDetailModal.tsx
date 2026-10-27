@@ -1,7 +1,7 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react'
 import { SincraModal, SincraButton } from '@/shared/components'
 import { formatDateRange } from '@/shared/utils'
-import type { CalendarItem } from '../types/calendar.types'
+import type { CalendarItem } from '../../types/calendar.types'
 
 interface EventDetailModalProps {
   opened: boolean

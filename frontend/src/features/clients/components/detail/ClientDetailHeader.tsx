@@ -1,7 +1,7 @@
 import { Mail, Phone, Pencil, Trash2 } from 'lucide-react'
 import { Avatar, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 interface ClientDetailHeaderProps {
   client: ClientDetail

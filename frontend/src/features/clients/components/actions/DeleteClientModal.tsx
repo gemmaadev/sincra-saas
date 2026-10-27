@@ -1,8 +1,8 @@
 import { ConfirmDeleteModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useDeleteClient } from '../hooks/useDeleteClient'
-import type { ClientDetail } from '../types/client.types'
+import { useDeleteClient } from '../../hooks/useDeleteClient'
+import type { ClientDetail } from '../../types/client.types'
 
 interface DeleteClientModalProps {
   client: Pick<ClientDetail, 'id' | 'name'>

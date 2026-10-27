@@ -1,7 +1,7 @@
 import ReactECharts from 'echarts-for-react'
 import { Card } from '@/shared/components'
 import { formatCurrency } from '@/shared/utils'
-import type { ZoneChartPoint } from '../utils/buildZoneChartData'
+import type { ZoneChartPoint } from '../../utils/buildZoneChartData'
 
 interface ZoneBarChartProps {
   title: string

@@ -1,7 +1,7 @@
 import { TagsTab } from '@/features/tags/components/TagsTab'
-import { useAssignOrderTag } from '../hooks/useAssignOrderTag'
-import { useRemoveOrderTag } from '../hooks/useRemoveOrderTag'
-import type { OrderDetail } from '../types/order.types'
+import { useAssignOrderTag } from '../../hooks/useAssignOrderTag'
+import { useRemoveOrderTag } from '../../hooks/useRemoveOrderTag'
+import type { OrderDetail } from '../../types/order.types'
 
 interface OrderTagsTabProps {
   order: OrderDetail

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { CalendarTypeFilter } from './CalendarTypeFilter'
-import type { CalendarEventSource } from '../types/calendar.types'
+import type { CalendarEventSource } from '../../types/calendar.types'
 
 describe('CalendarTypeFilter', () => {
   // Given the dropdown is closed

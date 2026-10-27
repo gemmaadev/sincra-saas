@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useDisclosure, useClickOutside } from '@mantine/hooks'
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
-import { formatCurrentLabel } from '../utils/formatCurrentLabel'
+import { formatCurrentLabel } from '../../utils/formatCurrentLabel'
 
 const MONTH_LABELS = [
   'Ene',

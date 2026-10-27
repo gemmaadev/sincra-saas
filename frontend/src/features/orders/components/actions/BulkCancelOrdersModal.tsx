@@ -1,6 +1,6 @@
 import { ConfirmDeleteModal } from '@/shared/components'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useBulkCancelOrders } from '../hooks/useBulkCancelOrders'
+import { useBulkCancelOrders } from '../../hooks/useBulkCancelOrders'
 
 interface BulkCancelOrdersModalProps {
   opened: boolean

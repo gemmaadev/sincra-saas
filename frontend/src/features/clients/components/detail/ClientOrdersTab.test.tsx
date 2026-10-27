@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { ClientOrdersTab } from './ClientOrdersTab'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 const mockClient: ClientDetail = {
   id: 'client-1',

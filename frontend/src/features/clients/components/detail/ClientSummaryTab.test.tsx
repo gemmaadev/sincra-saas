@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import { describe, it, expect } from 'vitest'
 import { ClientSummaryTab } from './ClientSummaryTab'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 const mockClient: ClientDetail = {
   id: 'client-1',

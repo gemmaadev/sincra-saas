@@ -1,4 +1,4 @@
-import type { CalendarViewMode } from '../types/calendar.types'
+import type { CalendarViewMode } from '../../types/calendar.types'
 
 const baseClasses = 'px-4 py-1.5 text-sm font-medium transition-colors'
 

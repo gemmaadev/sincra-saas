@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { ClientForm } from './ClientForm'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 const mockClient: ClientDetail = {
   id: 'client-1',

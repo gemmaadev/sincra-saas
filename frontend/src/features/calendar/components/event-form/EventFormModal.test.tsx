@@ -6,7 +6,7 @@ import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { EventFormModal } from './EventFormModal'
-import type { CalendarItem } from '../types/calendar.types'
+import type { CalendarItem } from '../../types/calendar.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

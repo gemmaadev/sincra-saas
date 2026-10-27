@@ -1,7 +1,7 @@
 import { NotesTab } from '@/shared/components'
-import { useClientNotes } from '../hooks/useClientNotes'
-import { useCreateNote } from '../hooks/useCreateNote'
-import { useDeleteNote } from '../hooks/useDeleteNote'
+import { useClientNotes } from '../../hooks/useClientNotes'
+import { useCreateNote } from '../../hooks/useCreateNote'
+import { useDeleteNote } from '../../hooks/useDeleteNote'
 
 interface ClientNotesTabProps {
   clientId: string

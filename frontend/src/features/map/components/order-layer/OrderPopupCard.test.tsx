@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { OrderPopupCard } from './OrderPopupCard'
-import type { MapOrder } from '../types/map.types'
+import type { MapOrder } from '../../types/map.types'
 
 const mockOrder: MapOrder = {
   id: 'order-1',

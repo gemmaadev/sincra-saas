@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api, ApiError } from '@/shared/services'
 import { ClientTagsTab } from './ClientTagsTab'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 const mockClient: ClientDetail = {
   id: 'client-1',

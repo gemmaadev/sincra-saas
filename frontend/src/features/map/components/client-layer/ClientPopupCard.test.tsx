@@ -4,7 +4,7 @@ import { MantineProvider } from '@mantine/core'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { ClientPopupCard } from './ClientPopupCard'
-import type { MapClient } from '../types/map.types'
+import type { MapClient } from '../../types/map.types'
 
 const mockClient: MapClient = {
   id: 'client-1',

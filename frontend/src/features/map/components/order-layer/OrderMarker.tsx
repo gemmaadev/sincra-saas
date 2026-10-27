@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { divIcon } from 'leaflet'
 import { Marker, Popup, useMap } from 'react-leaflet'
 import { OrderPopupCard } from './OrderPopupCard'
-import type { MapOrder } from '../types/map.types'
+import type { MapOrder } from '../../types/map.types'
 
 function buildOrderIcon(number: number) {
   return divIcon({

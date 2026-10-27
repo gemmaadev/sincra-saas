@@ -1,7 +1,7 @@
 import { NotesTab } from '@/shared/components'
-import { useOrderNotes } from '../hooks/useOrderNotes'
-import { useCreateOrderNote } from '../hooks/useCreateOrderNote'
-import { useDeleteOrderNote } from '../hooks/useDeleteOrderNote'
+import { useOrderNotes } from '../../hooks/useOrderNotes'
+import { useCreateOrderNote } from '../../hooks/useCreateOrderNote'
+import { useDeleteOrderNote } from '../../hooks/useDeleteOrderNote'
 
 interface OrderNotesTabProps {
   orderId: string

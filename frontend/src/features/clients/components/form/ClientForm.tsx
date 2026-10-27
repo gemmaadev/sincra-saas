@@ -6,7 +6,7 @@ import { EMAIL_PATTERN, PHONE_PATTERN } from '@/shared/utils'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
 import type { Channel } from '@/shared/types'
 import { AddressSearch } from './AddressSearch'
-import type { AddressCandidate, ClientDetail, ClientFormValues, Coordinates } from '../types/client.types'
+import type { AddressCandidate, ClientDetail, ClientFormValues, Coordinates } from '../../types/client.types'
 
 interface ClientFormProps {
   client?: ClientDetail

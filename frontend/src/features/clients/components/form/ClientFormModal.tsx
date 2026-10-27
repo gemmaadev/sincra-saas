@@ -2,9 +2,9 @@ import { UserRound } from 'lucide-react'
 import { SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useSaveClient } from '../hooks/useSaveClient'
+import { useSaveClient } from '../../hooks/useSaveClient'
 import { ClientForm } from './ClientForm'
-import type { ClientDetail, ClientFormValues, Coordinates } from '../types/client.types'
+import type { ClientDetail, ClientFormValues, Coordinates } from '../../types/client.types'
 
 interface ClientFormModalProps {
   opened: boolean

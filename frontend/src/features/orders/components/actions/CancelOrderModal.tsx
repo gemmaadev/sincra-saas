@@ -1,8 +1,8 @@
 import { ConfirmDeleteModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import { useUpdateOrderStatus } from '../hooks/useUpdateOrderStatus'
-import type { OrderDetail } from '../types/order.types'
+import { useUpdateOrderStatus } from '../../hooks/useUpdateOrderStatus'
+import type { OrderDetail } from '../../types/order.types'
 
 interface CancelOrderModalProps {
   order: Pick<OrderDetail, 'id' | 'number'>

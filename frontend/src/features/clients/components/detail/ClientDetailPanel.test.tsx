@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
 import { api, ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
-import type { ClientDetail } from '../types/client.types'
+import type { ClientDetail } from '../../types/client.types'
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()

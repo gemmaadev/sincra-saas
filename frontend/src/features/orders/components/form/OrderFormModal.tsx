@@ -3,9 +3,9 @@ import { SincraModal } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { notifySuccess } from '@/shared/utils/notify'
 import type { Coordinates } from '@/features/clients/types/client.types'
-import { useSaveOrder } from '../hooks/useSaveOrder'
+import { useSaveOrder } from '../../hooks/useSaveOrder'
 import { OrderForm } from './OrderForm'
-import type { OrderDetail, OrderFormValues } from '../types/order.types'
+import type { OrderDetail, OrderFormValues } from '../../types/order.types'
 
 interface OrderFormModalProps {
   opened: boolean
