@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { CalendarView } from '@/features/calendar/components/CalendarView'
-import { EventFormModal } from '@/features/calendar/components/EventFormModal'
-import { EventDetailModal } from '@/features/calendar/components/EventDetailModal'
-import { DeleteEventModal } from '@/features/calendar/components/DeleteEventModal'
+import { EventFormModal } from '@/features/calendar/components/event-form/EventFormModal'
+import { EventDetailModal } from '@/features/calendar/components/event-form/EventDetailModal'
+import { DeleteEventModal } from '@/features/calendar/components/event-form/DeleteEventModal'
 import { SincraButton } from '@/shared/components'
 import type { CalendarItem } from '@/features/calendar/types/calendar.types'
 
