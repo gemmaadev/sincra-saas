@@ -97,7 +97,7 @@ describe('getOverview', () => {
 
     expect(countClients).toHaveBeenCalledWith('business-1', {
       gte: new Date('2026-10-01'),
-      lte: new Date('2026-10-31'),
+      lt: new Date('2026-11-01'),
     })
   })
 
@@ -111,7 +111,23 @@ describe('getOverview', () => {
 
     await getOverview('business-1', { dateFrom: 'not-a-date', dateTo: '2026-10-31' })
 
-    expect(countClients).toHaveBeenCalledWith('business-1', { lte: new Date('2026-10-31') })
+    expect(countClients).toHaveBeenCalledWith('business-1', { lt: new Date('2026-11-01') })
+  })
+
+  // Given a dateTo of the last day of the selected range
+  // When getting the overview
+  // Then the upper bound should be exclusive, so a client/order created later that day is included
+  it('includes the full last day of the date range', async () => {
+    const countClients = vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([])
+
+    await getOverview('business-1', { dateTo: '2026-10-31' })
+
+    const range = countClients.mock.calls[0][1] as { lt: Date }
+    const lateInTheDay = new Date('2026-10-31T23:59:59.999Z')
+
+    expect(lateInTheDay.getTime()).toBeLessThan(range.lt.getTime())
   })
 
   // Given no date filters at all
@@ -180,8 +196,22 @@ describe('getOrdersByStatus', () => {
 
     expect(countByStatus).toHaveBeenCalledWith('business-1', {
       gte: new Date('2026-10-01'),
-      lte: new Date('2026-10-31'),
+      lt: new Date('2026-11-01'),
     })
+  })
+
+  // Given a dateTo of the last day of the selected range
+  // When getting the orders-by-status breakdown
+  // Then the upper bound should be exclusive, so an order created later that day is included
+  it('includes the full last day of the date range', async () => {
+    const countByStatus = vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([])
+
+    await getOrdersByStatus('business-1', { dateTo: '2026-10-31' })
+
+    const range = countByStatus.mock.calls[0][1] as { lt: Date }
+    const lateInTheDay = new Date('2026-10-31T23:59:59.999Z')
+
+    expect(lateInTheDay.getTime()).toBeLessThan(range.lt.getTime())
   })
 })
 

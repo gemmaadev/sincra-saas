@@ -51,8 +51,11 @@ function buildCreatedAtRange(
   }
 
   if (dateTo) {
-    const lte = new Date(dateTo)
-    if (!Number.isNaN(lte.getTime())) range.lte = lte
+    const lt = new Date(dateTo)
+    if (!Number.isNaN(lt.getTime())) {
+      lt.setDate(lt.getDate() + 1)
+      range.lt = lt
+    }
   }
 
   return Object.keys(range).length > 0 ? range : undefined
@@ -157,6 +160,13 @@ function bucketStart(date: Date, granularity: OrdersEvolutionGranularity): Date 
     : new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+// Undoes the +1 day from buildCreatedAtRange's exclusive upper bound, back to the actual last selected day.
+function previousDay(date: Date): Date {
+  const previous = new Date(date)
+  previous.setDate(previous.getDate() - 1)
+  return previous
+}
+
 // Generates every date/week in range for a continuous chart timeline (filling empty days with 0).
 function buildBucketKeys(
   dateFrom: Date,
@@ -192,8 +202,8 @@ export async function getOrdersEvolution(
 
   // If date range is incomplete, only plot buckets with actual data.
   const bucketKeys =
-    createdAtRange?.gte && createdAtRange.lte
-      ? buildBucketKeys(createdAtRange.gte as Date, createdAtRange.lte as Date, granularity)
+    createdAtRange?.gte && createdAtRange.lt
+      ? buildBucketKeys(createdAtRange.gte as Date, previousDay(createdAtRange.lt as Date), granularity)
       : [...counts.keys()].sort()
 
   return {
