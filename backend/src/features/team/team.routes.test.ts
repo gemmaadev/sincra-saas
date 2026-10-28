@@ -4,10 +4,12 @@ import app from '../../app'
 import { signToken, signInvitationToken } from '../../shared/jwt'
 import * as teamService from './team.service'
 import { AppError } from '../../shared/AppError'
+import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
 describe('team routes', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('ADMIN')
   })
 
   const adminCookie = `token=${signToken({ userId: 'admin-1', businessId: 'biz-1', role: 'ADMIN' })}`
@@ -37,6 +39,7 @@ describe('team routes', () => {
     // When trying to invite a new team member
     // Then requireRole should reject it with 403 before it ever reaches the service
     it('returns 403 when the requester is an employee, not an admin', async () => {
+      mockActiveMembership('EMPLOYEE')
       const inviteSpy = vi.spyOn(teamService, 'inviteMember')
 
       const res = await request(app)
@@ -128,6 +131,7 @@ describe('team routes', () => {
     // When listing team members
     // Then it should reach the service and return 200
     it('reaches the service for any authenticated member', async () => {
+      mockActiveMembership('EMPLOYEE')
       vi.spyOn(teamService, 'listBusinessMembers').mockResolvedValue([])
 
       const res = await request(app).get('/team').set('Cookie', employeeCookie)
@@ -183,6 +187,7 @@ describe('team routes', () => {
     // When trying to update a member's status
     // Then requireRole should reject it with 403 before it ever reaches the service
     it('returns 403 when the requester is an employee, not an admin', async () => {
+      mockActiveMembership('EMPLOYEE')
       const updateSpy = vi.spyOn(teamService, 'updateMemberStatus')
 
       const res = await request(app)
@@ -242,6 +247,7 @@ describe('team routes', () => {
     // When trying to resend an invite
     // Then requireRole should reject it with 403 before it ever reaches the service
     it('returns 403 when the requester is an employee, not an admin', async () => {
+      mockActiveMembership('EMPLOYEE')
       const resendSpy = vi.spyOn(teamService, 'resendInvite')
 
       const res = await request(app)

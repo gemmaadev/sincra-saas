@@ -3,10 +3,12 @@ import request from 'supertest'
 import app from '../../app'
 import { signToken, signPendingToken } from '../../shared/jwt'
 import * as authService from './auth.service'
+import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
 describe('auth routes', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership()
   })
 
   const validCookie = `token=${signToken({ userId: 'user-1', businessId: 'biz-1', role: 'ADMIN' })}`

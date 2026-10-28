@@ -4,10 +4,12 @@ import app from '../../app'
 import { signToken } from '../../shared/jwt'
 import * as clientService from './client.service'
 import * as clientMapService from './map/client-map.service'
+import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
 describe('client tag routes', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('EMPLOYEE')
   })
 
   const employeeCookie = `token=${signToken({ userId: 'emp-1', businessId: 'biz-1', role: 'EMPLOYEE' })}`
@@ -90,6 +92,7 @@ describe('client tag routes', () => {
 describe('GET /clients/map', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('EMPLOYEE')
   })
 
   const memberCookie = `token=${signToken({ userId: 'emp-1', businessId: 'biz-1', role: 'EMPLOYEE' })}`
@@ -155,6 +158,7 @@ describe('GET /clients/map', () => {
 describe('GET /clients/address-search', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('EMPLOYEE')
   })
 
   const employeeCookie = `token=${signToken({ userId: 'emp-1', businessId: 'biz-1', role: 'EMPLOYEE' })}`
