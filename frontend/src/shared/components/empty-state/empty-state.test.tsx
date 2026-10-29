@@ -31,6 +31,6 @@ describe('EmptyState', () => {
   // Then it should show the default illustration instead of a plain message
   it('shows the default illustration', () => {
     const { container } = render(<EmptyState title="Sin clientes todavía" />)
-    expect(container.querySelector('img[src="/empty-states-img.png"]')).toBeInTheDocument()
+    expect(container.querySelector('img[src="/empty-states-img.webp"]')).toBeInTheDocument()
   })
 })

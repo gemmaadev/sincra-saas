@@ -21,6 +21,8 @@ function FlowAgent({ agent, ringClassName }: { agent: AiAgent; ringClassName: st
       <img
         src={agent.avatar}
         alt=""
+        width={64}
+        height={64}
         className={`size-16 rounded-2xl object-cover ring-4 ${ringClassName}`}
       />
       <div>

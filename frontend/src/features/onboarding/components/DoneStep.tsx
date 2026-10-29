@@ -16,10 +16,11 @@ export function DoneStep({ data }: DoneStepProps) {
     <div className="flex w-full flex-col items-center gap-6 text-center">
       <div className="flex flex-w-full max-w-md">
         <img
-          src="/onboarding-step-3.png"
+          src="/onboarding-step-3.webp"
           alt="Ilustración de un gato durmiendo sobre un sobre de correo, con un avión de papel volando"
           className="w-full max-w-lg"
-          width={30}
+          width={1024}
+          height={432}
         />
       </div>
 
