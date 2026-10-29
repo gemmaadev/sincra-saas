@@ -32,7 +32,7 @@ export function PasswordInput({
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-          className="flex items-center"
+          className="flex items-center p-1 -m-1"
         >
           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>

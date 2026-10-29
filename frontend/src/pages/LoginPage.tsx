@@ -92,7 +92,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-ink-muted">
           ¿No tienes una cuenta?{' '}
-          <Link to="/register" className="text-primary">
+          <Link to="/register" className="text-primary underline">
             Regístrate
           </Link>
         </p>
