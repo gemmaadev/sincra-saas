@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { GoogleOAuthProvider } from '@react-oauth/google'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RegisterPage from './RegisterPage'
 import { AuthProvider } from '@/features/auth/context/AuthProvider'
@@ -26,13 +25,11 @@ vi.mock('@/shared/services', () => {
 function renderRegisterPage() {
   return render(
     withQueryClient(
-      <GoogleOAuthProvider clientId="test-google-client-id">
-        <MemoryRouter>
-          <AuthProvider>
-            <RegisterPage />
-          </AuthProvider>
-        </MemoryRouter>
-      </GoogleOAuthProvider>,
+      <MemoryRouter>
+        <AuthProvider>
+          <RegisterPage />
+        </AuthProvider>
+      </MemoryRouter>,
     ),
   )
 }
