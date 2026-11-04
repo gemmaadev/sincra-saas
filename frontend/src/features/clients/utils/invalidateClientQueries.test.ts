@@ -5,8 +5,8 @@ import { invalidateClientQueries } from './invalidateClientQueries'
 describe('invalidateClientQueries', () => {
   // Given a client id
   // When the client queries are invalidated
-  // Then both the clients list and that client's detail should be refreshed
-  it('invalidates the list and the detail of the client', () => {
+  // Then the clients list, that client's detail, stats and calendar should all be refreshed
+  it('invalidates the list, the detail, stats and calendar', () => {
     const queryClient = new QueryClient()
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -14,18 +14,22 @@ describe('invalidateClientQueries', () => {
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['clients'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['client', 'client-1'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['stats'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['calendar'] })
   })
 
   // Given no client id
   // When the client queries are invalidated
-  // Then only the clients list should be refreshed
-  it('invalidates only the list when there is no client id', () => {
+  // Then the clients list, stats and calendar should be refreshed, but no single-client detail
+  it('skips the client detail when there is no client id', () => {
     const queryClient = new QueryClient()
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
 
     invalidateClientQueries(queryClient)
 
-    expect(invalidateQueries).toHaveBeenCalledTimes(1)
+    expect(invalidateQueries).toHaveBeenCalledTimes(3)
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['clients'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['stats'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['calendar'] })
   })
 })

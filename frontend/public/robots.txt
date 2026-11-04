@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /clients
+Disallow: /orders
+Disallow: /calendar
+Disallow: /map
+Disallow: /stats
+Disallow: /team
+Disallow: /automations
+Disallow: /settings
+Disallow: /profile
+Disallow: /inbox

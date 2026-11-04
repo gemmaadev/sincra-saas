@@ -1,9 +1,9 @@
 import { Radio } from 'lucide-react'
+import { Spinner, SectionHeader } from '@/shared/components'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
 import { ONBOARDING_CHANNELS } from '@/features/onboarding/onboarding.constants'
 import { useConnectedChannels } from '../hooks/useConnectedChannels'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
-import { SectionHeader } from './SectionHeader'
 import type { ChannelConnectionStatus } from '../types/settings.types'
 import type { Channel } from '@/shared/types'
 
@@ -35,7 +35,9 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
       />
 
       {isLoading ? (
-        <p className="text-sm text-ink-muted">Cargando canales...</p>
+        <div className="flex justify-center py-6">
+          <Spinner label="Cargando canales" />
+        </div>
       ) : (
         <div className="flex flex-col divide-y divide-neutral-100">
           {ONBOARDING_CHANNELS.map((channel) => {

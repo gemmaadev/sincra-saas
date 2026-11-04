@@ -1,4 +1,4 @@
-import { useGoogleLogin } from '@react-oauth/google'
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'
 import { MicrosoftIcon } from '@/shared/components/icon/OAuthIcons'
 import { FcGoogle } from 'react-icons/fc'
 import { useSocialLogin } from '../hooks/useSocialLogin'
@@ -6,6 +6,14 @@ import { useSocialLogin } from '../hooks/useSocialLogin'
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
 export function SocialLoginButtons() {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <SocialLoginButtonsContent />
+    </GoogleOAuthProvider>
+  )
+}
+
+function SocialLoginButtonsContent() {
   const { loginWithGoogle, isSubmitting, error, setError } = useSocialLogin()
 
   const googleLogin = useGoogleLogin({

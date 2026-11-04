@@ -6,12 +6,13 @@ import { SincraButton } from '@/shared/components/button'
 import { Card } from '@/shared/components/card'
 import { Badge } from '@/shared/components/badge'
 import { InfoField, CopyableField } from '@/shared/components/field'
+import { Spinner } from '@/shared/components/spinner'
 import { formatDate } from '@/shared/utils/date'
 import type { User } from '@/features/auth/context/AuthContext'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '../hooks/useProfile'
 import { useUpdateProfile } from '../hooks/useUpdateProfile'
-import { SectionHeader } from './SectionHeader'
+import { SectionHeader } from '@/shared/components/section-header'
 import { PHONE_PATTERN } from '@/shared/utils'
 import { notifySuccess } from '@/shared/utils/notify'
 
@@ -72,7 +73,9 @@ export function PersonalInfoTab({ user }: PersonalInfoTabProps) {
     return (
       <Card className="flex flex-col gap-4">
         <SectionHeader icon={<UserIcon size={24} aria-hidden="true" />} title="Datos personales" />
-        <p className="text-sm text-ink-muted">Cargando datos personales…</p>
+        <div className="flex justify-center py-6">
+          <Spinner label="Cargando datos personales" />
+        </div>
       </Card>
     )
   }

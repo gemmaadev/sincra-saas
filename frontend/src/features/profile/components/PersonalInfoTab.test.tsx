@@ -78,10 +78,10 @@ describe('PersonalInfoTab', () => {
 
   // Given the profile data is still loading
   // When the tab is first rendered
-  // Then a loading message should be shown instead of the form
-  it('shows a loading message while the profile is being fetched', () => {
+  // Then a loading spinner should be shown instead of the form
+  it('shows a loading spinner while the profile is being fetched', () => {
     renderPersonalInfoTab()
-    expect(screen.getByText('Cargando datos personales…')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando datos personales' })).toBeInTheDocument()
   })
 
   // Given the profile has loaded

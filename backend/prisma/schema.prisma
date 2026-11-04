@@ -95,6 +95,30 @@ model Business {
   orders            Order[]
   calendarEvents    CalendarEvent[]
   connectedChannels ConnectedChannel[]
+  extractions       Extraction[]
+}
+
+// Audit trail of AI findings, scoped to the business that received the email.
+model Extraction {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  businessId     String    @map("business_id")
+  emailId        String    @map("email_id")
+  emailSubject   String?   @map("email_subject")
+  emailFrom      String    @map("email_from")
+  emailTo        String?   @map("email_to")
+  extractionType String    @map("extraction_type")
+  rawData        Json      @default("{}") @map("raw_data")
+  confidence     Int?
+  status         String    @default("pending")
+  syncedAt       DateTime? @map("synced_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, status])
+  @@index([emailId])
+  @@index([extractionType])
+  @@map("extractions")
 }
 
 model User {

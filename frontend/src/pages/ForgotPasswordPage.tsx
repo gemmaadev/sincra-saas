@@ -13,7 +13,7 @@ interface ForgotPasswordFormData {
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate()
-  const { requestPasswordReset, isSubmitting } = useForgotPassword()
+  const { requestPasswordReset, isSubmitting, error } = useForgotPassword()
 
   const {
     register,
@@ -22,8 +22,8 @@ export default function ForgotPasswordPage() {
   } = useForm<ForgotPasswordFormData>()
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    await requestPasswordReset(data.email)
-    navigate('/verify-email', { state: { email: data.email } })
+    const success = await requestPasswordReset(data.email)
+    if (success) navigate('/verify-email', { state: { email: data.email } })
   }
 
   return (
@@ -62,6 +62,8 @@ export default function ForgotPasswordPage() {
             })}
           />
 
+          {error && <p className="rounded-lg bg-error/10 px-3 py-2 text-sm text-error">{error}</p>}
+
           <SincraButton type="submit" variant="primary" disabled={isSubmitting}>
             {isSubmitting ? 'Enviando...' : 'Enviar enlace'}
           </SincraButton>
@@ -69,7 +71,7 @@ export default function ForgotPasswordPage() {
 
         <p className="text-center text-sm text-ink-muted">
           ¿Recordaste tu contraseña?{' '}
-          <Link to="/login" className="text-primary">
+          <Link to="/login" className="text-primary underline">
             Inicia sesión
           </Link>
         </p>

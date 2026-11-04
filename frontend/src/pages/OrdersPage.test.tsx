@@ -145,6 +145,26 @@ describe('OrdersPage', () => {
     expect(await screen.findByText('Todavía no tienes pedidos')).toBeInTheDocument()
   })
 
+  // Given there are no results while a filter is active
+  // When OrdersPage is rendered
+  // Then it should show the "no results" empty state instead of "no orders yet",
+  // and clearing filters should bring back the "no orders yet" wording
+  it('shows a different empty state when filters are active, with a way to clear them', async () => {
+    mockApiGet({ data: [] })
+    renderOrdersPage()
+    await screen.findByText('Todavía no tienes pedidos')
+    const user = userEvent.setup()
+
+    await user.selectOptions(screen.getByLabelText('Estado'), 'PREPARING')
+
+    expect(await screen.findByText('No se han encontrado pedidos')).toBeInTheDocument()
+    expect(screen.queryByText('Todavía no tienes pedidos')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(await screen.findByText('Todavía no tienes pedidos')).toBeInTheDocument()
+  })
+
   // Given the API call fails
   // When OrdersPage is rendered
   // Then an error message should be shown

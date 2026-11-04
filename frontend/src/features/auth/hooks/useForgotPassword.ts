@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { api } from '@/shared/services'
+import { api, ApiError } from '@/shared/services'
 import type { SuccessResponse } from '@/shared/types'
 
 export function useForgotPassword() {
@@ -7,5 +7,17 @@ export function useForgotPassword() {
     mutationFn: (email: string) => api.post<SuccessResponse>('/auth/forgot-password', { email }),
   })
 
-  return { requestPasswordReset: mutation.mutateAsync, isSubmitting: mutation.isPending }
+  const requestPasswordReset = (email: string): Promise<boolean> =>
+    mutation.mutateAsync(email).then(
+      () => true,
+      () => false,
+    )
+
+  const error = mutation.error
+    ? mutation.error instanceof ApiError
+      ? mutation.error.message
+      : 'No se ha podido enviar el enlace. Inténtalo de nuevo.'
+    : null
+
+  return { requestPasswordReset, isSubmitting: mutation.isPending, error }
 }

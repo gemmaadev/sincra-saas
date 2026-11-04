@@ -5,10 +5,10 @@ import { useOrders } from '@/features/orders/hooks/useOrders'
 import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
 import { OrdersTableSkeleton } from '@/features/orders/components/OrdersTableSkeleton'
-import { OrderDetailPanel } from '@/features/orders/components/OrderDetailPanel'
-import { OrderFormModal } from '@/features/orders/components/OrderFormModal'
-import { BulkDeleteOrdersModal } from '@/features/orders/components/BulkDeleteOrdersModal'
-import { BulkCancelOrdersModal } from '@/features/orders/components/BulkCancelOrdersModal'
+import { OrderDetailPanel } from '@/features/orders/components/detail/OrderDetailPanel'
+import { OrderFormModal } from '@/features/orders/components/form/OrderFormModal'
+import { BulkDeleteOrdersModal } from '@/features/orders/components/actions/BulkDeleteOrdersModal'
+import { BulkCancelOrdersModal } from '@/features/orders/components/actions/BulkCancelOrdersModal'
 import { ordersTableColumns } from '@/features/orders/utils/ordersTableColumns'
 import {
   Table,
@@ -43,6 +43,8 @@ export default function OrdersPage() {
     changeDateFrom,
     changeDateTo,
     isDateRangeInvalid,
+    hasActiveFilters,
+    clearFilters,
     queryParams,
   } = useOrdersFilters()
 
@@ -185,7 +187,21 @@ export default function OrdersPage() {
                 onToggleAll: toggleAll,
                 getRowLabel: (order) => `Seleccionar pedido #${order.number}`,
               }}
-              emptyState={<EmptyState title="Todavía no tienes pedidos" />}
+              emptyState={
+                hasActiveFilters ? (
+                  <EmptyState
+                    title="No se han encontrado pedidos"
+                    description="Prueba a cambiar la búsqueda o los filtros."
+                    action={
+                      <SincraButton variant="text" size="sm" onClick={clearFilters}>
+                        Limpiar filtros
+                      </SincraButton>
+                    }
+                  />
+                ) : (
+                  <EmptyState title="Todavía no tienes pedidos" />
+                )
+              }
             />
           </div>
           <Pagination

@@ -10,7 +10,13 @@ export function AgentCard({ agent }: AgentCardProps) {
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <img src={agent.avatar} alt="" className="size-12 shrink-0 rounded-xl object-cover" />
+        <img
+          src={agent.avatar}
+          alt=""
+          width={48}
+          height={48}
+          className="size-12 shrink-0 rounded-xl object-cover"
+        />
         <div>
           <h2 className="text-lg font-semibold text-ink">{agent.name}</h2>
           <p className="text-sm text-ink-muted">{agent.role}</p>

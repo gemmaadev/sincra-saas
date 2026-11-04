@@ -253,7 +253,20 @@ describe('listOrders', () => {
     expect(where.businessId).toBe('business-1')
     expect(where.status).toBe('PENDING')
     expect(where.channel).toBe('WHATSAPP')
-    expect(where.createdAt).toEqual({ gte: new Date('2026-01-01'), lte: new Date('2026-01-31') })
+    expect(where.createdAt).toEqual({ gte: new Date('2026-01-01'), lt: new Date('2026-02-01') })
+  })
+
+  // Given a dateTo of the last day of the selected range
+  // When orders are listed
+  // Then the upper bound should be exclusive, so an order created later that same day is included
+  it('includes the full last day of the date range', async () => {
+    await listOrders('business-1', { dateTo: '2026-01-31' })
+
+    const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
+    const createdAt = where.createdAt as { lt: Date }
+    const lateInTheDay = new Date('2026-01-31T23:59:59.999Z')
+
+    expect(lateInTheDay.getTime()).toBeLessThan(createdAt.lt.getTime())
   })
 
   // Given no filters at all

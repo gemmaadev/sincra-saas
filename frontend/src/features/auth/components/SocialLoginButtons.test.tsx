@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -55,6 +56,7 @@ const { mockGoogleLoginTrigger, googleLoginOptions } = vi.hoisted(() => ({
 }))
 
 vi.mock('@react-oauth/google', () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
   useGoogleLogin: (options: typeof googleLoginOptions.current) => {
     googleLoginOptions.current = options
     return mockGoogleLoginTrigger

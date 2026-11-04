@@ -22,8 +22,10 @@ export default function NotFoundPage() {
 
       <div className="flex items-center justify-center">
         <img
-          src="/not-found-image.png"
+          src="/not-found-image.webp"
           alt="Ilustración de un gato durmiendo sobre un sobre de correo, con un avión de papel volando"
+          width={900}
+          height={779}
           className="w-full max-w-md"
         />
       </div>

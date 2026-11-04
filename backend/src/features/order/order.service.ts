@@ -197,8 +197,11 @@ function buildCreatedAtRange(
   }
 
   if (dateTo) {
-    const lte = new Date(dateTo)
-    if (!Number.isNaN(lte.getTime())) range.lte = lte
+    const lt = new Date(dateTo)
+    if (!Number.isNaN(lt.getTime())) {
+      lt.setDate(lt.getDate() + 1)
+      range.lt = lt
+    }
   }
 
   return Object.keys(range).length > 0 ? range : undefined

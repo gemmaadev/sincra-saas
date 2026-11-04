@@ -6,6 +6,7 @@ import { notifySuccess } from '@/shared/utils/notify'
 import { useTeam } from '@/features/team/hooks/useTeam'
 import { useTeamFilters } from '@/features/team/hooks/useTeamFilters'
 import { useUpdateMemberStatus } from '@/features/team/hooks/useUpdateMemberStatus'
+import { useResendInvite } from '@/features/team/hooks/useResendInvite'
 import { buildTeamKpiCards } from '@/features/team/utils/buildTeamKpiCards'
 import { buildTeamTableColumns } from '@/features/team/utils/teamTableColumns'
 import { TeamFilterBar } from '@/features/team/components/TeamFilterBar'
@@ -24,6 +25,7 @@ export default function TeamPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
   const [memberToDeactivate, setMemberToDeactivate] = useState<TeamMember | null>(null)
   const reactivateMember = useUpdateMemberStatus()
+  const resendInvite = useResendInvite()
 
   const adminCount = data?.members.filter((member) => member.role === 'ADMIN').length ?? 0
 
@@ -32,6 +34,10 @@ export default function TeamPage() {
       { userId: member.id, status: 'ACTIVE' },
       { onSuccess: () => notifySuccess('Acceso reactivado') },
     )
+  }
+
+  function handleResendInvite(member: TeamMember) {
+    resendInvite.mutate(member.id, { onSuccess: () => notifySuccess('Invitación reenviada') })
   }
 
   return (
@@ -75,6 +81,7 @@ export default function TeamPage() {
               isOnlyAdmin: adminCount <= 1,
               onDeactivate: setMemberToDeactivate,
               onReactivate: handleReactivate,
+              onResendInvite: handleResendInvite,
             })}
             data={filteredMembers}
             getRowKey={(member) => member.id}

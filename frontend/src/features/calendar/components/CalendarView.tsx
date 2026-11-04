@@ -12,11 +12,11 @@ import { isMultiDayEvent } from '../utils/isMultiDayEvent'
 import { toAllDayExclusiveEnd } from '../utils/toAllDayExclusiveEnd'
 import { applyCalendarDelta } from '../utils/applyCalendarDelta'
 import { notifyEventRescheduled } from '../utils/notifyEventRescheduled'
-import { CalendarNavigation } from './CalendarNavigation'
-import { CalendarViewToggle } from './CalendarViewToggle'
-import { CalendarMonthSelect } from './CalendarMonthSelect'
+import { CalendarNavigation } from './controls/CalendarNavigation'
+import { CalendarViewToggle } from './controls/CalendarViewToggle'
+import { CalendarMonthSelect } from './controls/CalendarMonthSelect'
 import { CalendarEventContent } from './CalendarEventContent'
-import { CalendarTypeFilter } from './CalendarTypeFilter'
+import { CalendarTypeFilter } from './controls/CalendarTypeFilter'
 import { CalendarUpcomingEvents } from './CalendarUpcomingEvents'
 import type {
   CalendarEventSource,
@@ -45,7 +45,7 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
   const [visibleSources, setVisibleSources] = useState<Set<CalendarEventSource>>(
     new Set(DEFAULT_VISIBLE_SOURCES),
   )
-  const { data: events } = useCalendarEvents(range)
+  const { data: events, isLoading } = useCalendarEvents(range)
   const { mutate: reschedule } = useRescheduleCalendarEvent()
 
   function handleDatesSet(arg: DatesSetArg) {
@@ -147,7 +147,11 @@ export function CalendarView({ onDateClick, onEventClick }: CalendarViewProps) {
           })}
         />
       </div>
-      <CalendarUpcomingEvents events={visibleEvents} onEventClick={onEventClick} />
+      <CalendarUpcomingEvents
+        events={visibleEvents}
+        isLoading={isLoading}
+        onEventClick={onEventClick}
+      />
     </div>
   )
 }

@@ -17,6 +17,7 @@ interface TeamTableColumnsOptions {
   isOnlyAdmin: boolean
   onDeactivate: (member: TeamMember) => void
   onReactivate: (member: TeamMember) => void
+  onResendInvite: (member: TeamMember) => void
 }
 
 export function buildTeamTableColumns({
@@ -25,6 +26,7 @@ export function buildTeamTableColumns({
   isOnlyAdmin,
   onDeactivate,
   onReactivate,
+  onResendInvite,
 }: TeamTableColumnsOptions): Column<TeamMember>[] {
   const columns: Column<TeamMember>[] = [
     {
@@ -70,7 +72,7 @@ export function buildTeamTableColumns({
       render: (member: TeamMember) => {
         if (member.status === 'PENDING') {
           return (
-            <SincraButton variant="secondary" size="sm" disabled>
+            <SincraButton variant="secondary" size="sm" onClick={() => onResendInvite(member)}>
               <Send size={14} aria-hidden="true" />
               Reenviar invitación
             </SincraButton>

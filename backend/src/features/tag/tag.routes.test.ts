@@ -3,10 +3,12 @@ import request from 'supertest'
 import app from '../../app'
 import { signToken } from '../../shared/jwt'
 import * as tagService from './tag.service'
+import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
 describe('tag routes', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('EMPLOYEE')
   })
 
   const adminCookie = `token=${signToken({ userId: 'admin-1', businessId: 'biz-1', role: 'ADMIN' })}`
@@ -72,6 +74,7 @@ describe('tag routes', () => {
     // When updating a tag
     // Then it should reach the service with the business and the tag id
     it('lets an admin update a tag', async () => {
+      mockActiveMembership('ADMIN')
       const tag = { id: 'tag-1', name: 'Nuevo' }
       vi.spyOn(tagService, 'updateTag').mockResolvedValue(tag as never)
 
@@ -108,6 +111,7 @@ describe('tag routes', () => {
     // When updating a tag
     // Then it should answer 400
     it('rejects an update with nothing to change', async () => {
+      mockActiveMembership('ADMIN')
       const res = await request(app).patch('/tags/tag-1').set('Cookie', adminCookie).send({})
 
       expect(res.status).toBe(400)
@@ -118,6 +122,7 @@ describe('tag routes', () => {
     // When updating a tag
     // Then it should answer 400 instead of failing with a 500
     it('rejects a name that is not text', async () => {
+      mockActiveMembership('ADMIN')
       const res = await request(app)
         .patch('/tags/tag-1')
         .set('Cookie', adminCookie)
@@ -132,6 +137,7 @@ describe('tag routes', () => {
     // When deleting a tag
     // Then it should answer 204 and call the service
     it('lets an admin delete a tag', async () => {
+      mockActiveMembership('ADMIN')
       vi.spyOn(tagService, 'deleteTag').mockResolvedValue(undefined)
 
       const res = await request(app).delete('/tags/tag-1').set('Cookie', adminCookie)

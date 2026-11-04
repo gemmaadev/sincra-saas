@@ -4,7 +4,9 @@ import { BusinessInfoCard } from '@/features/settings/components/BusinessInfoCar
 import { ContactInfoCard } from '@/features/settings/components/ContactInfoCard'
 import { ConnectedChannelsCard } from '@/features/settings/components/ConnectedChannelsCard'
 import { LocaleCard } from '@/features/settings/components/LocaleCard'
+import { TagManagementCard } from '@/features/tags/components/TagManagementCard'
 import { DangerZoneCard } from '@/features/settings/components/DangerZoneCard'
+import { PageSpinner } from '@/shared/components/spinner'
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -20,7 +22,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {isLoading && <p className="text-ink-muted">Cargando...</p>}
+      {isLoading && <PageSpinner label="Cargando ajustes" />}
       {isError && <p className="text-error">No se ha podido cargar la información del negocio.</p>}
       {business && (
         <div className="flex max-w-6xl flex-col divide-y divide-neutral-100">
@@ -28,6 +30,7 @@ export default function SettingsPage() {
           <ContactInfoCard business={business} canEdit={isAdmin} />
           <ConnectedChannelsCard canEdit={isAdmin} />
           <LocaleCard business={business} canEdit={isAdmin} />
+          {isAdmin && <TagManagementCard />}
           {isAdmin && <DangerZoneCard />}
         </div>
       )}

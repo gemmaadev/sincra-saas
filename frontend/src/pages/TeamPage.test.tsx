@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,6 +6,7 @@ import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import TeamPage from './TeamPage'
 import { api } from '@/shared/services'
+import { notifySuccess } from '@/shared/utils/notify'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
 
@@ -13,6 +14,8 @@ vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn() } }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifySuccess: vi.fn() }))
 
 const mockMembers = [
   { id: 'user-1', name: 'Laura García', email: 'laura@sincra.app', role: 'ADMIN', status: 'ACTIVE' },
@@ -136,6 +139,23 @@ describe('TeamPage', () => {
     const table = within(screen.getByRole('table'))
     expect(table.getByText('Marta Soler')).toBeInTheDocument()
     expect(table.queryByText('Laura García')).not.toBeInTheDocument()
+  })
+
+  // Given an admin user viewing a pending member
+  // When they click "Reenviar invitación"
+  // Then it should POST to the resend-invite endpoint and show a success toast
+  it('resends the invite when "Reenviar invitación" is clicked', async () => {
+    vi.mocked(api.post).mockResolvedValue({ success: true })
+    renderTeamPage()
+    const user = userEvent.setup()
+    await screen.findByText('Laura García')
+    await user.selectOptions(screen.getByLabelText('Estado'), 'Todos los estados')
+    await screen.findByText('Carlos Ruiz')
+
+    await user.click(screen.getByRole('button', { name: 'Reenviar invitación' }))
+
+    expect(api.post).toHaveBeenCalledWith('/team/user-2/resend-invite')
+    await waitFor(() => expect(notifySuccess).toHaveBeenCalledWith('Invitación reenviada'))
   })
 
   // Given an admin user

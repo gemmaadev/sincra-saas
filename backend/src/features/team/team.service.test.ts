@@ -3,7 +3,13 @@ import * as userModel from '../user/user.model'
 import * as teamModel from './team.model'
 import * as hash from '../../shared/hash'
 import { signInvitationToken } from '../../shared/jwt'
-import { inviteMember, acceptInvite, listBusinessMembers, updateMemberStatus } from './team.service'
+import {
+  inviteMember,
+  acceptInvite,
+  listBusinessMembers,
+  updateMemberStatus,
+  resendInvite,
+} from './team.service'
 
 const { sendMock } = vi.hoisted(() => ({
   sendMock: vi.fn().mockResolvedValue({ data: {}, error: null }),
@@ -225,5 +231,54 @@ describe('updateMemberStatus', () => {
 
     expect(teamModel.countAdminMembers).not.toHaveBeenCalled()
     expect(teamModel.updateMemberStatus).toHaveBeenCalledWith('biz-1', 'emp-1', 'ACTIVE')
+  })
+})
+
+describe('resendInvite', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a pending member of the business
+  // When resending their invite
+  // Then it should issue a new invitation code and email the invite link again
+  it('issues a new invitation code and resends the invite email', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ status: 'PENDING' } as never)
+    vi.mocked(userModel.findUserById).mockResolvedValue({
+      id: 'user-1',
+      name: 'Nuevo Empleado',
+      email: 'nuevo@test.com',
+    } as never)
+
+    await resendInvite('biz-1', 'user-1')
+
+    expect(teamModel.setInvitationCode).toHaveBeenCalledWith('user-1', expect.any(String))
+    expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: 'nuevo@test.com' }))
+  })
+
+  // Given a user who doesn't belong to this business
+  // When trying to resend an invite to them
+  // Then it should throw a 404 AppError instead of sending anything
+  it('throws a 404 AppError when the member does not belong to this business', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue(null)
+
+    await expect(resendInvite('biz-1', 'ghost-1')).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'TEAM_MEMBER_NOT_FOUND',
+    })
+    expect(sendMock).not.toHaveBeenCalled()
+  })
+
+  // Given a member who has already accepted their invite (ACTIVE/INACTIVE)
+  // When trying to resend an invite to them
+  // Then it should throw a 409 AppError instead of sending a stale "invite" email
+  it('throws a 409 AppError when the member already accepted the invite', async () => {
+    vi.mocked(teamModel.findMembership).mockResolvedValue({ status: 'ACTIVE' } as never)
+
+    await expect(resendInvite('biz-1', 'user-1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'INVITE_ALREADY_ACCEPTED',
+    })
+    expect(sendMock).not.toHaveBeenCalled()
   })
 })

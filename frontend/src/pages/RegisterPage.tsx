@@ -119,11 +119,11 @@ export default function RegisterPage() {
             label={
               <>
                 Acepto los{' '}
-                <a href="/terminos" className="text-primary">
+                <a href="/terminos" className="text-primary underline">
                   Términos y Condiciones
                 </a>{' '}
                 y la{' '}
-                <a href="/privacidad" className="text-primary">
+                <a href="/privacidad" className="text-primary underline">
                   Política de Privacidad
                 </a>
               </>
@@ -148,7 +148,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-ink-muted">
           ¿Ya tienes una cuenta?{' '}
-          <Link to="/login" className="text-primary">
+          <Link to="/login" className="text-primary underline">
             Inicia sesión
           </Link>
         </p>

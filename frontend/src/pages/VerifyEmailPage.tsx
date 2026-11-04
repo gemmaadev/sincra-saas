@@ -14,10 +14,11 @@ export default function VerifyEmailPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-bg text-center">
       <div className="flex flex-col items-center gap-1">
         <img
-          src="/correo-recuperar-contrasena.png"
+          src="/correo-recuperar-contrasena.webp"
           alt="Ilustración de un sobre abierto"
           className="w-full max-w-lg"
-          width={30}
+          width={1024}
+          height={585}
         />
         <h1 className="text-2xl font-bold text-ink">Revisa tu correo</h1>
         <p className="max-w-sm text-ink-muted">

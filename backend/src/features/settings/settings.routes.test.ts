@@ -3,10 +3,12 @@ import request from 'supertest'
 import app from '../../app'
 import { signToken } from '../../shared/jwt'
 import * as settingsService from './settings.service'
+import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
 describe('settings routes', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    mockActiveMembership('ADMIN')
   })
 
   const adminCookie = `token=${signToken({ userId: 'admin-1', businessId: 'biz-1', role: 'ADMIN' })}`
@@ -32,6 +34,7 @@ describe('settings routes', () => {
     // When trying to connect a channel
     // Then requireRole should reject it with 403 before it ever reaches the service
     it('returns 403 when the requester is an employee, not an admin', async () => {
+      mockActiveMembership('EMPLOYEE')
       const connectSpy = vi.spyOn(settingsService, 'connectChannel')
 
       const res = await request(app)
@@ -76,6 +79,7 @@ describe('settings routes', () => {
     // When trying to disconnect a channel
     // Then it should be rejected with 403
     it('returns 403 when the requester is an employee', async () => {
+      mockActiveMembership('EMPLOYEE')
       const disconnectSpy = vi.spyOn(settingsService, 'disconnectChannel')
 
       const res = await request(app)
@@ -138,6 +142,7 @@ describe('settings routes', () => {
     // When trying to update business settings
     // Then it should be rejected with 403
     it('returns 403 when the requester is an employee', async () => {
+      mockActiveMembership('EMPLOYEE')
       const updateSpy = vi.spyOn(settingsService, 'updateBusinessSettings')
 
       const res = await request(app)
@@ -181,6 +186,7 @@ describe('settings routes', () => {
     // When trying to delete the account
     // Then it should be rejected with 403 — only admins can delete the account
     it('returns 403 when the requester is an employee', async () => {
+      mockActiveMembership('EMPLOYEE')
       const deleteSpy = vi.spyOn(settingsService, 'deleteAccount')
 
       const res = await request(app).delete('/settings/account').set('Cookie', employeeCookie)

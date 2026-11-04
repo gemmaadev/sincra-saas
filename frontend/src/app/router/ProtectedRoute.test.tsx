@@ -55,6 +55,6 @@ describe('ProtectedRoute', () => {
       login: vi.fn().mockResolvedValue(undefined),
       logout: vi.fn().mockResolvedValue(undefined),
     })
-    expect(screen.getByText('Cargando...')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument()
   })
 })

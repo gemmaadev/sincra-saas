@@ -21,24 +21,23 @@ export function PasswordInput({
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <div className="relative">
-      <Input
-        label={label}
-        type={showPassword ? 'text' : 'password'}
-        placeholder={placeholder}
-        error={error}
-        autoComplete={autoComplete}
-        className="pr-9"
-        {...registration}
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-9.5 text-ink-muted"
-        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-      >
-        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-      </button>
-    </div>
+    <Input
+      label={label}
+      type={showPassword ? 'text' : 'password'}
+      placeholder={placeholder}
+      error={error}
+      autoComplete={autoComplete}
+      rightIcon={
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          className="flex items-center p-1 -m-1"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      }
+      {...registration}
+    />
   )
 }
