@@ -38,14 +38,16 @@ describe('connect', () => {
     const req = createMockRequest({
       businessId: 'biz-1',
       userId: 'user-1',
-      body: { channel: 'GMAIL' },
+      body: { channel: 'GMAIL', accessToken: 'google-token' },
     })
     const res = createMockResponse()
 
     await connect(req, res, vi.fn() as NextFunction)
 
-    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1')
-    expect(res.json).toHaveBeenCalledWith({ connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' } })
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', 'google-token')
+    expect(res.json).toHaveBeenCalledWith({
+      connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' },
+    })
   })
 
   // Given a request with an invalid channel name
@@ -54,7 +56,11 @@ describe('connect', () => {
   it('throws a 400 AppError when the channel is invalid', async () => {
     const connectSpy = vi.spyOn(settingsService, 'connectChannel')
 
-    const req = createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'FAX' } })
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: { channel: 'FAX' },
+    })
     const res = createMockResponse()
     const next = vi.fn()
 

@@ -14,13 +14,13 @@ import type { ChannelActionBody, UpdateBusinessSettingsBody } from './settings.t
 const VALID_CHANNELS = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 
 export const connect = asyncHandler(async (req: Request, res: Response) => {
-  const { channel } = req.body as ChannelActionBody
+  const { channel, accessToken } = req.body as ChannelActionBody
 
   if (!channel || !VALID_CHANNELS.includes(channel)) {
     throw new AppError('Canal no válido', 400, 'INVALID_CHANNEL')
   }
 
-  const connectedChannel = await connectChannel(req.businessId!, channel, req.userId!)
+  const connectedChannel = await connectChannel(req.businessId!, channel, req.userId!, accessToken)
   res.json({ connectedChannel })
 })
 

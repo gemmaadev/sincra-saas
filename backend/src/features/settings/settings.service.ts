@@ -1,11 +1,22 @@
 import type { Channel } from '../../generated/prisma/client'
 import { AppError } from '../../shared/AppError'
 import { findBusinessById, updateBusiness } from '../auth/auth.model'
+import { readGmailAccount } from './gmail-account'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
 import type { UpdateBusinessSettingsBody } from './settings.types'
 
-export async function connectChannel(businessId: string, channel: Channel, userId: string) {
-  return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId)
+export async function connectChannel(
+  businessId: string,
+  channel: Channel,
+  userId: string,
+  accessToken?: string,
+) {
+  if (channel !== 'GMAIL') {
+    return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId)
+  }
+
+  const account = await readGmailAccount(accessToken)
+  return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId, account)
 }
 
 export async function disconnectChannel(businessId: string, channel: Channel, userId: string) {

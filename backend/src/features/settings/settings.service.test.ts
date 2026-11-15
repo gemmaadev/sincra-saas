@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as authModel from '../auth/auth.model'
 import * as settingsModel from './settings.model'
 import {
@@ -16,17 +16,99 @@ vi.mock('./settings.model')
 describe('connectChannel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('fetch', vi.fn())
   })
 
-  // Given a business and a channel
-  // When connecting it
-  // Then it should upsert the ConnectedChannel row with status CONNECTED
-  it('upserts the channel as CONNECTED', async () => {
-    await connectChannel('biz-1', 'GMAIL', 'user-1')
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
+  // Given a Google access token for the inbox being connected
+  // When connecting Gmail
+  // Then it should read the Google profile and store the address and stable account id
+  it('stores the Gmail address and Google account id from userinfo', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sub: 'google-sub-1',
+        email: 'Inbox@Gmail.com',
+        email_verified: true,
+        name: 'Inbox',
+      }),
+    } as Response)
+
+    await connectChannel('biz-1', 'GMAIL', 'user-1', 'google-token')
+
+    expect(fetch).toHaveBeenCalledWith('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer google-token' },
+    })
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
       'biz-1',
       'GMAIL',
+      'CONNECTED',
+      'user-1',
+      { accountEmail: 'inbox@gmail.com', providerAccountId: 'google-sub-1' },
+    )
+  })
+
+  // Given a Gmail connect request without a Google token
+  // When connecting it
+  // Then it should reject the request before writing a channel row
+  it('rejects Gmail connect when the Google token is missing', async () => {
+    await expect(connectChannel('biz-1', 'GMAIL', 'user-1')).rejects.toMatchObject({
+      statusCode: 400,
+      code: 'MISSING_TOKEN',
+    })
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
+  })
+
+  // Given a Google profile whose email is not verified
+  // When connecting Gmail
+  // Then it should reject the request and leave the channel unchanged
+  it('rejects Gmail connect when Google has not verified the email', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sub: 'google-sub-1',
+        email: 'inbox@gmail.com',
+        email_verified: false,
+      }),
+    } as Response)
+
+    await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'google-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_TOKEN',
+    })
+
+    expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
+  })
+
+  // Given a Google token that userinfo rejects
+  // When connecting Gmail
+  // Then it should reject the request and leave the channel unchanged
+  it('rejects Gmail connect when Google rejects the token', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+
+    await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'bad-token')).rejects.toMatchObject({
+      statusCode: 401,
+      code: 'INVALID_TOKEN',
+    })
+
+    expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
+  })
+
+  // Given a channel that is not Gmail
+  // When connecting it
+  // Then it should upsert CONNECTED without an account and without calling Google
+  it('connects a non-Gmail channel without an account', async () => {
+    await connectChannel('biz-1', 'OUTLOOK', 'user-1')
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
+      'biz-1',
+      'OUTLOOK',
       'CONNECTED',
       'user-1',
     )
@@ -62,7 +144,10 @@ describe('getBusinessSettings', () => {
   // When fetching its settings
   // Then it should return the business as-is
   it('returns the business', async () => {
-    vi.mocked(authModel.findBusinessById).mockResolvedValue({ id: 'biz-1', name: 'Tienda' } as never)
+    vi.mocked(authModel.findBusinessById).mockResolvedValue({
+      id: 'biz-1',
+      name: 'Tienda',
+    } as never)
 
     const business = await getBusinessSettings('biz-1')
 
