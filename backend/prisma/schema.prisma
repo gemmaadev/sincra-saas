@@ -157,18 +157,24 @@ model BusinessMember {
 }
 
 model ConnectedChannel {
-  id         String                  @id @default(uuid())
-  businessId String
-  channel    Channel
-  status     ChannelConnectionStatus
-  createdAt  DateTime                @default(now())
-  updatedAt  DateTime                @updatedAt
-  createdBy  String?
-  updatedBy  String?
+  id                String                  @id @default(uuid())
+  businessId        String
+  channel           Channel
+  status            ChannelConnectionStatus
+  // Inbox behind this channel. Unique with the business and channel, not globally:
+  // the same account can be connected to several businesses.
+  accountEmail      String?                 @map("account_email")
+  providerAccountId String?                 @map("provider_account_id")
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  createdBy         String?
+  updatedBy         String?
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, channel])
+  @@unique([businessId, channel, accountEmail])
+  @@unique([businessId, channel, providerAccountId])
   @@index([businessId])
 }
 
