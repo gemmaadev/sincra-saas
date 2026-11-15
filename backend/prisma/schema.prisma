@@ -180,6 +180,8 @@ model ConnectedChannel {
   businessId String
   channel    Channel
   status     ChannelConnectionStatus
+  accountEmail      String? @map("account_email")
+  providerAccountId String? @map("provider_account_id") // Google sub
   createdAt  DateTime                @default(now())
   updatedAt  DateTime                @updatedAt
   createdBy  String?
@@ -189,6 +191,8 @@ model ConnectedChannel {
 
   @@unique([businessId, channel])
   @@index([businessId])
+  @@index([channel, providerAccountId])
+  @@index([channel, accountEmail])
 }
 
 model PasswordResetToken {
