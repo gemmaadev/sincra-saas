@@ -1,11 +1,29 @@
 import type { Channel } from '../../generated/prisma/client'
 import { AppError } from '../../shared/AppError'
 import { findBusinessById, updateBusiness } from '../auth/auth.model'
+import { verifyGmailAccessToken } from './gmail-token'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
 import type { UpdateBusinessSettingsBody } from './settings.types'
 
-export async function connectChannel(businessId: string, channel: Channel, userId: string) {
-  return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId)
+export async function connectChannel(
+  businessId: string,
+  channel: Channel,
+  userId: string,
+  accessToken?: string,
+) {
+  if (channel !== 'GMAIL') {
+    return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId)
+  }
+
+  if (!accessToken?.trim()) {
+    throw new AppError('Falta el token de Gmail', 400, 'GMAIL_TOKEN_REQUIRED')
+  }
+
+  const account = await verifyGmailAccessToken(accessToken)
+  return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId, {
+    accountEmail: account.email,
+    providerAccountId: account.sub,
+  })
 }
 
 export async function disconnectChannel(businessId: string, channel: Channel, userId: string) {

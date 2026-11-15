@@ -10,10 +10,41 @@ export async function upsertConnectedChannel(
   channel: Channel,
   status: ChannelConnectionStatus,
   userId: string,
+  account?: { accountEmail: string; providerAccountId: string },
 ) {
   return prisma.connectedChannel.upsert({
     where: { businessId_channel: { businessId, channel } },
-    create: { businessId, channel, status, createdBy: userId, updatedBy: userId },
-    update: { status, updatedBy: userId },
+    create: {
+      businessId,
+      channel,
+      status,
+      createdBy: userId,
+      updatedBy: userId,
+      accountEmail: account?.accountEmail,
+      providerAccountId: account?.providerAccountId,
+    },
+    update: { status, updatedBy: userId, ...account },
   })
+}
+
+// Businesses whose CONNECTED account matches this channel.
+// providerAccountId wins; email is used only when the provider id is absent.
+export async function findBusinessIdsByConnectedAccount(
+  channel: Channel,
+  account: { providerAccountId?: string | null; accountEmail?: string | null },
+) {
+  const providerAccountId = account.providerAccountId?.trim() || null
+  const accountEmail = account.accountEmail?.trim().toLowerCase() || null
+  if (!providerAccountId && !accountEmail) return []
+
+  const rows = await prisma.connectedChannel.findMany({
+    where: {
+      channel,
+      status: 'CONNECTED',
+      ...(providerAccountId ? { providerAccountId } : { accountEmail }),
+    },
+    select: { businessId: true },
+  })
+
+  return rows.map((row) => row.businessId)
 }
