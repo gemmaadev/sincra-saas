@@ -69,6 +69,23 @@ enum ChannelConnectionStatus {
   MOCKED
 }
 
+enum ExtractionType {
+  QUOTE_REQUEST
+  ORDER_CONFIRMED
+  POTENTIAL_ORDER
+  INQUIRY
+  ORDER_CHANGE
+  ORDER_CANCELLATION
+  OTHER
+  INCIDENT // incidents, complaints, damaged deliveries, returns
+}
+
+enum ExtractionStatus {
+  PENDING
+  CONFIRMED
+  DISCARDED
+}
+
 model Business {
   id          String   @id @default(uuid())
   name        String
@@ -100,24 +117,26 @@ model Business {
 
 // Audit trail of AI findings, scoped to the business that received the email.
 model Extraction {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  businessId     String    @map("business_id")
-  emailId        String    @map("email_id")
-  emailSubject   String?   @map("email_subject")
-  emailFrom      String    @map("email_from")
-  emailTo        String?   @map("email_to")
-  extractionType String    @map("extraction_type")
-  rawData        Json      @default("{}") @map("raw_data")
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  businessId     String           @map("business_id")
+  emailId        String           @map("email_id")
+  emailSubject   String?          @map("email_subject")
+  emailFrom      String           @map("email_from")
+  emailTo        String?          @map("email_to")
+  extractionType ExtractionType   @map("extraction_type")
+  rawData        Json             @default("{}") @map("raw_data")
   confidence     Int?
-  status         String    @default("pending")
-  syncedAt       DateTime? @map("synced_at") @db.Timestamptz(6)
-  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  status         ExtractionStatus @default(PENDING)
+  decidedAt      DateTime?        @map("decided_at") @db.Timestamptz(6)
+  syncedAt       DateTime?        @map("synced_at") @db.Timestamptz(6)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@index([businessId, status])
   @@index([emailId])
   @@index([extractionType])
+  @@index([status, decidedAt])
   @@map("extractions")
 }
 
