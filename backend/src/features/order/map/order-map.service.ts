@@ -16,6 +16,15 @@ function resolveZone(record: OrderMapRecord): string | null {
   return record.zone?.trim() || record.client.zone?.trim() || null
 }
 
+function countDeliveredPrices(records: OrderMapRecord[]) {
+  const pricedCount = records.filter((record) => record.price != null).length
+  return {
+    pricedCount,
+    missingPriceCount: records.length - pricedCount,
+    hasPriceData: pricedCount > 0,
+  }
+}
+
 function sumRevenue(records: OrderMapRecord[]): Prisma.Decimal {
   return records.reduce((total, record) => {
     if (record.price == null) return total
@@ -110,7 +119,7 @@ export async function getOrderMap(
   return {
     total: records.length,
     deliveredRevenue: sumRevenue(deliveredRecords).toString(),
-    hasPriceData: deliveredRecords.some((record) => record.price != null),
+    ...countDeliveredPrices(deliveredRecords),
     zones: buildOrderZoneSummary(deliveredRecords),
     orders: buildMapOrders(records),
   }

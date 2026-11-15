@@ -101,8 +101,10 @@ export function computeZoneCentroids(points: ZonePoint[]): Map<string, Coordinat
 function sumDeliveredRevenue(orders: { price: Prisma.Decimal | null }[]): {
   amount: string
   hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
 } {
-  const hasPriceData = orders.some((order) => order.price != null)
+  const pricedCount = orders.filter((order) => order.price != null).length
   const amount = orders
     .reduce((total, order) => {
       if (order.price == null) return total
@@ -110,7 +112,12 @@ function sumDeliveredRevenue(orders: { price: Prisma.Decimal | null }[]): {
     }, new Prisma.Decimal(0))
     .toString()
 
-  return { amount, hasPriceData }
+  return {
+    amount,
+    hasPriceData: pricedCount > 0,
+    pricedCount,
+    missingPriceCount: orders.length - pricedCount,
+  }
 }
 
 export function buildMapClients(
@@ -122,7 +129,12 @@ export function buildMapClients(
   for (const record of records) {
     const { latitude, longitude, address, _count, orders, ...rest } = record
     const orderCount = _count.orders
-    const { amount: deliveredRevenue, hasPriceData } = sumDeliveredRevenue(orders)
+    const {
+      amount: deliveredRevenue,
+      hasPriceData,
+      pricedCount,
+      missingPriceCount,
+    } = sumDeliveredRevenue(orders)
 
     if (latitude !== null && longitude !== null) {
       mapClients.push({
@@ -133,6 +145,8 @@ export function buildMapClients(
         orderCount,
         deliveredRevenue,
         hasPriceData,
+        pricedCount,
+        missingPriceCount,
       })
       continue
     }
@@ -147,6 +161,8 @@ export function buildMapClients(
         orderCount,
         deliveredRevenue,
         hasPriceData,
+        pricedCount,
+        missingPriceCount,
       })
     }
   }

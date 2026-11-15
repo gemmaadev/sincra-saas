@@ -76,6 +76,15 @@ function computeAverageDeliveryDays(orders: DeliveredOrderRecord[]): number | nu
   return Math.round((totalDays / deliveredOrders.length) * 10) / 10
 }
 
+function countPrices(orders: { price: Prisma.Decimal | null }[]) {
+  const pricedCount = orders.filter((order) => order.price != null).length
+  return {
+    pricedCount,
+    missingPriceCount: orders.length - pricedCount,
+    hasPriceData: pricedCount > 0,
+  }
+}
+
 // A missing price is unknown, so it stays out of the sum. The starting 0 is only the
 // identity of addition: when no order has a price, the known revenue is 0.
 function sumRevenue(orders: DeliveredOrderRecord[]): Prisma.Decimal {
@@ -102,7 +111,7 @@ export async function getOverview(
     ordersCreated,
     averageDeliveryDays: computeAverageDeliveryDays(deliveredOrders),
     revenue: sumRevenue(deliveredOrders).toString(),
-    hasPriceData: deliveredOrders.some((order) => order.price != null),
+    ...countPrices(deliveredOrders),
   }
 }
 
@@ -285,6 +294,8 @@ function buildChannelPerformance(groups: ChannelRevenueGroup[]): ChannelPerforma
         revenue: revenue.toString(),
         averageTicket: averageTicket.toString(),
         hasPriceData: pricedOrders > 0,
+        pricedCount: pricedOrders,
+        missingPriceCount: group._count._all - pricedOrders,
       }
     })
     .sort((first, second) => Number(second.revenue) - Number(first.revenue))

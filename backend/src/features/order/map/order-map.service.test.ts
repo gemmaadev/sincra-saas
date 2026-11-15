@@ -122,7 +122,7 @@ describe('getOrderMap', () => {
 
     expect(result.total).toBe(3)
     expect(result.deliveredRevenue).toBe('50')
-    expect(result.hasPriceData).toBe(true)
+    expect(result).toMatchObject({ hasPriceData: true, pricedCount: 1, missingPriceCount: 0 })
   })
 
   // Given a delivered order with a price and another without one
@@ -137,7 +137,7 @@ describe('getOrderMap', () => {
     const result = await getOrderMap('business-1', {})
 
     expect(result.deliveredRevenue).toBe('50')
-    expect(result.hasPriceData).toBe(true)
+    expect(result).toMatchObject({ hasPriceData: true, pricedCount: 1, missingPriceCount: 1 })
   })
 
   // Given only delivered orders with no price
@@ -151,7 +151,7 @@ describe('getOrderMap', () => {
     const result = await getOrderMap('business-1', {})
 
     expect(result.deliveredRevenue).toBe('0')
-    expect(result.hasPriceData).toBe(false)
+    expect(result).toMatchObject({ hasPriceData: false, pricedCount: 0, missingPriceCount: 1 })
   })
 
   // Given a free delivered order
@@ -165,7 +165,7 @@ describe('getOrderMap', () => {
     const result = await getOrderMap('business-1', {})
 
     expect(result.deliveredRevenue).toBe('0')
-    expect(result.hasPriceData).toBe(true)
+    expect(result).toMatchObject({ hasPriceData: true, pricedCount: 1, missingPriceCount: 0 })
   })
 
   // Given two delivered orders in Barcelona and one in Girona

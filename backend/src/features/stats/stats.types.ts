@@ -14,8 +14,10 @@ export interface StatsOverview {
   ordersCreated: number
   averageDeliveryDays: number | null
   revenue: string
-  // false when no order in the group has a price, including a price of 0
+  // false only when every price is null. A price of 0 is known data.
   hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
 }
 
 export interface OrderStatusCount {
@@ -61,7 +63,10 @@ export interface ChannelPerformanceEntry {
   orderCount: number
   revenue: string
   averageTicket: string
+  // false only when every price is null. A price of 0 is known data.
   hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
 }
 
 // Only delivered orders count — same reasoning as getOverview's revenue.

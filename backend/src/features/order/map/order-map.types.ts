@@ -48,8 +48,10 @@ export interface MapOrder {
 export interface OrderMapResponse {
   total: number
   deliveredRevenue: string
-  // false when no delivered order has a price, including a price of 0
+  // false only when every delivered price is null. A price of 0 is known data.
   hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
   zones: OrderMapZoneSummary[]
   orders: MapOrder[]
 }

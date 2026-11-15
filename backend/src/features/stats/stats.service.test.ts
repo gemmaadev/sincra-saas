@@ -48,6 +48,8 @@ describe('getOverview', () => {
       averageDeliveryDays: 1.5,
       revenue: '150',
       hasPriceData: true,
+      pricedCount: 2,
+      missingPriceCount: 0,
     })
   })
 
@@ -67,6 +69,8 @@ describe('getOverview', () => {
       averageDeliveryDays: null,
       revenue: '0',
       hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
   })
 
@@ -112,6 +116,8 @@ describe('getOverview', () => {
 
     expect(overview.revenue).toBe('100')
     expect(overview.hasPriceData).toBe(true)
+    expect(overview.pricedCount).toBe(1)
+    expect(overview.missingPriceCount).toBe(1)
   })
 
   // Given a free delivered order and a priced one
@@ -129,6 +135,29 @@ describe('getOverview', () => {
 
     expect(overview.revenue).toBe('50')
     expect(overview.hasPriceData).toBe(true)
+    expect(overview.pricedCount).toBe(2)
+    expect(overview.missingPriceCount).toBe(0)
+  })
+
+  // Given a free delivered order and one with no price
+  // When getting the overview
+  // Then the free order counts as known data and the other as missing
+  it('counts a free order as priced and a null price as missing', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([
+      { id: 'order-1', price: 0 as never, createdAt: new Date(), statusHistory: [] },
+      { id: 'order-2', price: null, createdAt: new Date(), statusHistory: [] },
+    ] as never)
+
+    const overview = await getOverview('business-1', {})
+
+    expect(overview).toMatchObject({
+      revenue: '0',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
+    })
   })
 
   // Given delivered orders that all lack a price
@@ -145,6 +174,8 @@ describe('getOverview', () => {
 
     expect(overview.revenue).toBe('0')
     expect(overview.hasPriceData).toBe(false)
+    expect(overview.pricedCount).toBe(0)
+    expect(overview.missingPriceCount).toBe(1)
   })
 
   // Given dateFrom/dateTo query strings
@@ -490,6 +521,8 @@ describe('getChannelPerformance', () => {
           revenue: '300',
           averageTicket: '100',
           hasPriceData: true,
+          pricedCount: 3,
+          missingPriceCount: 0,
         },
         {
           channel: 'WHATSAPP',
@@ -497,6 +530,8 @@ describe('getChannelPerformance', () => {
           revenue: '100',
           averageTicket: '50',
           hasPriceData: true,
+          pricedCount: 2,
+          missingPriceCount: 0,
         },
       ],
     })
@@ -518,6 +553,8 @@ describe('getChannelPerformance', () => {
       revenue: '0',
       averageTicket: '0',
       hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
   })
 
@@ -548,6 +585,8 @@ describe('getChannelPerformance', () => {
       revenue: '100',
       averageTicket: '100',
       hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
     })
   })
 
@@ -567,6 +606,8 @@ describe('getChannelPerformance', () => {
       revenue: '0',
       averageTicket: '0',
       hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 2,
     })
   })
 })
@@ -609,6 +650,8 @@ describe('getDashboard', () => {
       averageDeliveryDays: null,
       revenue: '0',
       hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
     expect(dashboard.ordersByStatus.total).toBe(3)
     expect(dashboard.ordersEvolution).toEqual({
@@ -631,6 +674,8 @@ describe('getDashboard', () => {
           revenue: '100',
           averageTicket: '50',
           hasPriceData: true,
+          pricedCount: 2,
+          missingPriceCount: 0,
         },
       ],
     })

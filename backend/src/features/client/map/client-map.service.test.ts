@@ -318,7 +318,13 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ orderCount: 3, deliveredRevenue: '80', hasPriceData: true })
+    expect(mapClient).toMatchObject({
+      orderCount: 3,
+      deliveredRevenue: '80',
+      hasPriceData: true,
+      pricedCount: 2,
+      missingPriceCount: 0,
+    })
   })
 
   // Given a client whose delivered orders mix a price with a missing one
@@ -337,7 +343,12 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ deliveredRevenue: '50', hasPriceData: true })
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '50',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
+    })
   })
 
   // Given a client whose delivered orders all lack a price
@@ -356,7 +367,12 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ deliveredRevenue: '0', hasPriceData: false })
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 1,
+    })
   })
 
   // Given a client whose only delivered order is free
@@ -375,7 +391,12 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ deliveredRevenue: '0', hasPriceData: true })
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '0',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 0,
+    })
   })
 
   // Given a client with no orders at all
@@ -387,7 +408,13 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ orderCount: 0, deliveredRevenue: '0', hasPriceData: false })
+    expect(mapClient).toMatchObject({
+      orderCount: 0,
+      deliveredRevenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
+    })
   })
 
   // Given clients in a given order
