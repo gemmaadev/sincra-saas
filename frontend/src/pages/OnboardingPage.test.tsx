@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import OnboardingPage from './OnboardingPage'
 import { TOTAL_CHANNELS_COUNT } from '@/features/onboarding/onboarding.constants'
 import { api } from '@/shared/services'
+import { succeedGoogleLogin } from '@/shared/test/googleOauth'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+
+vi.mock('@react-oauth/google', async () => {
+  const { googleOauthModule } = await import('@/shared/test/googleOauth')
+  return googleOauthModule()
+})
 
 const mockNavigate = vi.fn()
 const mockRegisterBusiness = vi.fn()
@@ -40,6 +46,7 @@ describe('OnboardingPage', () => {
     mockRegisterBusiness.mockClear()
     mockRegisterBusiness.mockResolvedValue(true)
     vi.mocked(api.post).mockReset().mockResolvedValue({})
+    succeedGoogleLogin()
   })
 
   it('Scenario: the flow starts on the business step', () => {
@@ -116,6 +123,9 @@ describe('OnboardingPage', () => {
 
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Desconectar Gmail' })).toBeInTheDocument(),
+    )
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 

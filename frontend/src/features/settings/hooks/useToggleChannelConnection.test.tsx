@@ -24,17 +24,37 @@ describe('useToggleChannelConnection', () => {
     vi.mocked(api.post).mockReset().mockResolvedValue({})
   })
 
-  // Given connect: true
+  // Given a Gmail connect with a Google access token
   // When the mutation runs
-  // Then it should POST to /channels/connect with the channel
-  it('posts to /channels/connect when connecting', async () => {
+  // Then it should POST that token with the channel
+  it('posts the Google access token when connecting Gmail', async () => {
     const { result } = renderUseToggleChannelConnection()
 
     await act(async () => {
-      await result.current.mutateAsync({ channel: 'GMAIL', connect: true })
+      await result.current.mutateAsync({
+        channel: 'GMAIL',
+        connect: true,
+        accessToken: 'google-token',
+      })
     })
 
-    expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'GMAIL' })
+    expect(api.post).toHaveBeenCalledWith('/channels/connect', {
+      channel: 'GMAIL',
+      accessToken: 'google-token',
+    })
+  })
+
+  // Given a channel that does not use Google
+  // When connecting it
+  // Then the request should not include an access token
+  it('omits the access token when connecting without one', async () => {
+    const { result } = renderUseToggleChannelConnection()
+
+    await act(async () => {
+      await result.current.mutateAsync({ channel: 'OUTLOOK', connect: true })
+    })
+
+    expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'OUTLOOK' })
   })
 
   // Given connect: false

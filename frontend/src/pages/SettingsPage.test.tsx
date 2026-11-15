@@ -8,6 +8,11 @@ import { api } from '@/shared/services'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
 
+vi.mock('@react-oauth/google', async () => {
+  const { googleOauthModule } = await import('@/shared/test/googleOauth')
+  return googleOauthModule()
+})
+
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }
@@ -53,7 +58,10 @@ const adminAuth: AuthContextValue = {
   logout: async () => {},
 }
 
-const employeeAuth: AuthContextValue = { ...adminAuth, user: { ...adminAuth.user!, role: 'employee' } }
+const employeeAuth: AuthContextValue = {
+  ...adminAuth,
+  user: { ...adminAuth.user!, role: 'employee' },
+}
 
 function renderSettingsPage(authValue: AuthContextValue = adminAuth) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

@@ -1,14 +1,23 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api } from '@/shared/services'
+import { googleOauth, succeedGoogleLogin } from '@/shared/test/googleOauth'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { notifyError } from '@/shared/utils/notify'
 import { ConnectedChannelsCard } from './ConnectedChannelsCard'
+
+vi.mock('@react-oauth/google', async () => {
+  const { googleOauthModule } = await import('@/shared/test/googleOauth')
+  return googleOauthModule()
+})
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
   return { ...actual, api: { get: vi.fn(), post: vi.fn() } }
 })
+
+vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
 
 const mockChannels = [
   { channel: 'GMAIL', status: 'CONNECTED' },
@@ -23,10 +32,16 @@ function renderCard(canEdit = true) {
   return { user: userEvent.setup() }
 }
 
+function channelRow(name: string) {
+  return screen.getByText(name).closest('div.justify-between') as HTMLElement
+}
+
 describe('ConnectedChannelsCard', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset().mockResolvedValue({ channels: mockChannels })
     vi.mocked(api.post).mockReset().mockResolvedValue({})
+    vi.mocked(notifyError).mockReset()
+    succeedGoogleLogin()
   })
 
   // Given the channels endpoint resolves
@@ -62,6 +77,77 @@ describe('ConnectedChannelsCard', () => {
     await user.click(await screen.findByRole('button', { name: 'Conectar' }))
 
     expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'OUTLOOK' })
+    expect(googleOauth.trigger).not.toHaveBeenCalled()
+  })
+
+  // Given Gmail is disconnected
+  // When an admin connects it and Google returns a token
+  // Then it should POST that token with the Gmail channel
+  it('sends the Google access token when connecting Gmail', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL' ? { ...channel, status: 'DISCONNECTED' } : channel,
+      ),
+    })
+    const { user } = renderCard()
+
+    await screen.findByText('Gmail')
+    await user.click(within(channelRow('Gmail')).getByRole('button', { name: 'Conectar' }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/channels/connect', {
+        channel: 'GMAIL',
+        accessToken: 'google-token',
+      }),
+    )
+  })
+
+  // Given the user closes the Google window
+  // When they try to connect Gmail
+  // Then nothing is saved and a toast explains the cancellation
+  it('shows an error toast when the Google prompt is cancelled', async () => {
+    googleOauth.trigger.mockImplementation(() => {
+      googleOauth.options.current?.onNonOAuthError()
+    })
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL' ? { ...channel, status: 'DISCONNECTED' } : channel,
+      ),
+    })
+    const { user } = renderCard()
+
+    await screen.findByText('Gmail')
+    await user.click(within(channelRow('Gmail')).getByRole('button', { name: 'Conectar' }))
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith('Has cancelado la conexión con Google.'),
+    )
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  // Given Google cannot issue a token
+  // When the user tries to connect Gmail
+  // Then nothing is saved and a toast explains the failure
+  it('shows an error toast when Google fails to return a token', async () => {
+    googleOauth.trigger.mockImplementation(() => {
+      googleOauth.options.current?.onError()
+    })
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL' ? { ...channel, status: 'DISCONNECTED' } : channel,
+      ),
+    })
+    const { user } = renderCard()
+
+    await screen.findByText('Gmail')
+    await user.click(within(channelRow('Gmail')).getByRole('button', { name: 'Conectar' }))
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith(
+        'No se ha podido conectar con Google. Inténtalo de nuevo.',
+      ),
+    )
+    expect(api.post).not.toHaveBeenCalled()
   })
 
   // Given a non-admin viewing the channels

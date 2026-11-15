@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChannelsStep } from './ChannelsStep'
 import { api } from '@/shared/services'
+import { googleOauth, succeedGoogleLogin } from '@/shared/test/googleOauth'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { notifyError } from '@/shared/utils/notify'
+
+vi.mock('@react-oauth/google', async () => {
+  const { googleOauthModule } = await import('@/shared/test/googleOauth')
+  return googleOauthModule()
+})
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -31,6 +37,7 @@ describe('ChannelsStep', () => {
   beforeEach(() => {
     vi.mocked(api.post).mockReset().mockResolvedValue({})
     vi.mocked(notifyError).mockReset()
+    succeedGoogleLogin()
   })
 
   it('Scenario: no channels connected yet', () => {
@@ -66,7 +73,7 @@ describe('ChannelsStep', () => {
     const connectButton = within(gmailCard).getByRole('button', { name: 'Conectar' })
     await user.click(connectButton)
 
-    expect(handleChange).toHaveBeenCalledWith(['gmail'])
+    await waitFor(() => expect(handleChange).toHaveBeenCalledWith(['gmail']))
   })
 
   it('Scenario: disconnecting a channel', async () => {
@@ -134,7 +141,60 @@ describe('ChannelsStep', () => {
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
 
-    expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'GMAIL' })
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith('/channels/connect', {
+        channel: 'GMAIL',
+        accessToken: 'google-token',
+      }),
+    )
+    expect(googleOauth.options.current).toMatchObject({
+      flow: 'implicit',
+      scope: 'openid email profile',
+    })
+  })
+
+  it('Scenario: cancelling the Google prompt does not connect Gmail', async () => {
+    // Given the user closes the Google window
+    // When they try to connect Gmail
+    // Then nothing is saved and a toast explains that they cancelled
+    googleOauth.trigger.mockImplementation(() => {
+      googleOauth.options.current?.onNonOAuthError()
+    })
+    const user = userEvent.setup()
+    const handleChange = vi.fn()
+
+    renderChannelsStep({ onChange: handleChange })
+
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith('Has cancelado la conexión con Google.'),
+    )
+    expect(handleChange).not.toHaveBeenCalled()
+    expect(api.post).not.toHaveBeenCalled()
+  })
+
+  it('Scenario: Google fails to return a token', async () => {
+    // Given Google reports an OAuth error
+    // When the user tries to connect Gmail
+    // Then nothing is saved and a toast explains that the connection failed
+    googleOauth.trigger.mockImplementation(() => {
+      googleOauth.options.current?.onError()
+    })
+    const user = userEvent.setup()
+
+    renderChannelsStep()
+
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    await waitFor(() =>
+      expect(notifyError).toHaveBeenCalledWith(
+        'No se ha podido conectar con Google. Inténtalo de nuevo.',
+      ),
+    )
+    expect(api.post).not.toHaveBeenCalled()
   })
 
   it('Scenario: disconnecting Outlook persists it to the backend', async () => {
@@ -180,8 +240,11 @@ describe('ChannelsStep', () => {
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
 
+    await waitFor(() => expect(handleChange).toHaveBeenCalledTimes(2))
     expect(handleChange).toHaveBeenNthCalledWith(1, ['gmail'])
     expect(handleChange).toHaveBeenNthCalledWith(2, [])
-    expect(notifyError).toHaveBeenCalledWith('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+    expect(notifyError).toHaveBeenCalledWith(
+      'No se ha podido guardar el cambio. Inténtalo de nuevo.',
+    )
   })
 })

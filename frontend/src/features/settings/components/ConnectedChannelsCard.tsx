@@ -1,7 +1,9 @@
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Radio } from 'lucide-react'
 import { Spinner, SectionHeader } from '@/shared/components'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
 import { ONBOARDING_CHANNELS } from '@/features/onboarding/onboarding.constants'
+import { notifyGoogleConnectError, useGoogleAccessToken } from '@/shared/auth/useGoogleAccessToken'
 import { useConnectedChannels } from '../hooks/useConnectedChannels'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
 import type { ChannelConnectionStatus } from '../types/settings.types'
@@ -17,9 +19,32 @@ const STATUS_MAP: Record<ChannelConnectionStatus, 'connected' | 'disconnected' |
   MOCKED: 'mocked',
 }
 
-export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
+export function ConnectedChannelsCard(props: ConnectedChannelsCardProps) {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ConnectedChannelsCardContent {...props} />
+    </GoogleOAuthProvider>
+  )
+}
+
+function ConnectedChannelsCardContent({ canEdit }: ConnectedChannelsCardProps) {
   const { data: channels, isLoading } = useConnectedChannels()
   const toggleChannelConnection = useToggleChannelConnection()
+  const requestGoogleAccessToken = useGoogleAccessToken()
+
+  async function toggleChannel(channel: Channel, connect: boolean) {
+    if (channel === 'GMAIL' && connect) {
+      try {
+        const accessToken = await requestGoogleAccessToken()
+        toggleChannelConnection.mutate({ channel, connect, accessToken })
+      } catch (error) {
+        notifyGoogleConnectError(error)
+      }
+      return
+    }
+
+    toggleChannelConnection.mutate({ channel, connect })
+  }
 
   function statusFor(channel: Channel) {
     const raw = channels?.find((item) => item.channel === channel)?.status ?? 'DISCONNECTED'
@@ -27,7 +52,10 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
   }
 
   return (
-    <section aria-label="Canales conectados" className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0">
+    <section
+      aria-label="Canales conectados"
+      className="flex flex-col gap-4 py-10 first:pt-0 last:pb-0"
+    >
       <SectionHeader
         icon={<Radio size={24} aria-hidden="true" />}
         title="Canales conectados"
@@ -52,12 +80,7 @@ export function ConnectedChannelsCard({ canEdit }: ConnectedChannelsCardProps) {
                 status={status}
                 bordered={false}
                 disabled={!canEdit || toggleChannelConnection.isPending}
-                onToggle={() =>
-                  toggleChannelConnection.mutate({
-                    channel: backendChannel,
-                    connect: status !== 'connected',
-                  })
-                }
+                onToggle={() => toggleChannel(backendChannel, status !== 'connected')}
               />
             )
           })}

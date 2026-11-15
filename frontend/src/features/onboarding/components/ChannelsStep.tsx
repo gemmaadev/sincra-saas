@@ -1,8 +1,10 @@
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { SincraButton } from '@/shared/components/button'
 import { ONBOARDING_CHANNELS } from '../onboarding.constants'
 import type { ChannelId } from '@/shared/channels/channels'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
+import { notifyGoogleConnectError, useGoogleAccessToken } from '@/shared/auth/useGoogleAccessToken'
 import { notifyError } from '@/shared/utils/notify'
 
 interface ChannelsStepProps {
@@ -15,12 +17,43 @@ interface ChannelsStepProps {
 // WhatsApp/Instagram/Messenger always report MOCKED regardless of what's stored, so skip persisting them
 const PERSISTABLE_CHANNELS: ChannelId[] = ['gmail', 'outlook']
 
-export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
-  // TODO: para Gmail/Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
-  const toggleChannelConnection = useToggleChannelConnection()
+export function ChannelsStep(props: ChannelsStepProps) {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ChannelsStepContent {...props} />
+    </GoogleOAuthProvider>
+  )
+}
 
-  const toggleConnection = (channelId: ChannelId) => {
+function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
+  const toggleChannelConnection = useToggleChannelConnection()
+  const requestGoogleAccessToken = useGoogleAccessToken()
+
+  const revert = () => {
+    onChange(connectedChannels)
+    notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+  }
+
+  const toggleConnection = async (channelId: ChannelId) => {
     const isConnected = connectedChannels.includes(channelId)
+
+    if (channelId === 'gmail' && !isConnected) {
+      let accessToken: string
+      try {
+        accessToken = await requestGoogleAccessToken()
+      } catch (error) {
+        notifyGoogleConnectError(error)
+        return
+      }
+
+      onChange([...connectedChannels, channelId])
+      toggleChannelConnection.mutate(
+        { channel: channelId, connect: true, accessToken },
+        { onError: revert },
+      )
+      return
+    }
+
     onChange(
       isConnected
         ? connectedChannels.filter((id) => id !== channelId)
@@ -30,12 +63,7 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
     if (PERSISTABLE_CHANNELS.includes(channelId)) {
       toggleChannelConnection.mutate(
         { channel: channelId, connect: !isConnected },
-        {
-          onError: () => {
-            onChange(connectedChannels)
-            notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
-          },
-        },
+        { onError: revert },
       )
     }
   }
