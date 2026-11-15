@@ -16,6 +16,7 @@ const mockClient: ClientDetail = {
   latitude: null,
   longitude: null,
   lastContact: null,
+  aiGenerated: false,
   clientTags: [],
   orders: [],
   createdAt: '2026-01-01T00:00:00.000Z',

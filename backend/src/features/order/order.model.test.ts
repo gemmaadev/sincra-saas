@@ -40,9 +40,10 @@ describe('findOrdersPage', () => {
 
   // Given a where clause, skip and take
   // When listing a page of orders
-  // Then each row should include the client's name and every item's product/quantity
+  // Then each row should include the client's name, every item's product/quantity
   // (used to build a fallback summary when the order has no description of its own)
-  it('includes the client and every item of each order', async () => {
+  // and the active tags in full, so each assignment's aiGenerated is returned
+  it('includes the client, every item and the active tags of each order', async () => {
     await findOrdersPage({ businessId: 'business-1' }, 0, 20)
 
     expect(prisma.order.findMany).toHaveBeenCalledWith({
@@ -53,6 +54,7 @@ describe('findOrdersPage', () => {
       include: {
         client: { select: { id: true, name: true } },
         items: { select: { product: true, quantity: true } },
+        orderTags: { where: { removedAt: null }, include: { tag: true } },
       },
     })
   })
@@ -224,12 +226,10 @@ describe('updateOrderWithItems', () => {
   // When the order is updated
   // Then a new entry is appended to the status history
   it('appends a status history entry when a status change is given', async () => {
-    await updateOrderWithItems(
-      'order-1',
-      { status: 'SHIPPED' },
-      undefined,
-      { status: 'SHIPPED', changedBy: 'user-1' },
-    )
+    await updateOrderWithItems('order-1', { status: 'SHIPPED' }, undefined, {
+      status: 'SHIPPED',
+      changedBy: 'user-1',
+    })
 
     expect(tx.orderStatusChange.create).toHaveBeenCalledWith({
       data: { orderId: 'order-1', status: 'SHIPPED', changedBy: 'user-1' },

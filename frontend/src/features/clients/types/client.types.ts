@@ -29,6 +29,7 @@ export interface Client {
   channels: Channel[]
   type: string | null
   zone: string | null
+  aiGenerated: boolean
   clientTags: ClientTag[]
   orderCount: number
   lastOrderAt: string | null
@@ -48,6 +49,7 @@ export interface ClientDetail {
   latitude: number | null
   longitude: number | null
   lastContact: string | null
+  aiGenerated: boolean
   clientTags: ClientTag[]
   orders: ClientOrderSummary[]
   createdAt: string

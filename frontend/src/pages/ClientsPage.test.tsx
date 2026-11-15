@@ -29,6 +29,7 @@ const mockClient: Client & ClientDetail = {
   latitude: null,
   longitude: null,
   lastContact: null,
+  aiGenerated: false,
   clientTags: [],
   orders: [],
   orderCount: 0,

@@ -28,6 +28,7 @@ const mockOrder: OrderDetail = {
     { id: 'item-1', product: 'Camiseta', description: null, quantity: 2, unitPrice: '15.00' },
   ],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',

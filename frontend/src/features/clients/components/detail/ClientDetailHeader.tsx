@@ -1,5 +1,5 @@
 import { Mail, Phone, Pencil, Trash2 } from 'lucide-react'
-import { Avatar, IconButton } from '@/shared/components'
+import { AiSuggestedBadge, Avatar, IconButton } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import type { ClientDetail } from '../../types/client.types'
 
@@ -15,8 +15,9 @@ export function ClientDetailHeader({ client, onEdit, onDelete }: ClientDetailHea
       <div className="flex items-center gap-3">
         <Avatar name={client.name} size="2xl" roundness="rounded" />
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-semibold text-ink">{client.name}</span>
+            {client.aiGenerated && <AiSuggestedBadge />}
             <ChannelIcons channels={client.channels} size={16} />
           </div>
           {client.email && (

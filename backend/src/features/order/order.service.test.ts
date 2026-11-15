@@ -464,6 +464,36 @@ describe('listOrders', () => {
       description: 'Chaqueta oversize x2, Bolso de piel',
     })
   })
+
+  // Given an order the AI created, with a tag the AI assigned
+  // When orders are listed
+  // Then aiGenerated should stay on the order and on the tag, and the raw items should not
+  it('keeps aiGenerated on the order and on each tag', async () => {
+    vi.mocked(orderModel.findOrdersPage).mockResolvedValue([
+      {
+        id: 'order-1',
+        description: 'Pedido de temporada',
+        aiGenerated: true,
+        items: [{ product: 'Camiseta', quantity: 1 }],
+        orderTags: [
+          {
+            id: 'assignment-1',
+            tagId: 'tag-1',
+            aiGenerated: true,
+            tag: { id: 'tag-1', name: 'Pedido' },
+          },
+        ],
+      },
+    ] as never)
+
+    const result = await listOrders('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      aiGenerated: true,
+      orderTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Pedido' } }],
+    })
+    expect(result.data[0]).not.toHaveProperty('items')
+  })
 })
 
 describe('getOrderById', () => {
@@ -513,6 +543,27 @@ describe('getOrderById', () => {
     const result = await getOrderById('business-1', 'order-1')
 
     expect(result).toMatchObject({ description: 'Chaqueta oversize x2, Bolso de piel' })
+  })
+
+  // Given an order the AI created, with a tag the AI assigned
+  // When it is requested
+  // Then aiGenerated should stay on the order and on the tag
+  it('keeps aiGenerated on the order and on each tag', async () => {
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue({
+      id: 'order-1',
+      description: 'Pedido de temporada',
+      aiGenerated: true,
+      items: [{ product: 'Camiseta', quantity: 1 }],
+      orderTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Pedido' } }],
+    } as never)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toMatchObject({
+      aiGenerated: true,
+      orderTags: [{ id: 'assignment-1', aiGenerated: true }],
+      items: [{ product: 'Camiseta', quantity: 1 }],
+    })
   })
 
   // Given an order with items

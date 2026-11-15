@@ -18,6 +18,7 @@ const mockOrder: OrderDetail = {
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',

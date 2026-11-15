@@ -16,6 +16,7 @@ const mockClient: ClientDetail = {
   latitude: null,
   longitude: null,
   lastContact: null,
+  aiGenerated: false,
   clientTags: [],
   orders: [],
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -75,6 +76,36 @@ describe('ClientDetailHeader', () => {
     )
     expect(screen.getByLabelText('Gmail')).toBeInTheDocument()
     expect(screen.getByLabelText('WhatsApp')).toBeInTheDocument()
+  })
+
+  // Given a client the AI created
+  // When ClientDetailHeader is rendered
+  // Then it should say the record was suggested by the AI
+  it('shows that the client was suggested by the AI', () => {
+    render(
+      <MantineProvider>
+        <ClientDetailHeader
+          client={{ ...mockClient, aiGenerated: true }}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Sugerido por IA')).toBeInTheDocument()
+  })
+
+  // Given a client a person created
+  // When ClientDetailHeader is rendered
+  // Then it should not claim the AI suggested it
+  it('does not mark a client a person created', () => {
+    render(
+      <MantineProvider>
+        <ClientDetailHeader client={mockClient} onEdit={vi.fn()} onDelete={vi.fn()} />
+      </MantineProvider>,
+    )
+
+    expect(screen.queryByText('Sugerido por IA')).not.toBeInTheDocument()
   })
 
   // Given a client

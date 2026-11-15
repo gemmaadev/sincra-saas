@@ -1,6 +1,8 @@
 import prisma from '../../config/db'
 import type { Prisma } from '../../generated/prisma/client'
 
+// Active assignments are included in full (no field select), so each tag keeps aiGenerated.
+// The client row itself is not projected, so its own aiGenerated comes back with the other scalars.
 const ACTIVE_CLIENT_TAGS_INCLUDE = {
   clientTags: { where: { removedAt: null }, include: { tag: true } },
 } satisfies Prisma.ClientInclude

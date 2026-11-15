@@ -36,6 +36,7 @@ const mockOrder: OrderDetail = {
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -90,6 +91,27 @@ describe('OrderDetailPanel', () => {
     expect(await screen.findByText('No se ha podido cargar el pedido.')).toBeInTheDocument()
   })
 
+  // Given an order the AI created
+  // When the panel is rendered
+  // Then the header should say the order was suggested by the AI
+  it('shows that the order was suggested by the AI', async () => {
+    mockApiGet({ ...mockOrder, aiGenerated: true })
+    renderPanel()
+
+    expect(await screen.findByText('Sugerido por IA')).toBeInTheDocument()
+  })
+
+  // Given an order a person created
+  // When the panel is rendered
+  // Then the header should not claim the AI suggested it
+  it('does not mark an order a person created', async () => {
+    mockApiGet()
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    expect(screen.queryByText('Sugerido por IA')).not.toBeInTheDocument()
+  })
+
   // Given the order loads successfully
   // When the panel is rendered
   // Then it should show the order number as the panel title
@@ -121,7 +143,9 @@ describe('OrderDetailPanel', () => {
   it('opens the edit modal prefilled with the order data', async () => {
     mockApiGet({
       ...mockOrder,
-      items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' }],
+      items: [
+        { id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' },
+      ],
     })
     renderPanel()
     await screen.findByText('Pedido #7')
@@ -154,7 +178,9 @@ describe('OrderDetailPanel', () => {
   it('shows the order items on the Productos tab', async () => {
     mockApiGet({
       ...mockOrder,
-      items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' }],
+      items: [
+        { id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' },
+      ],
     })
     renderPanel()
     await screen.findByText('Pedido #7')
@@ -230,7 +256,9 @@ describe('OrderDetailPanel', () => {
     const dialog = await screen.findByRole('dialog', { name: '¿Cancelar pedido?' })
     await user.click(within(dialog).getByRole('button', { name: 'Cancelar pedido' }))
 
-    await waitFor(() => expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'CANCELLED' }))
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'CANCELLED' }),
+    )
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 

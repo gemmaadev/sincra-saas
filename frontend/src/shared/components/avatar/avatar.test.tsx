@@ -11,6 +11,14 @@ describe('Avatar', () => {
     expect(screen.getByText('LG')).toBeInTheDocument()
   })
 
+  // Given a name that mixes a person and a business, with parentheses
+  // When the avatar is rendered
+  // Then the initials should skip the punctuation
+  it('skips punctuation when building initials', () => {
+    render(<Avatar name="Anna (Restaurant Can Vila)" />)
+    expect(screen.getByText('AR')).toBeInTheDocument()
+  })
+
   // Given an Avatar with an image URL
   // When it is rendered
   // Then it should display the image instead of the initials

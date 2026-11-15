@@ -20,6 +20,7 @@ const mockOrder: OrderDetail = {
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -92,11 +93,14 @@ describe('OrderTagsTab', () => {
 
   // Given a tag that the AI assigned and one that a person assigned
   // When OrderTagsTab is rendered
-  // Then only the AI one should carry the "Sugerido por IA" badge
+  // Then only the AI tag should show the suggestion mark inside its pill
   it('marks the tags assigned by the AI', () => {
     renderOrderTagsTab(orderWithTags([{ tag: vipTag, aiGenerated: true }, { tag: urgentTag }]))
 
-    expect(screen.getAllByText('Sugerido por IA')).toHaveLength(1)
+    expect(screen.getByText('VIP')).toContainElement(screen.getByLabelText('Sugerido por IA'))
+    expect(screen.getByText('Urgente')).not.toContainElement(
+      screen.getByLabelText('Sugerido por IA'),
+    )
   })
 
   // Given an order with a tag

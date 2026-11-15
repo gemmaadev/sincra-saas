@@ -13,6 +13,11 @@ const COLUMNS: SkeletonColumn[] = [
     renderCell: () => <Skeleton className="h-3.5 w-28" />,
   },
   {
+    key: 'tags',
+    header: 'Etiquetas',
+    renderCell: () => <Skeleton className="h-5 w-16 rounded-full" />,
+  },
+  {
     key: 'product',
     header: 'Producto / Servicio',
     renderCell: () => (

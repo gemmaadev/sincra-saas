@@ -27,8 +27,11 @@ const mockOrder: OrderDetail = {
   expectedDate: null,
   description: null,
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
-  items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 2, unitPrice: '15.00' }],
+  items: [
+    { id: 'item-1', product: 'Camiseta', description: null, quantity: 2, unitPrice: '15.00' },
+  ],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -168,7 +171,9 @@ describe('OrderFormModal', () => {
     await user.type(screen.getByLabelText('Precio'), '15')
     await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
 
-    expect(await screen.findByText('No se ha podido asignar el número de pedido')).toBeInTheDocument()
+    expect(
+      await screen.findByText('No se ha podido asignar el número de pedido'),
+    ).toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
     expect(notifySuccess).not.toHaveBeenCalled()
   })

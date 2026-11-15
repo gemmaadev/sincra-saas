@@ -20,6 +20,8 @@ export interface Order {
   createdAt: string
   client: OrderClientSummary
   description: string | null
+  aiGenerated: boolean
+  orderTags: OrderTag[]
 }
 
 export interface OrderItem {
@@ -66,6 +68,7 @@ export interface OrderDetail {
   client: OrderDetailClient
   items: OrderItem[]
   statusHistory: OrderStatusChangeEntry[]
+  aiGenerated: boolean
   orderTags: OrderTag[]
   createdAt: string
   updatedAt: string
