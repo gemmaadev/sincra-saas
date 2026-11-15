@@ -26,6 +26,6 @@ describe('Extraction model', () => {
     expect(model?.fields.find((field) => field.name === 'emailId')?.dbName).toBe('email_id')
     expect(model?.fields.find((field) => field.name === 'extractionType')?.dbName).toBe('extraction_type')
     expect(model?.fields.find((field) => field.name === 'rawData')?.dbName).toBe('raw_data')
-    expect(model?.fields.find((field) => field.name === 'status')?.default).toBe('pending')
+    expect(model?.fields.find((field) => field.name === 'status')?.default).toBe('PENDING')
   })
 })
