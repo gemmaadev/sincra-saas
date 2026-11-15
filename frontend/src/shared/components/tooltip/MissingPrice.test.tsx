@@ -16,4 +16,17 @@ describe('MissingPrice', () => {
 
     expect(screen.getByLabelText('Precio aún no definido')).toBeInTheDocument()
   })
+
+  // Given a count of orders that lack a price
+  // When the indicator is rendered with that label
+  // Then the tooltip text should say how many prices are missing
+  it('can label how many orders lack a price', () => {
+    render(
+      <MantineProvider>
+        <MissingPrice label="Faltan precios en 2 pedidos" />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByLabelText('Faltan precios en 2 pedidos')).toBeInTheDocument()
+  })
 })

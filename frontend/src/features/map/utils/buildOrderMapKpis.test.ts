@@ -23,6 +23,7 @@ describe('buildOrderMapKpis', () => {
       deliveredRevenue: 150.5,
       topRevenueZone: 'Bilbao',
       hasPriceData: true,
+      missingPriceCount: 0,
     })
   })
 
@@ -44,6 +45,7 @@ describe('buildOrderMapKpis', () => {
       deliveredRevenue: 0,
       topRevenueZone: null,
       hasPriceData: false,
+      missingPriceCount: 0,
     })
   })
 })
@@ -59,6 +61,7 @@ describe('toOrderKpiCards', () => {
       deliveredRevenue: 234.5,
       topRevenueZone: 'Bilbao',
       hasPriceData: true,
+      missingPriceCount: 0,
     })
 
     expect(cards).toHaveLength(4)
@@ -82,9 +85,29 @@ describe('toOrderKpiCards', () => {
       deliveredRevenue: 0,
       topRevenueZone: 'Vic',
       hasPriceData: false,
+      missingPriceCount: 2,
     })
 
     expect(cards.find((card) => card.label === 'Ingresos totales')?.noPriceData).toBe(true)
+  })
+
+  // Given order-map revenue where only some orders have a price
+  // When the cards are built
+  // Then the revenue card should carry how many prices are missing
+  it('carries the missing price count when some orders have a price', () => {
+    const cards = toOrderKpiCards({
+      totalOrders: 3,
+      zonesWithSales: 1,
+      deliveredRevenue: 40,
+      topRevenueZone: 'Vic',
+      hasPriceData: true,
+      missingPriceCount: 2,
+    })
+
+    expect(cards.find((card) => card.label === 'Ingresos totales')).toMatchObject({
+      noPriceData: false,
+      missingPriceCount: 2,
+    })
   })
 
   // Given the order map data has not loaded yet (kpis is null)

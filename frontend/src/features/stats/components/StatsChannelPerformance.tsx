@@ -1,4 +1,5 @@
-import { Card, InfoTooltip, NoPriceDataHint } from '@/shared/components'
+import { Card, InfoTooltip, MissingPrice, NoPriceDataHint } from '@/shared/components'
+import { missingPricesLabel } from '@/shared/components/tooltip/missingPricesLabel'
 import { formatCurrency } from '@/shared/utils'
 import type { ChannelPerformanceRow } from '../utils/buildChannelPerformanceRows'
 
@@ -32,7 +33,13 @@ export function StatsChannelPerformance({ rows }: StatsChannelPerformanceProps) 
                 </div>
                 <span className="flex w-24 shrink-0 items-center justify-end gap-1 text-sm text-ink-muted">
                   {formatCurrency(row.revenue)}
-                  {row.hasPriceData === false && <NoPriceDataHint />}
+                  {row.hasPriceData === false ? (
+                    <NoPriceDataHint />
+                  ) : (
+                    row.missingPriceCount > 0 && (
+                      <MissingPrice label={missingPricesLabel(row.missingPriceCount)} />
+                    )
+                  )}
                 </span>
               </li>
             )

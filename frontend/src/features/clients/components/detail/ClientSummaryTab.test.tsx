@@ -138,6 +138,7 @@ describe('ClientSummaryTab', () => {
     })
 
     expect(screen.getByText('10,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Falta el precio en 1 pedido')).toBeInTheDocument()
   })
 
   // Given only delivered orders with no price

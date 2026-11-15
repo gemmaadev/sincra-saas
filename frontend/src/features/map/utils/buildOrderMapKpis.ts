@@ -9,12 +9,14 @@ export interface OrderMapKpis {
   deliveredRevenue: number
   topRevenueZone: string | null
   hasPriceData: boolean
+  missingPriceCount: number
 }
 
 export function buildOrderMapKpis({
   total,
   deliveredRevenue,
   hasPriceData,
+  missingPriceCount,
   zones,
 }: OrderMapResponse): OrderMapKpis {
   const [topZone] = zones
@@ -25,6 +27,7 @@ export function buildOrderMapKpis({
     deliveredRevenue: Number(deliveredRevenue),
     topRevenueZone: topZone?.zone ?? null,
     hasPriceData: hasPriceData !== false,
+    missingPriceCount: missingPriceCount ?? 0,
   }
 }
 
@@ -51,6 +54,7 @@ export function toOrderKpiCards(kpis: OrderMapKpis | null): KpiCardProps[] {
       label: 'Ingresos totales',
       value: formatCurrency(kpis.deliveredRevenue),
       noPriceData: !kpis.hasPriceData,
+      missingPriceCount: kpis.missingPriceCount,
     },
     { icon: Trophy, label: 'Zona con más ingresos', value: kpis.topRevenueZone ?? '—' },
   ]

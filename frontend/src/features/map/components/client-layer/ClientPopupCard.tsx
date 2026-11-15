@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { ArrowRight, MapPin, Pencil, Trash2 } from 'lucide-react'
-import { Avatar, IconButton, NoPriceDataHint } from '@/shared/components'
+import { Avatar, IconButton, MissingPrice, NoPriceDataHint } from '@/shared/components'
+import { missingPricesLabel } from '@/shared/components/tooltip/missingPricesLabel'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import type { MapClient } from '../../types/map.types'
@@ -42,7 +43,13 @@ export function ClientPopupCard({ client, onEdit, onDelete }: ClientPopupCardPro
                 {client.orderCount} {client.orderCount === 1 ? 'pedido' : 'pedidos'} ·{' '}
                 {formatCurrency(Number(client.deliveredRevenue))}
               </span>
-              {client.hasPriceData === false && <NoPriceDataHint />}
+              {client.hasPriceData === false ? (
+                <NoPriceDataHint />
+              ) : (
+                (client.missingPriceCount ?? 0) > 0 && (
+                  <MissingPrice label={missingPricesLabel(client.missingPriceCount ?? 0)} />
+                )
+              )}
             </p>
           )}
         </div>

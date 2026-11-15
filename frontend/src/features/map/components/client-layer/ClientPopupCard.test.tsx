@@ -95,6 +95,22 @@ describe('ClientPopupCard', () => {
     expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
   })
 
+  // Given a client whose delivered orders mix a price with a missing one
+  // When the card is rendered
+  // Then the revenue should show how many prices are missing
+  it('shows how many prices are missing when some orders have a price', () => {
+    renderCard({
+      ...mockClient,
+      orderCount: 2,
+      deliveredRevenue: '40',
+      hasPriceData: true,
+      missingPriceCount: 1,
+    })
+
+    expect(screen.getByLabelText('Falta el precio en 1 pedido')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Sin datos de precio en ningún pedido')).not.toBeInTheDocument()
+  })
+
   // Given a client placed at the centre of its zone
   // When the card is rendered
   // Then it should warn that the location is approximate

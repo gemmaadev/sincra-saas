@@ -22,6 +22,8 @@ export interface MapClient {
   orderCount: number
   deliveredRevenue: string
   hasPriceData?: boolean
+  pricedCount?: number
+  missingPriceCount?: number
 }
 
 export interface ZoneSummary {
@@ -67,6 +69,8 @@ export interface OrderMapResponse {
   total: number
   deliveredRevenue: string
   hasPriceData?: boolean
+  pricedCount?: number
+  missingPriceCount?: number
   zones: OrderMapZoneSummary[]
   orders: MapOrder[]
 }

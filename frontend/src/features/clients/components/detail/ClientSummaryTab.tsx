@@ -1,4 +1,5 @@
-import { Badge, InfoTooltip, NoPriceDataHint } from '@/shared/components'
+import { Badge, InfoTooltip, MissingPrice, NoPriceDataHint } from '@/shared/components'
+import { missingPricesLabel } from '@/shared/components/tooltip/missingPricesLabel'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
   ORDER_STATUS_LABELS,
@@ -18,7 +19,8 @@ export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
   // Only delivered orders are guaranteed revenue — a pending/shipped order could still
   // be cancelled before it completes, and a cancelled one was never actually paid.
   const deliveredOrders = client.orders.filter((order) => order.status === 'DELIVERED')
-  const hasPriceData = deliveredOrders.some((order) => order.price != null)
+  const missingPriceCount = deliveredOrders.filter((order) => order.price == null).length
+  const hasPriceData = deliveredOrders.length - missingPriceCount > 0
   const totalValue = deliveredOrders.reduce(
     (sum, order) => (order.price == null ? sum : sum + Number(order.price)),
     0,
@@ -47,7 +49,13 @@ export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
           </div>
           <span className="flex items-center gap-1 font-medium text-ink">
             {formatCurrency(totalValue)}
-            {!hasPriceData && <NoPriceDataHint />}
+            {!hasPriceData ? (
+              <NoPriceDataHint />
+            ) : (
+              missingPriceCount > 0 && (
+                <MissingPrice label={missingPricesLabel(missingPriceCount)} />
+              )
+            )}
           </span>
         </div>
       </div>
