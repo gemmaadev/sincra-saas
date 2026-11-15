@@ -85,6 +85,16 @@ describe('ClientPopupCard', () => {
     expect(screen.getByText('1 pedido · 0,00 €')).toBeInTheDocument()
   })
 
+  // Given a client whose orders have no known price
+  // When the card is rendered
+  // Then the zero revenue should be marked as having no price data
+  it('marks the revenue when no order has a price', () => {
+    renderCard({ ...mockClient, orderCount: 2, deliveredRevenue: '0', hasPriceData: false })
+
+    expect(screen.getByText(/2 pedidos/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
+  })
+
   // Given a client placed at the centre of its zone
   // When the card is rendered
   // Then it should warn that the location is approximate

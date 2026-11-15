@@ -26,6 +26,7 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 300,
         averageTicket: 100,
         percentage: 75,
+        hasPriceData: true,
       },
       {
         label: 'WhatsApp',
@@ -34,6 +35,7 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 100,
         averageTicket: 50,
         percentage: 25,
+        hasPriceData: true,
       },
     ])
   })
@@ -54,6 +56,7 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 50,
         averageTicket: 50,
         percentage: 100,
+        hasPriceData: true,
       },
     ])
   })
@@ -65,5 +68,18 @@ describe('buildChannelPerformanceRows', () => {
     const rows = buildChannelPerformanceRows({ entries: [] })
 
     expect(rows).toEqual([])
+  })
+
+  // Given a channel whose orders all lack a price
+  // When building the rows
+  // Then the row should be marked as having no price data
+  it('marks a channel with no known prices', () => {
+    const rows = buildChannelPerformanceRows({
+      entries: [
+        { channel: 'GMAIL', orderCount: 2, revenue: '0', averageTicket: '0', hasPriceData: false },
+      ],
+    })
+
+    expect(rows[0]?.hasPriceData).toBe(false)
   })
 })

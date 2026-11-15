@@ -55,6 +55,7 @@ describe('ClientSummaryTab', () => {
     renderClientSummaryTab(mockClient)
     expect(screen.getByText('Total de pedidos').nextSibling).toHaveTextContent('0')
     expect(screen.getByText('0,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
   })
 
   // Given a client with a delivered order, a pending one and a cancelled one
@@ -102,6 +103,91 @@ describe('ClientSummaryTab', () => {
     expect(screen.getByText('Total de pedidos').nextSibling).toHaveTextContent('3')
     expect(screen.getByText('89,90 €')).toBeInTheDocument()
     expect(screen.getByText('Chaqueta oversize')).toBeInTheDocument()
+  })
+
+  // Given a delivered order with a price and another delivered order without one
+  // When ClientSummaryTab is rendered
+  // Then the total value should include only the known price
+  it('ignores a delivered order with no price when totalling the value', () => {
+    renderClientSummaryTab({
+      ...mockClient,
+      orders: [
+        {
+          id: 'order-1',
+          number: 1,
+          status: 'DELIVERED',
+          kind: 'PRODUCT',
+          channel: null,
+          price: '10',
+          expectedDate: null,
+          createdAt: '2026-10-01T00:00:00.000Z',
+          description: null,
+        },
+        {
+          id: 'order-2',
+          number: 2,
+          status: 'DELIVERED',
+          kind: 'PRODUCT',
+          channel: null,
+          price: null,
+          expectedDate: null,
+          createdAt: '2026-10-02T00:00:00.000Z',
+          description: null,
+        },
+      ],
+    })
+
+    expect(screen.getByText('10,00 €')).toBeInTheDocument()
+  })
+
+  // Given only delivered orders with no price
+  // When ClientSummaryTab is rendered
+  // Then the total value should be 0 €
+  it('shows 0€ when no delivered order has a price', () => {
+    renderClientSummaryTab({
+      ...mockClient,
+      orders: [
+        {
+          id: 'order-1',
+          number: 1,
+          status: 'DELIVERED',
+          kind: 'PRODUCT',
+          channel: null,
+          price: null,
+          expectedDate: null,
+          createdAt: '2026-10-01T00:00:00.000Z',
+          description: null,
+        },
+      ],
+    })
+
+    expect(screen.getByText('0,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
+  })
+
+  // Given only a free delivered order
+  // When ClientSummaryTab is rendered
+  // Then the total is 0 € and it is not marked as missing price data
+  it('does not mark the total when the delivered price is zero', () => {
+    renderClientSummaryTab({
+      ...mockClient,
+      orders: [
+        {
+          id: 'order-1',
+          number: 1,
+          status: 'DELIVERED',
+          kind: 'PRODUCT',
+          channel: null,
+          price: '0',
+          expectedDate: null,
+          createdAt: '2026-10-01T00:00:00.000Z',
+          description: null,
+        },
+      ],
+    })
+
+    expect(screen.getByText('0,00 €')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Sin datos de precio en ningún pedido')).not.toBeInTheDocument()
   })
 
   // Given a client with an address and zone

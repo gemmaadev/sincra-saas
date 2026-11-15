@@ -209,10 +209,10 @@ describe('Client and Tag models', () => {
       expect(order.items).toHaveLength(2)
       expect(order.statusHistory).toHaveLength(1)
 
-      const total = order.items.reduce(
-        (sum, item) => sum.plus(item.unitPrice.mul(item.quantity)),
-        new Prisma.Decimal(0),
-      )
+      const total = order.items.reduce((sum, item) => {
+        if (item.unitPrice == null) return sum
+        return sum.plus(item.unitPrice.mul(item.quantity))
+      }, new Prisma.Decimal(0))
       expect(total.toFixed(2)).toBe('119.90')
     } finally {
       await prisma.business.delete({ where: { id: business.id } })

@@ -1,10 +1,17 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect } from 'vitest'
 import { OrderItemsList } from './OrderItemsList'
 import type { OrderItem } from '../../types/order.types'
 
 const mockItems: OrderItem[] = [
-  { id: 'item-1', product: 'Chaqueta oversize', description: 'Talla M - Beige', quantity: 1, unitPrice: '89.90' },
+  {
+    id: 'item-1',
+    product: 'Chaqueta oversize',
+    description: 'Talla M - Beige',
+    quantity: 1,
+    unitPrice: '89.90',
+  },
   { id: 'item-2', product: 'Bolso de piel', description: null, quantity: 2, unitPrice: '25.00' },
 ]
 
@@ -32,5 +39,24 @@ describe('OrderItemsList', () => {
     render(<OrderItemsList items={[]} />)
 
     expect(screen.getByText('Este pedido no tiene productos.')).toBeInTheDocument()
+  })
+
+  // Given a line with no unit price
+  // When the list is rendered
+  // Then that line should show a missing-price mark and no invented amount
+  it('shows a missing-price mark when a line has no price', () => {
+    render(
+      <MantineProvider>
+        <OrderItemsList
+          items={[
+            { id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: null },
+          ]}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Camiseta')).toBeInTheDocument()
+    expect(screen.getByLabelText('Precio aún no definido')).toBeInTheDocument()
+    expect(screen.queryByText('0,00 €')).not.toBeInTheDocument()
   })
 })

@@ -38,7 +38,11 @@ describe('buildMapOrders', () => {
   // Then it should fall back to the client's location, marked as approximate
   it('falls back to the client location when the order has none of its own', () => {
     const orders = buildMapOrders([
-      record({ latitude: null, longitude: null, client: { name: 'Ana', zone: null, latitude: 41.3, longitude: 2.1 } }),
+      record({
+        latitude: null,
+        longitude: null,
+        client: { name: 'Ana', zone: null, latitude: 41.3, longitude: 2.1 },
+      }),
     ])
 
     expect(orders).toEqual([
@@ -88,6 +92,15 @@ describe('buildMapOrders', () => {
       },
     ])
   })
+
+  // Given an order with no price
+  // When the map orders are built
+  // Then the price should stay null
+  it('keeps a missing price as null', () => {
+    const orders = buildMapOrders([record({ price: null, latitude: 41.1, longitude: 2.2 })])
+
+    expect(orders[0]?.price).toBeNull()
+  })
 })
 
 describe('getOrderMap', () => {
@@ -109,6 +122,50 @@ describe('getOrderMap', () => {
 
     expect(result.total).toBe(3)
     expect(result.deliveredRevenue).toBe('50')
+    expect(result.hasPriceData).toBe(true)
+  })
+
+  // Given a delivered order with a price and another without one
+  // When the order map is built
+  // Then delivered revenue should include only the known price
+  it('leaves unpriced delivered orders out of the revenue sum', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ id: 'order-1', status: 'DELIVERED', price: new Prisma.Decimal('50') }),
+      record({ id: 'order-2', status: 'DELIVERED', price: null }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.deliveredRevenue).toBe('50')
+    expect(result.hasPriceData).toBe(true)
+  })
+
+  // Given only delivered orders with no price
+  // When the order map is built
+  // Then delivered revenue should be zero and marked as having no price data
+  it('reports zero delivered revenue when no delivered order has a price', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ id: 'order-1', status: 'DELIVERED', price: null }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.deliveredRevenue).toBe('0')
+    expect(result.hasPriceData).toBe(false)
+  })
+
+  // Given a free delivered order
+  // When the order map is built
+  // Then its price counts as known data and the revenue stays 0
+  it('treats a free delivered order as known price data', async () => {
+    vi.mocked(orderMapModel.findOrdersForMap).mockResolvedValue([
+      record({ id: 'order-1', status: 'DELIVERED', price: new Prisma.Decimal(0) }),
+    ] as never)
+
+    const result = await getOrderMap('business-1', {})
+
+    expect(result.deliveredRevenue).toBe('0')
+    expect(result.hasPriceData).toBe(true)
   })
 
   // Given two delivered orders in Barcelona and one in Girona

@@ -39,6 +39,7 @@ describe('StatsChannelPerformance', () => {
           revenue: 300,
           averageTicket: 100,
           percentage: 75,
+          hasPriceData: true,
         },
         {
           label: 'WhatsApp',
@@ -47,6 +48,7 @@ describe('StatsChannelPerformance', () => {
           revenue: 100,
           averageTicket: 50,
           percentage: 25,
+          hasPriceData: true,
         },
       ],
     })
@@ -55,5 +57,27 @@ describe('StatsChannelPerformance', () => {
     expect(screen.getByText('300,00 €')).toBeInTheDocument()
     expect(screen.getByText('WhatsApp')).toBeInTheDocument()
     expect(screen.getByText('100,00 €')).toBeInTheDocument()
+  })
+
+  // Given a channel with no known prices
+  // When the block is rendered
+  // Then the zero revenue should be marked as having no price data
+  it('marks zero revenue when the channel has no price data', () => {
+    renderPerformance({
+      rows: [
+        {
+          label: 'Gmail',
+          icon: SiGmail,
+          colorClassName: 'text-gmail',
+          revenue: 0,
+          averageTicket: 0,
+          percentage: 0,
+          hasPriceData: false,
+        },
+      ],
+    })
+
+    expect(screen.getByText('0,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
   })
 })

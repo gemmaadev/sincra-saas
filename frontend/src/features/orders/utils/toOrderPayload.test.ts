@@ -105,4 +105,35 @@ describe('toOrderPayload', () => {
     expect(payload).not.toHaveProperty('latitude')
     expect(payload).not.toHaveProperty('longitude')
   })
+
+  // Given a line with no price
+  // When the form is converted to a payload
+  // Then that line price should stay null
+  it('sends a missing line price as null', () => {
+    const payload = toOrderPayload({
+      ...filledValues,
+      items: [{ product: 'Camiseta', description: '', quantity: 1, unitPrice: null }],
+    })
+
+    expect(payload.items[0]?.unitPrice).toBeNull()
+  })
+
+  // Given a line with a price
+  // When the form is converted to a payload
+  // Then that price should be carried over unchanged
+  it('keeps a line price that was entered', () => {
+    expect(toOrderPayload(filledValues).items[0]?.unitPrice).toBe(15)
+  })
+
+  // Given a free line
+  // When the form is converted to a payload
+  // Then the price should stay 0
+  it('keeps a free line price of 0', () => {
+    const payload = toOrderPayload({
+      ...filledValues,
+      items: [{ product: 'Regalo', description: '', quantity: 1, unitPrice: 0 }],
+    })
+
+    expect(payload.items[0]?.unitPrice).toBe(0)
+  })
 })
