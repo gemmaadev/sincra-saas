@@ -14,6 +14,8 @@ export interface StatsOverview {
   ordersCreated: number
   averageDeliveryDays: number | null
   revenue: string
+  // false when no order in the group has a price, including a price of 0
+  hasPriceData: boolean
 }
 
 export interface OrderStatusCount {
@@ -59,6 +61,7 @@ export interface ChannelPerformanceEntry {
   orderCount: number
   revenue: string
   averageTicket: string
+  hasPriceData: boolean
 }
 
 // Only delivered orders count — same reasoning as getOverview's revenue.

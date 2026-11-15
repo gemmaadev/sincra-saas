@@ -17,7 +17,10 @@ function resolveZone(record: OrderMapRecord): string | null {
 }
 
 function sumRevenue(records: OrderMapRecord[]): Prisma.Decimal {
-  return records.reduce((total, record) => total.plus(record.price ?? 0), new Prisma.Decimal(0))
+  return records.reduce((total, record) => {
+    if (record.price == null) return total
+    return total.plus(record.price)
+  }, new Prisma.Decimal(0))
 }
 
 // Only delivered orders count as real revenue — a pending/shipped order could still be
@@ -46,7 +49,10 @@ export function buildOrderZoneSummary(deliveredRecords: OrderMapRecord[]): Order
       revenue: sumRevenue(records),
       percentage: toPercentage(records.length, deliveredRecords.length),
     }))
-    .sort((first, second) => second.revenue.comparedTo(first.revenue) || first.zone.localeCompare(second.zone))
+    .sort(
+      (first, second) =>
+        second.revenue.comparedTo(first.revenue) || first.zone.localeCompare(second.zone),
+    )
     .map((summary) => ({ ...summary, revenue: summary.revenue.toString() }))
 }
 
@@ -64,7 +70,11 @@ function resolveOrderLocation(record: OrderMapRecord): OrderLocation | null {
   }
 
   if (record.client.latitude !== null && record.client.longitude !== null) {
-    return { latitude: record.client.latitude, longitude: record.client.longitude, approximate: true }
+    return {
+      latitude: record.client.latitude,
+      longitude: record.client.longitude,
+      approximate: true,
+    }
   }
 
   return null
@@ -79,7 +89,7 @@ function toMapOrder(record: OrderMapRecord): MapOrder | null {
     number: record.number,
     status: record.status,
     channel: record.channel,
-    price: (record.price ?? new Prisma.Decimal(0)).toString(),
+    price: record.price?.toString() ?? null,
     zone: resolveZone(record),
     clientName: record.client.name,
     ...location,
@@ -87,9 +97,7 @@ function toMapOrder(record: OrderMapRecord): MapOrder | null {
 }
 
 export function buildMapOrders(records: OrderMapRecord[]): MapOrder[] {
-  return records
-    .map(toMapOrder)
-    .filter((mapOrder): mapOrder is MapOrder => mapOrder !== null)
+  return records.map(toMapOrder).filter((mapOrder): mapOrder is MapOrder => mapOrder !== null)
 }
 
 export async function getOrderMap(
@@ -102,6 +110,7 @@ export async function getOrderMap(
   return {
     total: records.length,
     deliveredRevenue: sumRevenue(deliveredRecords).toString(),
+    hasPriceData: deliveredRecords.some((record) => record.price != null),
     zones: buildOrderZoneSummary(deliveredRecords),
     orders: buildMapOrders(records),
   }

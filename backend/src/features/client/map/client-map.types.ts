@@ -45,6 +45,8 @@ export interface MapClient {
   approximate: boolean
   orderCount: number
   deliveredRevenue: string
+  // false when no delivered order has a price, including a price of 0
+  hasPriceData: boolean
 }
 
 export interface ZoneSummary {

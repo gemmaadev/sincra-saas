@@ -76,8 +76,13 @@ function computeAverageDeliveryDays(orders: DeliveredOrderRecord[]): number | nu
   return Math.round((totalDays / deliveredOrders.length) * 10) / 10
 }
 
+// A missing price is unknown, so it stays out of the sum. The starting 0 is only the
+// identity of addition: when no order has a price, the known revenue is 0.
 function sumRevenue(orders: DeliveredOrderRecord[]): Prisma.Decimal {
-  return orders.reduce((total, order) => total.plus(order.price ?? 0), new Prisma.Decimal(0))
+  return orders.reduce((total, order) => {
+    if (order.price == null) return total
+    return total.plus(order.price)
+  }, new Prisma.Decimal(0))
 }
 
 export async function getOverview(
@@ -97,6 +102,7 @@ export async function getOverview(
     ordersCreated,
     averageDeliveryDays: computeAverageDeliveryDays(deliveredOrders),
     revenue: sumRevenue(deliveredOrders).toString(),
+    hasPriceData: deliveredOrders.some((order) => order.price != null),
   }
 }
 
@@ -203,7 +209,11 @@ export async function getOrdersEvolution(
   // If date range is incomplete, only plot buckets with actual data.
   const bucketKeys =
     createdAtRange?.gte && createdAtRange.lt
-      ? buildBucketKeys(createdAtRange.gte as Date, previousDay(createdAtRange.lt as Date), granularity)
+      ? buildBucketKeys(
+          createdAtRange.gte as Date,
+          previousDay(createdAtRange.lt as Date),
+          granularity,
+        )
       : [...counts.keys()].sort()
 
   return {
@@ -212,7 +222,7 @@ export async function getOrdersEvolution(
   }
 }
 
-// Groups null/empty/whitespace-only type into a single "Sin segmento" bucket, sorted by count desc 
+// Groups null/empty/whitespace-only type into a single "Sin segmento" bucket, sorted by count desc
 function buildClientsByType(groups: { type: string | null; _count: number }[]): ClientsByType {
   const counts = new Map<string, number>()
 
@@ -254,21 +264,27 @@ export async function getAiSummary(businessId: string, filters: StatsFilters): P
 interface ChannelRevenueGroup {
   channel: Channel | null
   _sum: { price: Prisma.Decimal | null }
-  _count: number
+  _count: { _all: number; price: number }
 }
 
 // Sorted by revenue descending — the channel that actually earns the most goes first.
+// Revenue is the sum of known prices (0 when none are known). The average ticket divides
+// by orders that have a price, so an unpriced order is not treated as 0. orderCount
+// still counts every delivered order.
 function buildChannelPerformance(groups: ChannelRevenueGroup[]): ChannelPerformance {
   const entries = groups
     .map((group) => {
       const revenue = group._sum.price ?? new Prisma.Decimal(0)
-      const averageTicket = group._count === 0 ? new Prisma.Decimal(0) : revenue.dividedBy(group._count)
+      const pricedOrders = group._count.price
+      const averageTicket =
+        pricedOrders === 0 ? new Prisma.Decimal(0) : revenue.dividedBy(pricedOrders)
 
       return {
         channel: group.channel,
-        orderCount: group._count,
+        orderCount: group._count._all,
         revenue: revenue.toString(),
         averageTicket: averageTicket.toString(),
+        hasPriceData: pricedOrders > 0,
       }
     })
     .sort((first, second) => Number(second.revenue) - Number(first.revenue))
