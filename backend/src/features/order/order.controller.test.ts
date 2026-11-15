@@ -182,17 +182,33 @@ describe('create', () => {
     expect(passedItems[0]?.unitPrice).toBe(0)
   })
 
-  // Given an item whose price is negative or not a number
+  // Given an item with a negative price
   // When creating an order
-  // Then it should throw a 400 AppError without calling the service
-  it.each([
-    ['negative', { product: 'Camiseta', unitPrice: -5 }],
-    ['not a number', { product: 'Camiseta', unitPrice: 'gratis' }],
-  ])('throws a 400 AppError when the price is %s', async (_label, item) => {
+  // Then it should throw a 400 INVALID_PRICE without calling the service
+  it('throws INVALID_PRICE when the price is negative', async () => {
     const createSpy = vi.spyOn(orderService, 'createOrder')
     const req = createMockRequest({
       businessId: 'biz-1',
-      body: { clientId: 'client-1', items: [item] },
+      body: { clientId: 'client-1', items: [{ product: 'Camiseta', unitPrice: -5 }] },
+    })
+    const next = vi.fn()
+
+    await create(req, createMockResponse(), next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_PRICE' }),
+    )
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // Given an item whose price is not a number
+  // When creating an order
+  // Then it should throw a 400 MISSING_PRICE without calling the service
+  it('throws MISSING_PRICE when the price is not a number', async () => {
+    const createSpy = vi.spyOn(orderService, 'createOrder')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: { clientId: 'client-1', items: [{ product: 'Camiseta', unitPrice: 'gratis' }] },
     })
     const next = vi.fn()
 

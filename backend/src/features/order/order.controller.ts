@@ -48,6 +48,10 @@ function assertValidItems(items: unknown): OrderItemInput[] {
       )
     }
 
+    if (typeof unitPrice === 'number' && unitPrice < 0) {
+      throw new AppError(`El precio del artículo ${index + 1} no es válido`, 400, 'INVALID_PRICE')
+    }
+
     if (unitPrice !== undefined && unitPrice !== null && !isNonNegativeNumber(unitPrice)) {
       throw new AppError(`El precio del artículo ${index + 1} no es válido`, 400, 'MISSING_PRICE')
     }
