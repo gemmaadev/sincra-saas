@@ -10,6 +10,23 @@ export async function findConnectedChannels(businessId: string) {
   return prisma.connectedChannel.findMany({ where: { businessId } })
 }
 
+export async function findConnectedChannelsByAccount(account: {
+  accountEmail: string | null
+  providerAccountId: string | null
+}) {
+  const matches = [
+    ...(account.accountEmail ? [{ accountEmail: account.accountEmail }] : []),
+    ...(account.providerAccountId ? [{ providerAccountId: account.providerAccountId }] : []),
+  ]
+
+  if (matches.length === 0) return []
+
+  return prisma.connectedChannel.findMany({
+    where: { status: 'CONNECTED', OR: matches },
+    select: { businessId: true },
+  })
+}
+
 export async function upsertConnectedChannel(
   businessId: string,
   channel: Channel,
