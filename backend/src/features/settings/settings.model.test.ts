@@ -42,6 +42,17 @@ describe('findBusinessIdsByConnectedAccount', () => {
     })
   })
 
+  it('searches the email trimmed and lowercased', async () => {
+    vi.mocked(prisma.connectedChannel.findMany).mockResolvedValue([] as never)
+
+    await findBusinessIdsByConnectedAccount('GMAIL', { accountEmail: '  Tienda@Gmail.com ' })
+
+    expect(prisma.connectedChannel.findMany).toHaveBeenCalledWith({
+      where: { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' },
+      select: { businessId: true },
+    })
+  })
+
   it('returns an empty list without querying when neither id nor email is present', async () => {
     await expect(findBusinessIdsByConnectedAccount('GMAIL', {})).resolves.toEqual([])
     expect(prisma.connectedChannel.findMany).not.toHaveBeenCalled()

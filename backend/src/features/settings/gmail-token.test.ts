@@ -11,6 +11,7 @@ function tokenInfo(overrides: Record<string, unknown> = {}, status = 200) {
       azp: CLIENT_ID,
       sub: 'sub-1',
       email: 'tienda@gmail.com',
+      email_verified: 'true',
       scope: 'openid https://www.googleapis.com/auth/userinfo.email profile',
       ...overrides,
     }),
@@ -44,6 +45,27 @@ describe('verifyGmailAccessToken', () => {
 
     vi.mocked(fetch).mockResolvedValue(tokenInfo({ scope: 'openid email profile' }))
     await expect(verifyGmailAccessToken(ACCESS_TOKEN)).resolves.toMatchObject({ sub: 'sub-1' })
+  })
+
+  it('returns the email trimmed and lowercased when Google verified it', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      tokenInfo({ email: '  Tienda@Gmail.com  ', email_verified: true }),
+    )
+
+    await expect(verifyGmailAccessToken(ACCESS_TOKEN)).resolves.toEqual({
+      email: 'tienda@gmail.com',
+      sub: 'sub-1',
+    })
+  })
+
+  it('rejects an unverified email without saving', async () => {
+    for (const email_verified of [false, 'false', undefined]) {
+      vi.mocked(fetch).mockResolvedValue(tokenInfo({ email_verified }))
+      await expect(verifyGmailAccessToken(ACCESS_TOKEN)).rejects.toMatchObject({
+        statusCode: 401,
+        code: 'GMAIL_TOKEN_INVALID',
+      })
+    }
   })
 
   it('rejects a bad token without logging it', async () => {

@@ -34,7 +34,7 @@ export async function findBusinessIdsByConnectedAccount(
   account: { providerAccountId?: string | null; accountEmail?: string | null },
 ) {
   const providerAccountId = account.providerAccountId?.trim() || null
-  const accountEmail = account.accountEmail?.trim() || null
+  const accountEmail = account.accountEmail?.trim().toLowerCase() || null
   if (!providerAccountId && !accountEmail) return []
 
   const rows = await prisma.connectedChannel.findMany({

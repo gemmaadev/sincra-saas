@@ -8,6 +8,7 @@ interface GoogleTokenInfo {
   azp?: string
   sub?: string
   email?: string
+  email_verified?: string | boolean
   scope?: string
 }
 
@@ -31,17 +32,20 @@ export async function verifyGmailAccessToken(accessToken: string) {
     throw new AppError('No se pudo verificar la cuenta de Gmail', 401, 'GMAIL_TOKEN_INVALID')
   }
 
+  const email = payload.email?.trim().toLowerCase()
   const hasEmailScope = (payload.scope ?? '').split(' ').some((scope) => EMAIL_SCOPES.has(scope))
+  const emailVerified = payload.email_verified === true || payload.email_verified === 'true'
   if (
     !ok ||
     payload.aud !== clientId ||
     payload.azp !== clientId ||
     !hasEmailScope ||
-    !payload.email ||
+    !email ||
+    !emailVerified ||
     !payload.sub
   ) {
     throw new AppError('No se pudo verificar la cuenta de Gmail', 401, 'GMAIL_TOKEN_INVALID')
   }
 
-  return { email: payload.email, sub: payload.sub }
+  return { email, sub: payload.sub }
 }
