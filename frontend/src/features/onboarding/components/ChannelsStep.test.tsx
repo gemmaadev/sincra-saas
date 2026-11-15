@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -5,6 +6,25 @@ import { ChannelsStep } from './ChannelsStep'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
 import { notifyError } from '@/shared/utils/notify'
+
+const googleLogin = vi.hoisted(() => ({
+  outcome: 'success' as 'success' | 'cancel' | 'error',
+}))
+
+vi.mock('@react-oauth/google', () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: (options: {
+    onSuccess: (response: { access_token: string }) => void
+    onError: () => void
+    onNonOAuthError: () => void
+  }) => {
+    return () => {
+      if (googleLogin.outcome === 'cancel') options.onNonOAuthError()
+      else if (googleLogin.outcome === 'error') options.onError()
+      else options.onSuccess({ access_token: 'google-access-token' })
+    }
+  },
+}))
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -29,6 +49,7 @@ function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsS
 
 describe('ChannelsStep', () => {
   beforeEach(() => {
+    googleLogin.outcome = 'success'
     vi.mocked(api.post).mockReset().mockResolvedValue({})
     vi.mocked(notifyError).mockReset()
   })
@@ -134,7 +155,32 @@ describe('ChannelsStep', () => {
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
 
-    expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'GMAIL' })
+    expect(api.post).toHaveBeenCalledWith('/channels/connect', {
+      channel: 'GMAIL',
+      accessToken: 'google-access-token',
+    })
+  })
+
+  it('Scenario: cancelling or failing Gmail connect does not persist', async () => {
+    // Given Google sign-in is cancelled or fails
+    // When the user clicks "Conectar" on Gmail
+    // Then nothing is saved and the existing error toast is shown
+    const user = userEvent.setup()
+    const handleChange = vi.fn()
+    renderChannelsStep({ onChange: handleChange })
+    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
+
+    googleLogin.outcome = 'cancel'
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    googleLogin.outcome = 'error'
+    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+
+    expect(api.post).not.toHaveBeenCalled()
+    expect(handleChange).not.toHaveBeenCalled()
+    expect(notifyError).toHaveBeenCalledTimes(2)
+    expect(notifyError).toHaveBeenCalledWith(
+      'No se ha podido guardar el cambio. Inténtalo de nuevo.',
+    )
   })
 
   it('Scenario: disconnecting Outlook persists it to the backend', async () => {
@@ -182,6 +228,8 @@ describe('ChannelsStep', () => {
 
     expect(handleChange).toHaveBeenNthCalledWith(1, ['gmail'])
     expect(handleChange).toHaveBeenNthCalledWith(2, [])
-    expect(notifyError).toHaveBeenCalledWith('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+    expect(notifyError).toHaveBeenCalledWith(
+      'No se ha podido guardar el cambio. Inténtalo de nuevo.',
+    )
   })
 })

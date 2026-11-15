@@ -114,8 +114,8 @@ describe('OnboardingPage', () => {
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 
-    const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
-    await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    const outlookCard = screen.getByText('Outlook').closest('div[class*="rounded-xl"]') as HTMLElement
+    await user.click(within(outlookCard).getByRole('button', { name: 'Conectar' }))
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 

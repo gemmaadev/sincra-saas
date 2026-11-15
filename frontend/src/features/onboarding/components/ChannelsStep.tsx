@@ -1,3 +1,4 @@
+import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'
 import { SincraButton } from '@/shared/components/button'
 import { ONBOARDING_CHANNELS } from '../onboarding.constants'
 import type { ChannelId } from '@/shared/channels/channels'
@@ -14,13 +15,52 @@ interface ChannelsStepProps {
 
 // WhatsApp/Instagram/Messenger always report MOCKED regardless of what's stored, so skip persisting them
 const PERSISTABLE_CHANNELS: ChannelId[] = ['gmail', 'outlook']
+const SAVE_ERROR = 'No se ha podido guardar el cambio. Inténtalo de nuevo.'
 
-export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
-  // TODO: para Gmail/Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
+export function ChannelsStep(props: ChannelsStepProps) {
+  return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <ChannelsStepContent {...props} />
+    </GoogleOAuthProvider>
+  )
+}
+
+function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
+  // TODO: para Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
   const toggleChannelConnection = useToggleChannelConnection()
+
+  const requestGmailAccess = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
+    onSuccess: (tokenResponse) => {
+      const accessToken = tokenResponse.access_token
+      if (!accessToken) {
+        notifyError(SAVE_ERROR)
+        return
+      }
+      const previous = connectedChannels
+      onChange(previous.includes('gmail') ? previous : [...previous, 'gmail'])
+      toggleChannelConnection.mutate(
+        { channel: 'gmail', connect: true, accessToken },
+        {
+          onError: () => {
+            onChange(previous)
+            notifyError(SAVE_ERROR)
+          },
+        },
+      )
+    },
+    onError: () => notifyError(SAVE_ERROR),
+    onNonOAuthError: () => notifyError(SAVE_ERROR),
+  })
 
   const toggleConnection = (channelId: ChannelId) => {
     const isConnected = connectedChannels.includes(channelId)
+    if (channelId === 'gmail' && !isConnected) {
+      requestGmailAccess()
+      return
+    }
+
     onChange(
       isConnected
         ? connectedChannels.filter((id) => id !== channelId)
@@ -33,7 +73,7 @@ export function ChannelsStep({ connectedChannels, onChange, onBack, onNext }: Ch
         {
           onError: () => {
             onChange(connectedChannels)
-            notifyError('No se ha podido guardar el cambio. Inténtalo de nuevo.')
+            notifyError(SAVE_ERROR)
           },
         },
       )
