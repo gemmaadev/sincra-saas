@@ -13,35 +13,49 @@ import {
 vi.mock('../auth/auth.model')
 vi.mock('./settings.model')
 
+const GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com'
+
+function googleResponse(body: unknown, ok = true) {
+  return { ok, json: async () => body } as Response
+}
+
 describe('connectChannel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('GOOGLE_CLIENT_ID', GOOGLE_CLIENT_ID)
     vi.stubGlobal('fetch', vi.fn())
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     vi.unstubAllGlobals()
   })
 
   // Given a Google access token for the inbox being connected
   // When connecting Gmail
-  // Then it should read the Google profile and store the address and stable account id
+  // Then it should check tokeninfo, read the profile, and store the address and account id
   it('stores the Gmail address and Google account id from userinfo', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        sub: 'google-sub-1',
-        email: 'Inbox@Gmail.com',
-        email_verified: true,
-        name: 'Inbox',
-      }),
-    } as Response)
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        googleResponse({
+          aud: GOOGLE_CLIENT_ID,
+          azp: GOOGLE_CLIENT_ID,
+          scope: 'openid email profile',
+        }),
+      )
+      .mockResolvedValueOnce(
+        googleResponse({
+          sub: 'google-sub-1',
+          email: 'Inbox@Gmail.com',
+          email_verified: true,
+          name: 'Inbox',
+        }),
+      )
 
     await connectChannel('biz-1', 'GMAIL', 'user-1', 'google-token')
 
-    expect(fetch).toHaveBeenCalledWith('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer google-token' },
-    })
+    expect(vi.mocked(fetch).mock.calls[0][0]).toBe('https://oauth2.googleapis.com/tokeninfo')
+    expect(vi.mocked(fetch).mock.calls[1][0]).toBe('https://www.googleapis.com/oauth2/v3/userinfo')
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
       'biz-1',
       'GMAIL',
@@ -68,14 +82,21 @@ describe('connectChannel', () => {
   // When connecting Gmail
   // Then it should reject the request and leave the channel unchanged
   it('rejects Gmail connect when Google has not verified the email', async () => {
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        sub: 'google-sub-1',
-        email: 'inbox@gmail.com',
-        email_verified: false,
-      }),
-    } as Response)
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        googleResponse({
+          aud: GOOGLE_CLIENT_ID,
+          azp: GOOGLE_CLIENT_ID,
+          scope: 'openid email profile',
+        }),
+      )
+      .mockResolvedValueOnce(
+        googleResponse({
+          sub: 'google-sub-1',
+          email: 'inbox@gmail.com',
+          email_verified: false,
+        }),
+      )
 
     await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'google-token')).rejects.toMatchObject({
       statusCode: 401,
@@ -89,7 +110,7 @@ describe('connectChannel', () => {
   // When connecting Gmail
   // Then it should reject the request and leave the channel unchanged
   it('rejects Gmail connect when Google rejects the token', async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response)
+    vi.mocked(fetch).mockResolvedValue(googleResponse({}, false))
 
     await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'bad-token')).rejects.toMatchObject({
       statusCode: 401,
