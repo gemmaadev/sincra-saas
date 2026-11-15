@@ -6,7 +6,7 @@ import {
   type ExtractionType as ExtractionTypeValue,
 } from '../../generated/prisma/client'
 import { AppError } from '../../shared/AppError'
-import { insertExtraction } from './extraction.model'
+import { findExtractionById, insertExtraction, updateExtraction } from './extraction.model'
 import type { CreateExtractionInput } from './extraction.types'
 
 const EXTRACTION_TYPES = new Set<string>(Object.values(ExtractionType))
@@ -29,8 +29,14 @@ export function assertExtractionStatus(value: unknown): ExtractionStatusValue {
   return value as ExtractionStatusValue
 }
 
+// CONFIRMED and DISCARDED are decisions. PENDING clears a previous decision.
+export function decidedAtForStatus(status: ExtractionStatusValue, now = new Date()): Date | null {
+  return status === ExtractionStatus.PENDING ? null : now
+}
+
 export async function createExtraction(input: CreateExtractionInput) {
   const extractionType = assertExtractionType(input.extractionType)
+  const status = input.status === undefined ? undefined : assertExtractionStatus(input.status)
   const data: Prisma.ExtractionUncheckedCreateInput = {
     businessId: input.businessId,
     emailId: input.emailId,
@@ -40,15 +46,34 @@ export async function createExtraction(input: CreateExtractionInput) {
     extractionType,
     confidence: input.confidence,
     syncedAt: input.syncedAt,
+    decidedAt: decidedAtForStatus(status ?? ExtractionStatus.PENDING),
   }
 
   if (input.rawData !== undefined) {
     data.rawData = input.rawData as Prisma.InputJsonValue
   }
 
-  if (input.status !== undefined) {
-    data.status = assertExtractionStatus(input.status)
+  if (status !== undefined) {
+    data.status = status
   }
 
   return insertExtraction(data)
+}
+
+export async function updateExtractionStatus(id: string, status: unknown) {
+  const nextStatus = assertExtractionStatus(status)
+  const existing = await findExtractionById(id)
+
+  if (!existing) {
+    throw new AppError('Extracción no encontrada', 404, 'EXTRACTION_NOT_FOUND')
+  }
+
+  if (existing.status === nextStatus) {
+    return existing
+  }
+
+  return updateExtraction(id, {
+    status: nextStatus,
+    decidedAt: decidedAtForStatus(nextStatus),
+  })
 }

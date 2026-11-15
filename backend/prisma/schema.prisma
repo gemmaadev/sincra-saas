@@ -127,6 +127,7 @@ model Extraction {
   rawData        Json             @default("{}") @map("raw_data")
   confidence     Int?
   status         ExtractionStatus @default(PENDING)
+  decidedAt      DateTime?        @map("decided_at") @db.Timestamptz(6)
   syncedAt       DateTime?        @map("synced_at") @db.Timestamptz(6)
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
 
@@ -135,6 +136,7 @@ model Extraction {
   @@index([businessId, status])
   @@index([emailId])
   @@index([extractionType])
+  @@index([status, decidedAt])
   @@map("extractions")
 }
 
