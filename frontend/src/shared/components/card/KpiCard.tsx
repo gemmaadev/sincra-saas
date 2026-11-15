@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Card, InfoTooltip, Skeleton } from '@/shared/components'
+import { Card, InfoTooltip, NoPriceDataHint, Skeleton } from '@/shared/components'
 
 export interface KpiCardProps {
   icon: LucideIcon
@@ -7,9 +7,17 @@ export interface KpiCardProps {
   value: string
   pending?: boolean
   infoTooltip?: string
+  noPriceData?: boolean
 }
 
-export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip }: KpiCardProps) {
+export function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  pending = false,
+  infoTooltip,
+  noPriceData = false,
+}: KpiCardProps) {
   return (
     <Card padding="sm" className="flex items-start gap-3">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
@@ -23,7 +31,10 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
         {pending ? (
           <Skeleton className="h-5 w-16" />
         ) : (
-          <p className="truncate text-2xl font-semibold text-ink">{value}</p>
+          <div className="flex items-center gap-1">
+            <p className="truncate text-2xl font-semibold text-ink">{value}</p>
+            {noPriceData && <NoPriceDataHint />}
+          </div>
         )}
       </div>
     </Card>

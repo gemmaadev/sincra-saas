@@ -8,9 +8,15 @@ export interface OrderMapKpis {
   zonesWithSales: number
   deliveredRevenue: number
   topRevenueZone: string | null
+  hasPriceData: boolean
 }
 
-export function buildOrderMapKpis({ total, deliveredRevenue, zones }: OrderMapResponse): OrderMapKpis {
+export function buildOrderMapKpis({
+  total,
+  deliveredRevenue,
+  hasPriceData,
+  zones,
+}: OrderMapResponse): OrderMapKpis {
   const [topZone] = zones
 
   return {
@@ -18,6 +24,7 @@ export function buildOrderMapKpis({ total, deliveredRevenue, zones }: OrderMapRe
     zonesWithSales: zones.length,
     deliveredRevenue: Number(deliveredRevenue),
     topRevenueZone: topZone?.zone ?? null,
+    hasPriceData: hasPriceData !== false,
   }
 }
 
@@ -39,7 +46,12 @@ export function toOrderKpiCards(kpis: OrderMapKpis | null): KpiCardProps[] {
       infoTooltip: 'Incluye pedidos de cualquier estado, no solo entregados',
     },
     { icon: Layers, label: 'Zonas con ventas', value: String(kpis.zonesWithSales) },
-    { icon: Euro, label: 'Ingresos totales', value: formatCurrency(kpis.deliveredRevenue) },
+    {
+      icon: Euro,
+      label: 'Ingresos totales',
+      value: formatCurrency(kpis.deliveredRevenue),
+      noPriceData: !kpis.hasPriceData,
+    },
     { icon: Trophy, label: 'Zona con más ingresos', value: kpis.topRevenueZone ?? '—' },
   ]
 }

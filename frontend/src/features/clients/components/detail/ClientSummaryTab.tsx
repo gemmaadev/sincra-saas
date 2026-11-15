@@ -1,4 +1,4 @@
-import { Badge, InfoTooltip } from '@/shared/components'
+import { Badge, InfoTooltip, NoPriceDataHint } from '@/shared/components'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
   ORDER_STATUS_LABELS,
@@ -17,9 +17,12 @@ export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
   const location = [client.address, client.zone].filter(Boolean).join(', ')
   // Only delivered orders are guaranteed revenue — a pending/shipped order could still
   // be cancelled before it completes, and a cancelled one was never actually paid.
-  const totalValue = client.orders
-    .filter((order) => order.status === 'DELIVERED')
-    .reduce((sum, order) => sum + Number(order.price ?? 0), 0)
+  const deliveredOrders = client.orders.filter((order) => order.status === 'DELIVERED')
+  const hasPriceData = deliveredOrders.some((order) => order.price != null)
+  const totalValue = deliveredOrders.reduce(
+    (sum, order) => (order.price == null ? sum : sum + Number(order.price)),
+    0,
+  )
   const recentOrders = client.orders.slice(0, RECENT_ORDERS_LIMIT)
 
   return (
@@ -42,7 +45,10 @@ export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
             <span className="text-sm text-ink-muted">Valor total</span>
             <InfoTooltip label="Solo pedidos entregados" />
           </div>
-          <span className="font-medium text-ink">{formatCurrency(totalValue)}</span>
+          <span className="flex items-center gap-1 font-medium text-ink">
+            {formatCurrency(totalValue)}
+            {!hasPriceData && <NoPriceDataHint />}
+          </span>
         </div>
       </div>
 

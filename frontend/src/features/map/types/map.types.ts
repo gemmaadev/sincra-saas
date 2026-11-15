@@ -21,6 +21,7 @@ export interface MapClient {
   approximate: boolean
   orderCount: number
   deliveredRevenue: string
+  hasPriceData?: boolean
 }
 
 export interface ZoneSummary {
@@ -54,7 +55,7 @@ export interface MapOrder {
   number: number
   status: OrderStatus
   channel: Channel | null
-  price: string
+  price: string | null
   zone: string | null
   clientName: string
   latitude: number
@@ -65,6 +66,7 @@ export interface MapOrder {
 export interface OrderMapResponse {
   total: number
   deliveredRevenue: string
+  hasPriceData?: boolean
   zones: OrderMapZoneSummary[]
   orders: MapOrder[]
 }

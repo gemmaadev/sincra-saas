@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { ArrowRight, MapPin, Pencil, Trash2 } from 'lucide-react'
-import { Avatar, IconButton } from '@/shared/components'
+import { Avatar, IconButton, NoPriceDataHint } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import type { MapClient } from '../../types/map.types'
@@ -34,11 +34,17 @@ export function ClientPopupCard({ client, onEdit, onDelete }: ClientPopupCardPro
               <ChannelIcons channels={client.channels} size={16} />
             </div>
           )}
-          <p>
-            {client.orderCount === 0
-              ? 'Sin pedidos'
-              : `${client.orderCount} ${client.orderCount === 1 ? 'pedido' : 'pedidos'} · ${formatCurrency(Number(client.deliveredRevenue))}`}
-          </p>
+          {client.orderCount === 0 ? (
+            <p>Sin pedidos</p>
+          ) : (
+            <p className="flex items-center gap-1">
+              <span>
+                {client.orderCount} {client.orderCount === 1 ? 'pedido' : 'pedidos'} ·{' '}
+                {formatCurrency(Number(client.deliveredRevenue))}
+              </span>
+              {client.hasPriceData === false && <NoPriceDataHint />}
+            </p>
+          )}
         </div>
         {client.approximate && (
           <p className="text-xs">Ubicación aproximada: añade su dirección para situarlo mejor.</p>

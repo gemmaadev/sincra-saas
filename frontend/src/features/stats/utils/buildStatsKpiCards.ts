@@ -27,6 +27,7 @@ export function buildStatsKpiCards(overview: StatsOverview | null): KpiCardProps
       label: 'Ingresos',
       value: formatCurrency(Number(overview.revenue)),
       infoTooltip: 'Suma de pedidos entregados en el periodo.',
+      noPriceData: overview.hasPriceData === false,
     },
   ]
 }

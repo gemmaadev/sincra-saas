@@ -1,6 +1,11 @@
 import { emptyToNull } from '@/shared/utils'
 import type { OrderFormValues, OrderPayload } from '../types/order.types'
 
+function toOptionalUnitPrice(value: number | null): number | null {
+  if (value == null || !Number.isFinite(value)) return null
+  return value
+}
+
 export function toOrderPayload(values: OrderFormValues): OrderPayload {
   return {
     clientId: values.clientId,
@@ -8,7 +13,7 @@ export function toOrderPayload(values: OrderFormValues): OrderPayload {
       product: item.product.trim(),
       description: emptyToNull(item.description),
       quantity: item.quantity,
-      unitPrice: item.unitPrice,
+      unitPrice: toOptionalUnitPrice(item.unitPrice),
     })),
     channel: values.channel === '' ? null : values.channel,
     zone: emptyToNull(values.zone),
