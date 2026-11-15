@@ -15,19 +15,21 @@ describe('findConnectedChannelsByAccount', () => {
     vi.clearAllMocks()
   })
 
-  // Given an email and a provider account id
+  // Given a provider account id, even when an email is also present
   // When looking up the channel
-  // Then it should keep only CONNECTED rows that match either identifier
-  it('matches connected channels by email or provider account id', async () => {
+  // Then it should match that provider id on the given channel only
+  it('matches by provider account id and ignores the email', async () => {
     await findConnectedChannelsByAccount({
+      channel: 'GMAIL',
       accountEmail: 'inbox@gmail.com',
       providerAccountId: 'google-sub-1',
     })
 
     expect(prisma.connectedChannel.findMany).toHaveBeenCalledWith({
       where: {
+        channel: 'GMAIL',
         status: 'CONNECTED',
-        OR: [{ accountEmail: 'inbox@gmail.com' }, { providerAccountId: 'google-sub-1' }],
+        providerAccountId: 'google-sub-1',
       },
       select: { businessId: true },
     })
@@ -35,15 +37,40 @@ describe('findConnectedChannelsByAccount', () => {
 
   // Given only an email
   // When looking up the channel
-  // Then it should not add an empty provider-id predicate
-  it('matches by email alone', async () => {
+  // Then it should fall back to that email on the given channel
+  it('falls back to the email when the provider account id is absent', async () => {
     await findConnectedChannelsByAccount({
+      channel: 'GMAIL',
       accountEmail: 'inbox@gmail.com',
       providerAccountId: null,
     })
 
     expect(prisma.connectedChannel.findMany).toHaveBeenCalledWith({
-      where: { status: 'CONNECTED', OR: [{ accountEmail: 'inbox@gmail.com' }] },
+      where: {
+        channel: 'GMAIL',
+        status: 'CONNECTED',
+        accountEmail: 'inbox@gmail.com',
+      },
+      select: { businessId: true },
+    })
+  })
+
+  // Given the same address stored on another channel
+  // When looking up Gmail
+  // Then the query stays on Gmail, so an Outlook row cannot match
+  it('does not look at other channels', async () => {
+    await findConnectedChannelsByAccount({
+      channel: 'OUTLOOK',
+      accountEmail: 'inbox@gmail.com',
+      providerAccountId: null,
+    })
+
+    expect(prisma.connectedChannel.findMany).toHaveBeenCalledWith({
+      where: {
+        channel: 'OUTLOOK',
+        status: 'CONNECTED',
+        accountEmail: 'inbox@gmail.com',
+      },
       select: { businessId: true },
     })
   })
@@ -53,6 +80,7 @@ describe('findConnectedChannelsByAccount', () => {
   // Then it should return nothing and avoid a query that would match every null account
   it('does not query when neither identifier is present', async () => {
     const rows = await findConnectedChannelsByAccount({
+      channel: 'GMAIL',
       accountEmail: null,
       providerAccountId: null,
     })

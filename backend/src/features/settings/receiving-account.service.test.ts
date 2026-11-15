@@ -9,18 +9,20 @@ describe('resolveBusinessesByReceivingAccount', () => {
     vi.clearAllMocks()
   })
 
-  // Given an address or provider id with no CONNECTED channel
+  // Given an address with no CONNECTED channel on that channel
   // When resolving the businesses that receive on that account
   // Then it should return an empty list so the caller saves nothing
   it('returns an empty list when nothing matches', async () => {
     vi.mocked(settingsModel.findConnectedChannelsByAccount).mockResolvedValue([])
 
     const businessIds = await resolveBusinessesByReceivingAccount({
+      channel: 'GMAIL',
       email: 'nobody@gmail.com',
     })
 
     expect(businessIds).toEqual([])
     expect(settingsModel.findConnectedChannelsByAccount).toHaveBeenCalledWith({
+      channel: 'GMAIL',
       accountEmail: 'nobody@gmail.com',
       providerAccountId: null,
     })
@@ -35,11 +37,13 @@ describe('resolveBusinessesByReceivingAccount', () => {
     ])
 
     const businessIds = await resolveBusinessesByReceivingAccount({
+      channel: 'GMAIL',
       email: ' Inbox@Gmail.com ',
     })
 
     expect(businessIds).toEqual(['biz-1'])
     expect(settingsModel.findConnectedChannelsByAccount).toHaveBeenCalledWith({
+      channel: 'GMAIL',
       accountEmail: 'inbox@gmail.com',
       providerAccountId: null,
     })
@@ -57,12 +61,34 @@ describe('resolveBusinessesByReceivingAccount', () => {
     ])
 
     const businessIds = await resolveBusinessesByReceivingAccount({
+      channel: 'GMAIL',
       providerAccountId: ' google-sub-1 ',
+      email: 'inbox@gmail.com',
     })
 
     expect(businessIds).toEqual(['biz-1', 'biz-2', 'biz-3'])
     expect(settingsModel.findConnectedChannelsByAccount).toHaveBeenCalledWith({
-      accountEmail: null,
+      channel: 'GMAIL',
+      accountEmail: 'inbox@gmail.com',
+      providerAccountId: 'google-sub-1',
+    })
+  })
+
+  // Given a provider id and an email
+  // When resolving
+  // Then the provider id is what gets matched; the email is not a second predicate
+  it('passes the provider account id ahead of the email', async () => {
+    vi.mocked(settingsModel.findConnectedChannelsByAccount).mockResolvedValue([])
+
+    await resolveBusinessesByReceivingAccount({
+      channel: 'GMAIL',
+      email: 'inbox@gmail.com',
+      providerAccountId: 'google-sub-1',
+    })
+
+    expect(settingsModel.findConnectedChannelsByAccount).toHaveBeenCalledWith({
+      channel: 'GMAIL',
+      accountEmail: 'inbox@gmail.com',
       providerAccountId: 'google-sub-1',
     })
   })
@@ -72,6 +98,7 @@ describe('resolveBusinessesByReceivingAccount', () => {
   // Then it should return an empty list without querying
   it('returns an empty list when the account has no identifier', async () => {
     const businessIds = await resolveBusinessesByReceivingAccount({
+      channel: 'GMAIL',
       email: '   ',
       providerAccountId: '',
     })

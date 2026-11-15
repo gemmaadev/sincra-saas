@@ -11,18 +11,31 @@ export async function findConnectedChannels(businessId: string) {
 }
 
 export async function findConnectedChannelsByAccount(account: {
+  channel: Channel
   accountEmail: string | null
   providerAccountId: string | null
 }) {
-  const matches = [
-    ...(account.accountEmail ? [{ accountEmail: account.accountEmail }] : []),
-    ...(account.providerAccountId ? [{ providerAccountId: account.providerAccountId }] : []),
-  ]
+  // Provider id wins. The email is only a fallback, so a Gmail message never
+  // matches another channel that happens to store the same address.
+  if (account.providerAccountId) {
+    return prisma.connectedChannel.findMany({
+      where: {
+        channel: account.channel,
+        status: 'CONNECTED',
+        providerAccountId: account.providerAccountId,
+      },
+      select: { businessId: true },
+    })
+  }
 
-  if (matches.length === 0) return []
+  if (!account.accountEmail) return []
 
   return prisma.connectedChannel.findMany({
-    where: { status: 'CONNECTED', OR: matches },
+    where: {
+      channel: account.channel,
+      status: 'CONNECTED',
+      accountEmail: account.accountEmail,
+    },
     select: { businessId: true },
   })
 }
