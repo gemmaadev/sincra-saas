@@ -12,6 +12,8 @@ export interface ChannelPerformanceRow {
   revenue: number
   averageTicket: number
   percentage: number
+  hasPriceData: boolean
+  missingPriceCount: number
 }
 
 function resolveLabel(channel: string | null): string {
@@ -40,6 +42,8 @@ export function buildChannelPerformanceRows(
       revenue,
       averageTicket: Number(entry.averageTicket),
       percentage: totalRevenue === 0 ? 0 : Math.round((revenue / totalRevenue) * 1000) / 10,
+      hasPriceData: entry.hasPriceData !== false,
+      missingPriceCount: entry.missingPriceCount ?? 0,
     }
   })
 }

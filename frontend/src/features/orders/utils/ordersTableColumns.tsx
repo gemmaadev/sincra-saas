@@ -1,4 +1,4 @@
-import { Badge } from '@/shared/components'
+import { Badge, MissingPrice } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
@@ -60,7 +60,7 @@ export const ordersTableColumns = [
     header: 'Total',
     render: (order: Order) => (
       <span className="font-medium text-ink">
-        {order.price !== null ? formatCurrency(Number(order.price)) : '—'}
+        {order.price != null ? formatCurrency(Number(order.price)) : <MissingPrice />}
       </span>
     ),
   },

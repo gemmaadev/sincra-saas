@@ -1,5 +1,8 @@
 import type { LucideIcon } from 'lucide-react'
 import { Card, InfoTooltip, Skeleton } from '@/shared/components'
+import { MissingPrice } from '../tooltip/MissingPrice'
+import { missingPricesLabel } from '../tooltip/missingPricesLabel'
+import { NoPriceDataHint } from '../tooltip/NoPriceDataHint'
 
 export interface KpiCardProps {
   icon: LucideIcon
@@ -7,9 +10,19 @@ export interface KpiCardProps {
   value: string
   pending?: boolean
   infoTooltip?: string
+  noPriceData?: boolean
+  missingPriceCount?: number
 }
 
-export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip }: KpiCardProps) {
+export function KpiCard({
+  icon: Icon,
+  label,
+  value,
+  pending = false,
+  infoTooltip,
+  noPriceData = false,
+  missingPriceCount = 0,
+}: KpiCardProps) {
   return (
     <Card padding="sm" className="flex items-start gap-3">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg text-primary">
@@ -23,7 +36,16 @@ export function KpiCard({ icon: Icon, label, value, pending = false, infoTooltip
         {pending ? (
           <Skeleton className="h-5 w-16" />
         ) : (
-          <p className="truncate text-2xl font-semibold text-ink">{value}</p>
+          <div className="flex items-center gap-1">
+            <p className="truncate text-2xl font-semibold text-ink">{value}</p>
+            {noPriceData ? (
+              <NoPriceDataHint />
+            ) : (
+              missingPriceCount > 0 && (
+                <MissingPrice label={missingPricesLabel(missingPriceCount)} />
+              )
+            )}
+          </div>
         )}
       </div>
     </Card>

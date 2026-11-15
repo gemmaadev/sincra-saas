@@ -145,7 +145,7 @@ describe('findDeliveredOrdersByChannelInRange', () => {
       by: ['channel'],
       where: { businessId: 'business-1', status: 'DELIVERED', createdAt: range },
       _sum: { price: true },
-      _count: true,
+      _count: { _all: true, price: true },
     })
   })
 })

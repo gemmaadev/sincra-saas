@@ -125,12 +125,16 @@ export function OrderForm({
                 <Input
                   label="Precio"
                   type="number"
-                  min={0.01}
                   step="0.01"
+                  placeholder="Opcional"
                   error={errors.items?.[index]?.unitPrice?.message}
                   {...register(`items.${index}.unitPrice`, {
-                    valueAsNumber: true,
-                    validate: (value) => value > 0 || 'Debe ser > 0',
+                    setValueAs: (value: string | number | null) => {
+                      if (value === '' || value == null) return null
+                      const number = typeof value === 'number' ? value : Number(value)
+                      return Number.isFinite(number) ? number : null
+                    },
+                    validate: (value) => value == null || value >= 0 || 'No puede ser negativo',
                   })}
                 />
               </div>
@@ -148,11 +152,7 @@ export function OrderForm({
             </div>
           ))}
         </div>
-        <SincraButton
-          type="button"
-          variant="secondary"
-          onClick={() => append(EMPTY_ITEM)}
-        >
+        <SincraButton type="button" variant="secondary" onClick={() => append(EMPTY_ITEM)}>
           <Plus size={16} aria-hidden="true" />
           Añadir producto
         </SincraButton>

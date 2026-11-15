@@ -22,6 +22,8 @@ describe('buildOrderMapKpis', () => {
       zonesWithSales: 2,
       deliveredRevenue: 150.5,
       topRevenueZone: 'Bilbao',
+      hasPriceData: true,
+      missingPriceCount: 0,
     })
   })
 
@@ -29,11 +31,21 @@ describe('buildOrderMapKpis', () => {
   // When the KPIs are built
   // Then everything should be zero and there should be no top zone
   it('returns empty KPIs when there are no orders', () => {
-    expect(buildOrderMapKpis({ total: 0, deliveredRevenue: '0', zones: [], orders: [] })).toEqual({
+    expect(
+      buildOrderMapKpis({
+        total: 0,
+        deliveredRevenue: '0',
+        hasPriceData: false,
+        zones: [],
+        orders: [],
+      }),
+    ).toEqual({
       totalOrders: 0,
       zonesWithSales: 0,
       deliveredRevenue: 0,
       topRevenueZone: null,
+      hasPriceData: false,
+      missingPriceCount: 0,
     })
   })
 })
@@ -48,6 +60,8 @@ describe('toOrderKpiCards', () => {
       zonesWithSales: 6,
       deliveredRevenue: 234.5,
       topRevenueZone: 'Bilbao',
+      hasPriceData: true,
+      missingPriceCount: 0,
     })
 
     expect(cards).toHaveLength(4)
@@ -59,6 +73,41 @@ describe('toOrderKpiCards', () => {
     ])
     expect(cards.map((card) => card.value)).toEqual(['24', '6', '234,50 €', 'Bilbao'])
     expect(cards.every((card) => !card.pending)).toBe(true)
+  })
+
+  // Given order-map revenue with no known prices
+  // When the cards are built
+  // Then the revenue card should be marked as having no price data
+  it('marks the revenue card when no order has a price', () => {
+    const cards = toOrderKpiCards({
+      totalOrders: 2,
+      zonesWithSales: 1,
+      deliveredRevenue: 0,
+      topRevenueZone: 'Vic',
+      hasPriceData: false,
+      missingPriceCount: 2,
+    })
+
+    expect(cards.find((card) => card.label === 'Ingresos totales')?.noPriceData).toBe(true)
+  })
+
+  // Given order-map revenue where only some orders have a price
+  // When the cards are built
+  // Then the revenue card should carry how many prices are missing
+  it('carries the missing price count when some orders have a price', () => {
+    const cards = toOrderKpiCards({
+      totalOrders: 3,
+      zonesWithSales: 1,
+      deliveredRevenue: 40,
+      topRevenueZone: 'Vic',
+      hasPriceData: true,
+      missingPriceCount: 2,
+    })
+
+    expect(cards.find((card) => card.label === 'Ingresos totales')).toMatchObject({
+      noPriceData: false,
+      missingPriceCount: 2,
+    })
   })
 
   // Given the order map data has not loaded yet (kpis is null)

@@ -318,7 +318,85 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ orderCount: 3, deliveredRevenue: '80' })
+    expect(mapClient).toMatchObject({
+      orderCount: 3,
+      deliveredRevenue: '80',
+      hasPriceData: true,
+      pricedCount: 2,
+      missingPriceCount: 0,
+    })
+  })
+
+  // Given a client whose delivered orders mix a price with a missing one
+  // When the map clients are built
+  // Then delivered revenue should include only the known price
+  it('ignores delivered orders with no price when summing revenue', () => {
+    const [mapClient] = buildMapClients(
+      [
+        record({
+          latitude: 41.5,
+          longitude: 2.1,
+          _count: { orders: 2 },
+          orders: [{ price: new Prisma.Decimal('50') }, { price: null }],
+        }),
+      ],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '50',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
+    })
+  })
+
+  // Given a client whose delivered orders all lack a price
+  // When the map clients are built
+  // Then delivered revenue should be zero
+  it('reports zero revenue when every delivered order has no price', () => {
+    const [mapClient] = buildMapClients(
+      [
+        record({
+          latitude: 41.5,
+          longitude: 2.1,
+          _count: { orders: 1 },
+          orders: [{ price: null }],
+        }),
+      ],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 1,
+    })
+  })
+
+  // Given a client whose only delivered order is free
+  // When the map clients are built
+  // Then the revenue is 0 and it still counts as known price data
+  it('treats a free delivered order as known price data', () => {
+    const [mapClient] = buildMapClients(
+      [
+        record({
+          latitude: 41.5,
+          longitude: 2.1,
+          _count: { orders: 1 },
+          orders: [{ price: new Prisma.Decimal(0) }],
+        }),
+      ],
+      centroids,
+    )
+
+    expect(mapClient).toMatchObject({
+      deliveredRevenue: '0',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 0,
+    })
   })
 
   // Given a client with no orders at all
@@ -330,7 +408,13 @@ describe('buildMapClients', () => {
       centroids,
     )
 
-    expect(mapClient).toMatchObject({ orderCount: 0, deliveredRevenue: '0' })
+    expect(mapClient).toMatchObject({
+      orderCount: 0,
+      deliveredRevenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
+    })
   })
 
   // Given clients in a given order

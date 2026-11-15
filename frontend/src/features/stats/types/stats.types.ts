@@ -14,6 +14,9 @@ export interface StatsOverview {
   ordersCreated: number
   averageDeliveryDays: number | null
   revenue: string
+  hasPriceData?: boolean
+  pricedCount?: number
+  missingPriceCount?: number
 }
 
 export interface OrderStatusCount {
@@ -58,6 +61,9 @@ export interface ChannelPerformanceEntry {
   orderCount: number
   revenue: string
   averageTicket: string
+  hasPriceData?: boolean
+  pricedCount?: number
+  missingPriceCount?: number
 }
 
 export interface ChannelPerformance {

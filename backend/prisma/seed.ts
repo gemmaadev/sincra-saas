@@ -97,7 +97,19 @@ function slugify(name: string): string {
 interface CatalogItem {
   product: string
   description?: string
-  unitPrice: number
+  unitPrice: number | null
+}
+
+function priceFromItems(items: CatalogItem[]): number | null {
+  if (items.length === 0) return null
+
+  let total = 0
+  for (const item of items) {
+    if (item.unitPrice == null) return null
+    total += item.unitPrice
+  }
+
+  return total
 }
 
 const PRODUCT_CATALOG: CatalogItem[] = [
@@ -234,11 +246,10 @@ async function seedOrders(businessId: string, clients: Client[]): Promise<number
     const status = pickRandom(ORDER_STATUS_POOL)
     const itemsCount = Math.random() < 0.75 ? 1 : 2
     const items = Array.from({ length: itemsCount }, () => pickRandom(PRODUCT_CATALOG))
-    const price = items.reduce((total, item) => total + item.unitPrice, 0)
+    const price = priceFromItems(items)
     const createdAt = createdAtDates[index]
-    const channel = Math.random() < 0.7 && client.channels.length > 0
-      ? pickRandom(client.channels)
-      : undefined
+    const channel =
+      Math.random() < 0.7 && client.channels.length > 0 ? pickRandom(client.channels) : undefined
 
     await prisma.order.create({
       data: {

@@ -27,7 +27,7 @@ export interface OrderItem {
   product: string
   description: string | null
   quantity: number
-  unitPrice: string
+  unitPrice: string | null
 }
 
 export interface OrderStatusChangeEntry {
@@ -100,7 +100,7 @@ export interface OrderFormItemValues {
   product: string
   description: string
   quantity: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 export interface OrderFormValues {
@@ -120,7 +120,7 @@ export interface OrderItemPayload {
   product: string
   description: string | null
   quantity: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 export interface OrderPayload {

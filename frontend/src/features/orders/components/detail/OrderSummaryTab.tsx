@@ -1,4 +1,4 @@
-import { Badge } from '@/shared/components'
+import { Badge, MissingPrice } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
@@ -50,7 +50,9 @@ export function OrderSummaryTab({ order }: OrderSummaryTabProps) {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm text-ink-muted">Total</span>
-            <span className="font-medium text-ink">{formatCurrency(Number(order.price ?? 0))}</span>
+            <span className="font-medium text-ink">
+              {order.price != null ? formatCurrency(Number(order.price)) : <MissingPrice />}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm text-ink-muted">Fecha prevista</span>

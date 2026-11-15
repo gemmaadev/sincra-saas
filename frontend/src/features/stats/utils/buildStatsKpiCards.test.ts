@@ -70,4 +70,78 @@ describe('buildStatsKpiCards', () => {
       ]),
     )
   })
+
+  // Given an overview whose delivered orders have no known price
+  // When building the KPI cards
+  // Then revenue stays 0 and the card is marked as having no price data
+  it('marks revenue when no delivered order has a price', () => {
+    const cards = buildStatsKpiCards({
+      newClients: 0,
+      ordersCreated: 2,
+      averageDeliveryDays: null,
+      revenue: '0',
+      hasPriceData: false,
+      missingPriceCount: 2,
+    })
+
+    expect(cards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Ingresos',
+          value: '0,00\xa0€',
+          noPriceData: true,
+          missingPriceCount: 2,
+        }),
+      ]),
+    )
+  })
+
+  // Given an overview whose only delivered order is free
+  // When building the KPI cards
+  // Then revenue is 0 and it is not marked as missing price data
+  it('does not mark revenue when the only known price is zero', () => {
+    const cards = buildStatsKpiCards({
+      newClients: 0,
+      ordersCreated: 1,
+      averageDeliveryDays: null,
+      revenue: '0',
+      hasPriceData: true,
+      missingPriceCount: 0,
+    })
+
+    expect(cards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Ingresos',
+          value: '0,00\xa0€',
+          noPriceData: false,
+          missingPriceCount: 0,
+        }),
+      ]),
+    )
+  })
+
+  // Given an overview where some delivered orders have a price and some do not
+  // When building the KPI cards
+  // Then revenue stays the known sum and the card carries the missing count
+  it('carries the missing price count when some delivered orders have a price', () => {
+    const cards = buildStatsKpiCards({
+      newClients: 0,
+      ordersCreated: 3,
+      averageDeliveryDays: null,
+      revenue: '40',
+      hasPriceData: true,
+      missingPriceCount: 2,
+    })
+
+    expect(cards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'Ingresos',
+          noPriceData: false,
+          missingPriceCount: 2,
+        }),
+      ]),
+    )
+  })
 })

@@ -24,7 +24,9 @@ const mockOrder: OrderDetail = {
   expectedDate: '2026-11-01T00:00:00.000Z',
   description: null,
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
-  items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 2, unitPrice: '15.00' }],
+  items: [
+    { id: 'item-1', product: 'Camiseta', description: null, quantity: 2, unitPrice: '15.00' },
+  ],
   statusHistory: [],
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -99,18 +101,49 @@ describe('OrderForm', () => {
 
   // Given a product with a price of 0
   // When the user submits the form
+  // Then the line is accepted as a free item
+  it('submits a price of 0', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await selectClient(user)
+    await user.type(screen.getByLabelText('Producto'), 'Regalo')
+    await user.type(screen.getByLabelText('Precio'), '0')
+    await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
+
+    expect(onSubmit).toHaveBeenCalled()
+    expect(onSubmit.mock.calls[0]?.[0].items[0]).toMatchObject({ product: 'Regalo', unitPrice: 0 })
+  })
+
+  // Given a product with a negative price
+  // When the user submits the form
   // Then the price error should be shown and nothing should be submitted
-  it('rejects a price that is not greater than 0', async () => {
+  it('rejects a negative price', async () => {
     const { onSubmit, user } = renderForm()
 
     await selectClient(user)
     await user.type(screen.getByLabelText('Producto'), 'Camiseta')
-    await user.clear(screen.getByLabelText('Precio'))
-    await user.type(screen.getByLabelText('Precio'), '0')
+    await user.type(screen.getByLabelText('Precio'), '-5')
     await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
 
-    expect(await screen.findByText('Debe ser > 0')).toBeInTheDocument()
+    expect(await screen.findByText('No puede ser negativo')).toBeInTheDocument()
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  // Given a product and no price
+  // When the user submits the form
+  // Then the line price should be submitted as null
+  it('submits a blank price as null', async () => {
+    const { onSubmit, user } = renderForm()
+
+    await selectClient(user)
+    await user.type(screen.getByLabelText('Producto'), 'Camiseta')
+    await user.click(screen.getByRole('button', { name: 'Crear pedido' }))
+
+    expect(onSubmit).toHaveBeenCalled()
+    expect(onSubmit.mock.calls[0]?.[0].items[0]).toMatchObject({
+      product: 'Camiseta',
+      unitPrice: null,
+    })
   })
 
   // Given one product line
