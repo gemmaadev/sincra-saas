@@ -75,10 +75,34 @@ describe('Tabs', () => {
   // Then it should default to the first tab that isn't disabled
   it('defaults to the first non-disabled tab', () => {
     const tabsWithFirstDisabled = [
-      { key: 'historial', label: 'Historial', content: <p>Contenido de historial</p>, disabled: true },
+      {
+        key: 'historial',
+        label: 'Historial',
+        content: <p>Contenido de historial</p>,
+        disabled: true,
+      },
       { key: 'resumen', label: 'Resumen', content: <p>Contenido de resumen</p> },
     ]
     render(<Tabs tabs={tabsWithFirstDisabled} />)
     expect(screen.getByText('Contenido de resumen')).toBeInTheDocument()
+  })
+
+  // Given a tab with a count and a tab without one
+  // When Tabs is rendered
+  // Then only the counted tab shows the number, including zero
+  it('shows a count bubble, including zero', () => {
+    render(
+      <Tabs
+        tabs={[
+          { key: 'notas', label: 'Notas', content: <p>Notas</p>, count: 3 },
+          { key: 'pedidos', label: 'Pedidos', content: <p>Pedidos</p>, count: 0 },
+          { key: 'resumen', label: 'Resumen', content: <p>Resumen</p> },
+        ]}
+      />,
+    )
+
+    expect(screen.getByRole('tab', { name: 'Notas 3' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Pedidos 0' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Resumen' })).toBeInTheDocument()
   })
 })

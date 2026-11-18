@@ -98,7 +98,9 @@ describe('OrderDetailPanel', () => {
     mockApiGet({ ...mockOrder, aiGenerated: true })
     renderPanel()
 
-    expect(await screen.findByText('Sugerido por IA')).toBeInTheDocument()
+    const chip = await screen.findByText('Sugerido por IA')
+    expect(chip).toHaveClass('rounded-full', 'text-sm')
+    expect(chip).toContainElement(screen.getByRole('img', { name: 'Sugerido por IA' }))
   })
 
   // Given an order a person created
@@ -168,8 +170,8 @@ describe('OrderDetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Resumen' })).toBeEnabled()
     expect(screen.getByRole('tab', { name: 'Productos' })).toBeEnabled()
     expect(screen.getByRole('tab', { name: 'Seguimiento' })).toBeEnabled()
-    expect(screen.getByRole('tab', { name: 'Notas' })).toBeEnabled()
-    expect(screen.getByRole('tab', { name: 'Etiquetas' })).toBeEnabled()
+    expect(screen.getByRole('tab', { name: 'Etiquetas 0' })).toBeEnabled()
+    expect(await screen.findByRole('tab', { name: 'Notas 0' })).toBeEnabled()
   })
 
   // Given an order with items
@@ -212,7 +214,7 @@ describe('OrderDetailPanel', () => {
     renderPanel()
     await screen.findByText('Pedido #7')
 
-    await userEvent.setup().click(screen.getByRole('tab', { name: 'Notas' }))
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'Notas 0' }))
 
     expect(
       await screen.findByPlaceholderText('Escribe una nota sobre este pedido...'),
@@ -237,9 +239,76 @@ describe('OrderDetailPanel', () => {
     renderPanel()
     await screen.findByText('Pedido #7')
 
-    await userEvent.setup().click(screen.getByRole('tab', { name: 'Etiquetas' }))
+    await userEvent.setup().click(screen.getByRole('tab', { name: 'Etiquetas 1' }))
 
     expect(await screen.findByText('VIP')).toBeInTheDocument()
+  })
+
+  // Given an order with notes and tags
+  // When the detail is shown
+  // Then Notas and Etiquetas show how many there are
+  it('shows how many notes and tags the order has', async () => {
+    vi.mocked(api.get).mockImplementation((path: string) => {
+      if (path.endsWith('/notes')) {
+        return Promise.resolve({
+          notes: [
+            {
+              id: 'note-1',
+              clientId: null,
+              orderId: 'order-1',
+              content: 'Una nota',
+              createdBy: 'user-1',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              id: 'note-2',
+              clientId: null,
+              orderId: 'order-1',
+              content: 'Otra nota',
+              createdBy: null,
+              createdAt: '2026-01-02T00:00:00.000Z',
+            },
+          ],
+        })
+      }
+      if (path === '/tags') return Promise.resolve({ tags: [] })
+      return Promise.resolve({
+        order: {
+          ...mockOrder,
+          orderTags: [
+            {
+              id: 'assignment-1',
+              tagId: 'tag-1',
+              aiGenerated: false,
+              tag: {
+                id: 'tag-1',
+                name: 'VIP',
+                color: '#ffb800',
+                priority: 'LOW',
+                isDefault: false,
+              },
+            },
+            {
+              id: 'assignment-2',
+              tagId: 'tag-2',
+              aiGenerated: true,
+              tag: {
+                id: 'tag-2',
+                name: 'Urgente',
+                color: '#e5484d',
+                priority: 'HIGH',
+                isDefault: false,
+              },
+            },
+          ],
+        },
+      })
+    })
+    renderPanel()
+
+    expect(await screen.findByRole('tab', { name: 'Etiquetas 2' })).toBeEnabled()
+    expect(await screen.findByRole('tab', { name: 'Notas 2' })).toBeEnabled()
+    expect(screen.getByRole('tab', { name: 'Productos' })).toBeEnabled()
   })
 
   // Given a loaded order that is not yet in a final status

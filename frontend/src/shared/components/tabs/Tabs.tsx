@@ -21,8 +21,9 @@ export function Tabs({ tabs, defaultTab, fillHeight = false }: TabsProps) {
             disabled={tab.disabled}
             aria-selected={tab.key === activeKey}
             aria-controls={`tabpanel-${tab.key}`}
+            aria-label={tab.count != null ? `${tab.label} ${tab.count}` : undefined}
             onClick={() => !tab.disabled && setActiveKey(tab.key)}
-            className={`border-b-2 px-1 py-2 text-sm font-medium transition-colors
+            className={`inline-flex items-center gap-1.5 border-b-2 px-1 py-2 text-sm font-medium transition-colors
               ${
                 tab.disabled
                   ? 'cursor-not-allowed border-transparent text-neutral-300'
@@ -33,6 +34,11 @@ export function Tabs({ tabs, defaultTab, fillHeight = false }: TabsProps) {
             `}
           >
             {tab.label}
+            {tab.count != null && (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-xs font-semibold text-ink">
+                {tab.count}
+              </span>
+            )}
           </button>
         ))}
       </div>

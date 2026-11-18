@@ -86,4 +86,23 @@ describe('clientsTableColumns name', () => {
 
     expect(screen.getByText('AR')).toBeInTheDocument()
   })
+
+  // Given a client the AI created
+  // When the Cliente cell is rendered
+  // Then the AI star sits next to the name
+  it('marks a client the AI created', () => {
+    renderColumn('name', { ...client, aiGenerated: true })
+
+    expect(screen.getByText('Anna (Restaurant Can Vila)')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Sugerido por IA' })).toBeInTheDocument()
+  })
+
+  // Given a client a person created
+  // When the Cliente cell is rendered
+  // Then there is no AI star next to the name
+  it('does not mark a client a person created', () => {
+    renderColumn('name')
+
+    expect(screen.queryByRole('img', { name: 'Sugerido por IA' })).not.toBeInTheDocument()
+  })
 })

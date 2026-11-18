@@ -1,23 +1,10 @@
-import { Tooltip } from '@mantine/core'
-import { Sparkles } from 'lucide-react'
+import { TagPill } from '../tag-pill/TagPill'
+import { AiSuggestedMark, AI_SUGGESTED_LABEL } from './AiSuggestedMark'
 
-const AI_SUGGESTED_LABEL = 'Sugerido por IA'
+export const AI_SUGGESTED_TAG_COLOR = '#1e5eff'
 
 export function AiSuggestedBadge({ compact = false }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <Tooltip label={AI_SUGGESTED_LABEL} withArrow position="top">
-        <span role="img" aria-label={AI_SUGGESTED_LABEL} className="inline-flex shrink-0">
-          <Sparkles size={12} aria-hidden="true" />
-        </span>
-      </Tooltip>
-    )
-  }
+  if (compact) return <AiSuggestedMark />
 
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">
-      <Sparkles size={12} aria-hidden="true" />
-      {AI_SUGGESTED_LABEL}
-    </span>
-  )
+  return <TagPill name={AI_SUGGESTED_LABEL} color={AI_SUGGESTED_TAG_COLOR} aiGenerated />
 }

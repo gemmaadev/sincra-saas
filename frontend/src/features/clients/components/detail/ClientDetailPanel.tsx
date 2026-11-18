@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Tabs, Spinner } from '@/shared/components'
 import { useClientDetail } from '../../hooks/useClientDetail'
+import { useClientNotes } from '../../hooks/useClientNotes'
 import { ClientDetailHeader } from './ClientDetailHeader'
 import { ClientFormModal } from '../form/ClientFormModal'
 import { DeleteClientModal } from '../actions/DeleteClientModal'
@@ -16,6 +17,7 @@ interface ClientDetailPanelProps {
 
 export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
   const { data: client, isLoading, isError } = useClientDetail(id)
+  const notesQuery = useClientNotes(id)
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
 
@@ -42,9 +44,24 @@ export function ClientDetailPanel({ id, onDeleted }: ClientDetailPanelProps) {
         tabs={[
           { key: 'resumen', label: 'Resumen', content: <ClientSummaryTab client={client} /> },
           { key: 'historial', label: 'Historial', content: null, disabled: true },
-          { key: 'pedidos', label: 'Pedidos', content: <ClientOrdersTab client={client} /> },
-          { key: 'notas', label: 'Notas', content: <ClientNotesTab clientId={client.id} /> },
-          { key: 'etiquetas', label: 'Etiquetas', content: <ClientTagsTab client={client} /> },
+          {
+            key: 'pedidos',
+            label: 'Pedidos',
+            count: client.orders.length,
+            content: <ClientOrdersTab client={client} />,
+          },
+          {
+            key: 'notas',
+            label: 'Notas',
+            count: notesQuery.data?.length,
+            content: <ClientNotesTab clientId={client.id} />,
+          },
+          {
+            key: 'etiquetas',
+            label: 'Etiquetas',
+            count: client.clientTags.length,
+            content: <ClientTagsTab client={client} />,
+          },
         ]}
       />
       <ClientFormModal

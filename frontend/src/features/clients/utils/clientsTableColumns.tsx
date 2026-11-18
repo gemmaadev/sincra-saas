@@ -1,4 +1,4 @@
-import { Avatar, TagPill } from '@/shared/components'
+import { AiSuggestedBadge, Avatar, TagPill } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate } from '@/shared/utils'
 import type { Client } from '../types/client.types'
@@ -11,7 +11,10 @@ export const clientsTableColumns = [
       <div className="flex items-center gap-3">
         <Avatar name={client.name} size="md" />
         <div className="flex flex-col">
-          <span className="font-medium text-ink">{client.name}</span>
+          <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+            {client.name}
+            {client.aiGenerated && <AiSuggestedBadge compact />}
+          </span>
           <span className="text-sm text-ink-muted">{client.email ?? client.phone ?? '—'}</span>
         </div>
       </div>
