@@ -1,0 +1,36 @@
+---
+description: Reglas globales Sincra — alcance, GitFlow y disciplina de docs.
+alwaysApply: true
+---
+
+# Sincra — reglas de proyecto
+
+## Fuente de verdad
+
+1. Tablero Trello (lista **Not MPV** = fuera de alcance, decisión cerrada).
+2. `CLAUDE.md` (actualizar en la misma sesión si cambia arquitectura, alcance o un patrón nuevo).
+3. `docs/architecture-notes.md` y `docs/refactor-backlog.md` cuando existan — léelos antes de trabajo no trivial.
+4. README = cara pública; si choca con Trello/`CLAUDE.md` en decisiones de producto, no uses el README como autoridad.
+
+Antes de asumir que una feature existe: **abre el archivo** (hay scaffolds vacíos: `inbox`/`communication`).
+
+## GitFlow
+
+- Integración: PRs contra **`develop`** (no `main`).
+- `main` = producción.
+- Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`, `docs:`).
+- Una unidad de trabajo = una rama = un PR.
+- No hay `package.json` en la raíz: trabaja siempre dentro de `frontend/` o `backend/`.
+
+## Alcance cerrado (no reabrir)
+
+- No bandeja unificada ni ChannelAdapter.
+- AI = **Sincra** (detecta) + **Sincro** (escribe DB), orquestados por **Hermes**. Solo marca "Sugerido por IA"; sin flujo de confirmación humana por ahora.
+- No Stripe real, no sesiones activas reales, no push/email de notificaciones (prefs CRUD ≠ delivery).
+- Roles de negocio: solo `ADMIN` | `EMPLOYEE` por `businessId`.
+
+## Calidad mínima antes de cerrar
+
+- `npm run lint` + `npm test` (+ `npm run build` si tocaste tipos/rutas) en el subproyecto afectado.
+- Mantén feature-based architecture; no erosiones capas FE/BE.
+- Nombres en inglés, descriptivos; UI/errores de usuario en español.
