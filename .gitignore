@@ -30,3 +30,5 @@ lerna-debug.log*
 # Claude Code project instructions
 CLAUDE.md
 docs/
+# Cursor (local rules and settings)
+.cursor/
