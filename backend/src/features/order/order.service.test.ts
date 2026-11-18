@@ -5,6 +5,7 @@ import * as authModel from '../auth/auth.model'
 import * as tagModel from '../tag/tag.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
+import { applySureIncidents } from './order-incident'
 import {
   createOrder,
   listOrders,
@@ -21,6 +22,10 @@ vi.mock('../auth/auth.model')
 vi.mock('../tag/tag.model')
 vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
+vi.mock('./order-incident', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./order-incident')>()
+  return { ...actual, applySureIncidents: vi.fn() }
+})
 
 describe('createOrder', () => {
   beforeEach(() => {
@@ -357,6 +362,7 @@ describe('listOrders', () => {
 
     const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
     expect(where).toEqual({ businessId: 'business-1' })
+    expect(applySureIncidents).toHaveBeenCalledWith('business-1')
   })
 
   // Given the business has orders in only some statuses
@@ -375,6 +381,7 @@ describe('listOrders', () => {
       PREPARING: 0,
       SHIPPED: 0,
       DELIVERED: 12,
+      INCIDENT: 0,
       CANCELLED: 2,
     })
   })
@@ -688,6 +695,52 @@ describe('updateOrder', () => {
       undefined,
       { status: nextStatus, changedBy: 'user-1' },
     )
+  })
+
+  // Given an open order and a note about what went wrong
+  // When it is marked as an incident
+  // Then the status, the timeline note and an order note are stored together
+  it('stores the incident note on the timeline and as an order note', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      status: 'INCIDENT',
+      incidentNote: '  El cliente recibió el pedido dañado  ',
+    })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: 'INCIDENT' },
+      undefined,
+      { status: 'INCIDENT', changedBy: 'user-1', note: 'El cliente recibió el pedido dañado' },
+      { content: 'El cliente recibió el pedido dañado', createdBy: 'user-1' },
+    )
+  })
+
+  // Given a note that is empty or only spaces
+  // When marking an incident
+  // Then a 400 is thrown and nothing is written
+  it('requires a note when marking an incident', async () => {
+    await expect(
+      updateOrder('business-1', 'user-1', 'order-1', { status: 'INCIDENT', incidentNote: '   ' }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'MISSING_INCIDENT_NOTE' })
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given a cancelled order
+  // When someone tries to mark it as an incident
+  // Then a 400 is thrown and the cancellation stays as it is
+  it('rejects marking a cancelled order as an incident', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'CANCELLED',
+    } as never)
+
+    await expect(
+      updateOrder('business-1', 'user-1', 'order-1', {
+        status: 'INCIDENT',
+        incidentNote: 'Llegó tarde',
+      }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'INCIDENT_NOT_ALLOWED' })
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
   })
 
   // Given an order already DELIVERED

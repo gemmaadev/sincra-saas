@@ -403,6 +403,31 @@ describe('update', () => {
     )
   })
 
+  // Given an incident status and the explanation
+  // When updating an order
+  // Then both reach the service
+  it('passes the incident note together with the status', async () => {
+    const updateSpy = vi
+      .spyOn(orderService, 'updateOrder')
+      .mockResolvedValue({ id: 'order-1', status: 'INCIDENT' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { id: 'order-1' },
+      body: { status: 'INCIDENT', incidentNote: 'Llegó dañado' },
+    })
+
+    await update(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'user-1',
+      'order-1',
+      expect.objectContaining({ status: 'INCIDENT', incidentNote: 'Llegó dañado' }),
+    )
+  })
+
   // Given an unknown status value
   // When updating an order
   // Then it should throw a 400 AppError without calling the service

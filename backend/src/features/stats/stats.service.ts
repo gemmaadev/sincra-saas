@@ -29,6 +29,7 @@ const ALL_ORDER_STATUSES: OrderStatus[] = [
   'PREPARING',
   'SHIPPED',
   'DELIVERED',
+  'INCIDENT',
   'CANCELLED',
 ]
 

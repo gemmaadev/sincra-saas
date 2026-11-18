@@ -22,6 +22,7 @@ import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
+import { applySureIncidents, assertIncidentNote } from './order-incident'
 import type {
   CreateOrderInput,
   UpdateOrderInput,
@@ -235,6 +236,8 @@ function buildSearchFilter(search: string): Prisma.OrderWhereInput['OR'] {
 }
 
 export async function listOrders(businessId: string, filters: ListOrdersFilters) {
+  await applySureIncidents(businessId)
+
   const { page, limit, skip } = parsePagination(filters)
   const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
 
@@ -263,6 +266,7 @@ const ALL_ORDER_STATUSES: OrderStatus[] = [
   'PREPARING',
   'SHIPPED',
   'DELIVERED',
+  'INCIDENT',
   'CANCELLED',
 ]
 
@@ -282,6 +286,8 @@ function buildStatusCounts(
 }
 
 export async function getOrderById(businessId: string, orderId: string) {
+  await applySureIncidents(businessId)
+
   const order = await findOrderWithDetails(businessId, orderId)
   if (!order) return null
 
@@ -334,12 +340,29 @@ export async function updateOrder(
     ...(input.items && { price: computeItemsTotal(input.items) }),
   }
 
+  const markingIncident = input.status === 'INCIDENT' && existing.status !== 'INCIDENT'
+  if (markingIncident && existing.status === 'CANCELLED') {
+    throw new AppError(
+      'Un pedido cancelado no se puede marcar como incidencia',
+      400,
+      'INCIDENT_NOT_ALLOWED',
+    )
+  }
+
+  const incidentNote = markingIncident ? assertIncidentNote(input.incidentNote) : undefined
   const statusChange =
     input.status !== undefined && input.status !== existing.status
-      ? { status: input.status, changedBy: userId }
+      ? {
+          status: input.status,
+          changedBy: userId,
+          ...(incidentNote && { note: incidentNote }),
+        }
       : undefined
+  const orderNote = incidentNote ? { content: incidentNote, createdBy: userId ?? null } : undefined
 
-  return updateOrderWithItems(orderId, data, items, statusChange)
+  return orderNote
+    ? updateOrderWithItems(orderId, data, items, statusChange, orderNote)
+    : updateOrderWithItems(orderId, data, items, statusChange)
 }
 
 export async function deleteOrder(businessId: string, orderId: string) {

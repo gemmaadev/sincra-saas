@@ -18,7 +18,7 @@ import type {
   OrderItemInput,
 } from './order.types'
 
-const VALID_STATUSES = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const VALID_STATUSES = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'INCIDENT', 'CANCELLED']
 
 function isPositiveNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
@@ -147,7 +147,8 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as UpdateOrderInput
-  const { channel, kind, address, zone, latitude, longitude, description, status } = body
+  const { channel, kind, address, zone, latitude, longitude, description, status, incidentNote } =
+    body
 
   const items = req.body.items !== undefined ? assertValidItems(req.body.items) : undefined
   assertValidCoordinates(latitude, longitude)
@@ -164,6 +165,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     longitude,
     description,
     status,
+    incidentNote: typeof incidentNote === 'string' ? incidentNote : undefined,
     expectedDate,
   })
 

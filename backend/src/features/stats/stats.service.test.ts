@@ -244,7 +244,7 @@ describe('getOrdersByStatus', () => {
 
   // Given order counts for some, but not all, statuses
   // When getting the orders-by-status breakdown
-  // Then it should return all 5 statuses in their lifecycle order, zero-count ones included,
+  // Then it should return all statuses in their lifecycle order, zero-count ones included,
   // each with its share of the total
   it('returns all statuses in lifecycle order, with zero-count ones included', async () => {
     vi.spyOn(statsModel, 'countOrdersByStatusInRange').mockResolvedValue([
@@ -262,6 +262,7 @@ describe('getOrdersByStatus', () => {
         { status: 'PREPARING', count: 0, percentage: 0 },
         { status: 'SHIPPED', count: 0, percentage: 0 },
         { status: 'DELIVERED', count: 6, percentage: 60 },
+        { status: 'INCIDENT', count: 0, percentage: 0 },
         { status: 'CANCELLED', count: 1, percentage: 10 },
       ],
     })
