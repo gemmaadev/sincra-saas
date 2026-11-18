@@ -1,36 +1,45 @@
 ---
-description: Global Sincra project rules — scope, GitFlow, and docs discipline.
+description: "[PROJECT] Global Sincra rules — scope, GitFlow, docs. Always apply."
 alwaysApply: true
 ---
 
-# Sincra — project rules
+# [PROJECT] Global rules
 
 ## Source of truth
 
-1. Trello board (**Not MPV** list = out of scope, closed decision).
+1. Trello board (**Not MPV** = out of scope, closed decision).
 2. `CLAUDE.md` (update in the same session when architecture, scope, or a lasting pattern changes).
-3. `docs/architecture-notes.md` and `docs/refactor-backlog.md` when they exist — read them before non-trivial work.
-4. README is user-facing; if it conflicts with Trello/`CLAUDE.md` on product decisions, do not treat the README as authority.
+3. `docs/architecture-notes.md` and `docs/refactor-backlog.md` when they exist — read before non-trivial work.
+4. README is user-facing; if it conflicts with Trello/`CLAUDE.md` on product decisions, do not treat README as authority.
 
-Before assuming a feature exists: **open the file** (empty scaffolds exist: `inbox`/`communication`).
+Before assuming a feature exists: **open the file** (empty scaffolds: `inbox`/`communication`).
 
 ## GitFlow
 
-- Integration: PRs target **`develop`** (not `main`).
-- `main` = production.
-- Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`, `docs:`).
+- PRs target **`develop`** (not `main`). `main` = production.
+- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `test:`, `docs:`.
 - One unit of work = one branch = one PR.
-- No root `package.json`: always work inside `frontend/` or `backend/`.
+- No root `package.json` — always `cd frontend` or `cd backend` first.
 
 ## Closed scope (do not reopen)
 
-- No unified inbox and no ChannelAdapter.
-- AI = **Sincra** (detects) + **Sincro** (writes DB), orchestrated by **Hermes**. Mark creations "Sugerido por IA" only; no human-confirmation flow for now.
-- No real Stripe billing, no real active-session management, no real notification delivery (prefs CRUD ≠ delivery).
-- Business roles: only `ADMIN` | `EMPLOYEE` per `businessId`.
+- No unified inbox / ChannelAdapter.
+- AI = **Sincra** (detect) + **Sincro** (write DB), orchestrated by **Hermes**. Mark "Sugerido por IA" only; no human-confirmation flow yet.
+- No real Stripe, no real active sessions, no real notification delivery (prefs CRUD ≠ sending).
+- Roles: only `ADMIN` | `EMPLOYEE` per `businessId`.
 
-## Minimum quality before closing
+## Quality bar
 
-- `npm run lint` + `npm test` (+ `npm run build` if you touched types/routes) in the affected subproject.
+- In the affected package: `npm run lint` + `npm test` (+ `npm run build` if types/routes changed).
 - Keep feature-based architecture; do not erode FE/BE layering.
-- Code identifiers in English, descriptive; user-facing UI and API error messages in Spanish.
+- Identifiers in English; user-facing UI and API error messages in Spanish.
+
+## Rule map (this repo)
+
+| File | Side | Topic |
+| --- | --- | --- |
+| `project.mdc` | both | scope / git / docs |
+| `frontend-architecture.mdc` | **FRONTEND** | folders, routing, state, design system |
+| `frontend-code.mdc` | **FRONTEND** | TS/React style, naming, tests |
+| `backend-architecture.mdc` | **BACKEND** | layers, auth, domain rules |
+| `backend-code.mdc` | **BACKEND** | TS/Express style, naming, tests |

@@ -1,0 +1,57 @@
+---
+description: "[BACKEND] Architecture — layers, auth, multi-tenant, domain rules. Apply when working under backend/."
+globs: backend/**/*
+alwaysApply: false
+---
+
+# [BACKEND] Architecture
+
+Source of truth: `CLAUDE.md`. Trello "Not MPV" wins on conflict.
+
+## Layers (mandatory — non-negotiable)
+
+Each domain under `backend/src/features/<domain>/`:
+
+| File | Does | Must not |
+| --- | --- | --- |
+| `*.routes.ts` | paths + middlewares | business logic |
+| `*.controller.ts` | validate input, cookies, status codes, call service | Prisma, hashing, geocoding, email, Cloudinary |
+| `*.service.ts` | business rules, `AppError`, response mapping | import `config/db` / Prisma |
+| `*.model.ts` | Prisma only (`config/db`), named queries, transactions | Express `req`/`res`, business policy |
+| `*.types.ts` | feature types | |
+
+- Cross-feature reads go through the **other feature’s model** (`calendar` → `order.model`, `note` → `client.model`). Never reach into another feature’s service to query tables.
+- Small duplicated helpers across features are OK for ownership (order vs client geocoding). No cross-domain god service.
+- Sub-topic folder when a feature grows past ~10 files (`features/client/map/`, `features/order/map/`). Routes stay on the parent `*.routes.ts`, registered **before** `/:id` wildcards.
+- New router must be mounted in `app.ts`.
+- `src/generated/prisma`: `npx prisma generate` only — never hand-edit.
+
+## Auth, tenancy, security
+
+- Authenticated business routes: `verifyAuth`. Admin-only: also `requireRole('ADMIN')` on the route.
+- Every list/get/update/delete scoped by `businessId` from auth. No cross-tenant queries.
+- JWT in httpOnly cookie; CORS `credentials: true` + `FRONTEND_URL`. Keep `helmet()`. Never open CORS to `*`.
+- Controllers wrapped in `asyncHandler`. Domain failures: `throw new AppError(spanishMessage, status, 'CODE')`.
+- Error JSON shape only: `{ error: { message, code } }` via `errorHandler`.
+- Rate-limit sensitive routes with existing middleware (auth, invite, address-search).
+
+## Fixed domain rules (do not reinvent)
+
+- Orders: compute `price` server-side from `items` — never accept `price` from the body.
+- Cancel = `PATCH` `{ status: 'CANCELLED' }`. `DELETE` = hard delete for mistakes/duplicates only.
+- Final statuses: may reopen to open flow; **no** direct DELIVERED ↔ CANCELLED (`ORDER_STATUS_FINAL`).
+- Notes: exactly one of `clientId` | `orderId` (enforced in `note.service`).
+- Geocoding (Nominatim): never blocks save; 3s timeout; 1 req/s; no search-as-you-type; coords validated together or `INVALID_COORDINATES`.
+- Stats: single `GET /stats/dashboard` (not one route per chart).
+- Calendar list: merge events + orders with `expectedDate` in the service; do not persist synthetic order calendar rows.
+- AI pipeline: Sincra/Sincro (+ Hermes). Persist `aiGenerated` / "Sugerido por IA". No confirmation-flow inventing.
+
+## Runtime (Render)
+
+- Listen on `0.0.0.0` + `process.env.PORT`.
+- Ephemeral disk: uploads → Cloudinary/DB, not local files.
+- Secrets only from env; keep `.env.example` in sync when adding vars.
+
+## Forbidden (Not MPV)
+
+No ChannelAdapter/inbox, communications CRUD, Meta messaging APIs, Stripe, cross-business developer role, notification sending engine, `Session` table / revoke. Prefs CRUD without delivery is fine.

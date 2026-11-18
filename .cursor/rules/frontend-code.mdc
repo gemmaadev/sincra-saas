@@ -1,0 +1,77 @@
+---
+description: "[FRONTEND] Code style — TypeScript, React, naming, tests. Apply when writing or editing frontend code."
+globs: frontend/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# [FRONTEND] Code style
+
+Mirror patterns already used in this repo. Prefer copying a neighbor file over inventing a new style.
+
+## Formatting (Prettier — non-negotiable)
+
+- No semicolons, single quotes, trailing commas, `printWidth: 100`, `tabWidth: 2`.
+- Run `npm run format` / keep ESLint clean (`npm run lint`) in `frontend/`.
+
+## Naming
+
+- Identifiers in **English**, descriptive. Never single-letter names (`catch (error)`, `(client) => …`, not `e` / `c`).
+- Files:
+  - Components: `PascalCase.tsx` (`ClientFormModal.tsx`, `SincraButton.tsx`).
+  - Hooks: `useSomething.ts(x)`.
+  - Types: `*.types.ts` (`client.types.ts`, `button.types.ts`).
+  - Variants/maps: `*.variants.ts` or `*.constants.ts`.
+  - Utils/mappers: camelCase verbs (`toClientPayload.ts`, `invalidateClientQueries.ts`).
+  - Tests: co-located `*.test.ts(x)` next to the unit under test.
+- Shared UI folders: kebab-case directory (`empty-state/`, `date-range-filter/`) with `Component.tsx` + `index.ts` barrel.
+
+## TypeScript
+
+- Explicit types for props, API responses, form values, and non-obvious generics (`useState<Set<string>>(new Set())`).
+- Prefer `interface` for object shapes; `type` for unions/aliases (`ButtonVariant = keyof typeof buttonVariants`).
+- Import types with `import type { … }`.
+- Do not use `any`. Prefer `unknown` + narrowing. Unused args: prefix `_` if required by a signature.
+- Keep domain types in `features/<domain>/types/`; move to `shared/types` only when truly cross-feature (e.g. `Note`).
+
+## React patterns
+
+- Function components only. Named exports except pages (default).
+- `setState(prev => …)` whenever next state depends on previous.
+- Extract early: if a page mixes data fetching + filters + table + modals + navigation, split into hooks/subcomponents before growing further.
+- `useMemo` / derived work only when cost is real (table columns, KPI builders, large filtered lists) — not by default.
+- Prefer library helpers already in the stack (TanStack Query, FullCalendar APIs, Mantine notifications) over reimplementing them.
+- Guard races: reset loading at request start; do not apply stale responses when filters/search can overlap.
+- Forms: follow existing feature patterns; email validation via shared `EMAIL_PATTERN` when applicable.
+- Accessibility: semantic HTML, keyboard on custom controls, `aria-busy` on loading buttons, decorative icons `aria-hidden`.
+
+## Component file shape (shared UI)
+
+Follow the existing split when adding shared components:
+
+```
+component-name/
+  ComponentName.tsx
+  component-name.types.ts
+  component-name.variants.ts   # if variants exist
+  ComponentName.test.tsx
+  index.ts                     # re-export public API
+```
+
+## Hooks & API calls
+
+- One concern per hook (`useClients`, `useSaveOrder`, `useDeleteClient`) — do not dump a feature’s entire API surface into one mega-hook.
+- Build query strings / payloads in the hook or a pure util (`toOrderPayload`); keep components free of transport details.
+- On mutation success, invalidate through the feature’s invalidate helper.
+
+## Tests
+
+- Vitest + Testing Library.
+- Comment scenarios as **Given / When / Then** above each `it(...)`.
+- Mock `@/shared/services` `api` and libraries that break jsdom (ECharts, Leaflet) with `vi.mock`.
+- Assert user-visible behavior and the API call shape; avoid testing implementation trivia.
+- After edits: `cd frontend && npx vitest run path/to/file.test.tsx` then `npm run lint`.
+
+## Comments
+
+- No narrating comments (`// increment counter`).
+- Comment only non-obvious decisions (why a binary map layer, why a hex for ECharts, why a copy near-duplicate exists).
