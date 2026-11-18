@@ -3,9 +3,9 @@ import { Circle, CheckCircle, AlertTriangle } from 'lucide-react'
 import { formatDateTime } from '@/shared/utils'
 import { AiSuggestedBadge, SincraButton } from '@/shared/components'
 import type { BadgeColor } from '@/shared/components'
+import { isSincroNote, sincroNoteBody } from '@/shared/components/notes-tab'
 import { ApiError } from '@/shared/services'
-import { isSincroNote, sincroNoteBody } from '@/shared/components/notes-tab/sincroNote'
-import { ORDER_STATUS_ICONS, ORDER_STATUS_COLORS } from '../../orderStatus.constants'
+import { ORDER_STATUS_ICONS, ORDER_STATUS_COLORS } from '@/shared/orderStatus.constants'
 import { useUpdateOrderStatus } from '../../hooks/useUpdateOrderStatus'
 import { lastOperationalStatus } from '../../utils/operationalStatus'
 import { MarkIncidentModal } from '../actions/MarkIncidentModal'
@@ -51,7 +51,7 @@ function incidentCopy(entry: OrderStatusChangeEntry | undefined): {
 
 export function OrderTimeline({ order }: OrderTimelineProps) {
   const updateStatus = useUpdateOrderStatus(order.id)
-  const [isIncidentModalOpen, setIsIncidentModalOpen] = useState(false)
+  const [isIncidentModalOpen, setIsIncidentModalOpen] = useState<boolean>(false)
   const operationalStatus = lastOperationalStatus(order.status, order.statusHistory)
   const nextStatus = order.status === 'CANCELLED' ? undefined : NEXT_STATUS[operationalStatus]
   const isAside = order.status === 'CANCELLED' || order.status === 'INCIDENT'

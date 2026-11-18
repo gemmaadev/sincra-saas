@@ -11,7 +11,6 @@ export function useMarkOrderIncident(orderId: string) {
     },
     onSuccess: () => {
       invalidateOrderQueries(queryClient, orderId)
-      queryClient.invalidateQueries({ queryKey: ['order-notes', orderId] })
     },
   })
 }

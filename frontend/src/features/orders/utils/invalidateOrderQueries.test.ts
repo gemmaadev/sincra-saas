@@ -5,8 +5,8 @@ import { invalidateOrderQueries } from './invalidateOrderQueries'
 describe('invalidateOrderQueries', () => {
   // Given an order id
   // When the order queries are invalidated
-  // Then the orders list (and map), that order's detail, stats and calendar should all be refreshed
-  it('invalidates the list, the detail, stats and calendar', () => {
+  // Then the list, that order, its notes, stats and calendar are refreshed
+  it('invalidates the list, the detail, its notes, stats and calendar', () => {
     const queryClient = new QueryClient()
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -14,6 +14,7 @@ describe('invalidateOrderQueries', () => {
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['orders'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['order', 'order-1'] })
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['order-notes', 'order-1'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['stats'] })
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['calendar'] })
   })

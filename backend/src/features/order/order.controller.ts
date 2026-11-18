@@ -11,6 +11,7 @@ import {
   assignTagToOrder,
   removeTagFromOrder,
 } from './order.service'
+import { assertIncidentNote } from './order-incident.service'
 import type {
   CreateOrderInput,
   UpdateOrderInput,
@@ -153,6 +154,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   const items = req.body.items !== undefined ? assertValidItems(req.body.items) : undefined
   assertValidCoordinates(latitude, longitude)
   assertValidStatus(status)
+  const parsedIncidentNote = status === 'INCIDENT' ? assertIncidentNote(incidentNote) : undefined
   const expectedDate = parseOptionalDate(req.body.expectedDate, 'La fecha prevista')
 
   const order = await updateOrder(req.businessId!, req.userId, req.params.id as string, {
@@ -165,7 +167,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     longitude,
     description,
     status,
-    incidentNote: typeof incidentNote === 'string' ? incidentNote : undefined,
+    incidentNote: parsedIncidentNote,
     expectedDate,
   })
 

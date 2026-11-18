@@ -2,7 +2,7 @@ import { Search } from 'lucide-react'
 import { DateRangeFilter, Input, Select } from '@/shared/components'
 import { ChannelSelect } from '@/shared/channels/ChannelSelect'
 import type { Channel } from '@/shared/types'
-import { ORDER_STATUS_LABELS } from '../orderStatus.constants'
+import { ORDER_STATUS_LABELS } from '@/shared/orderStatus.constants'
 import type { OrderStatus } from '../types/order.types'
 
 const STATUS_OPTIONS = Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({

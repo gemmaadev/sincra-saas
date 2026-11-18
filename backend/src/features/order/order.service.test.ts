@@ -5,7 +5,7 @@ import * as authModel from '../auth/auth.model'
 import * as tagModel from '../tag/tag.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
-import { applySureIncidents } from './order-incident'
+import { applySureIncidents } from './order-incident.service'
 import {
   createOrder,
   listOrders,
@@ -22,8 +22,8 @@ vi.mock('../auth/auth.model')
 vi.mock('../tag/tag.model')
 vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
-vi.mock('./order-incident', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./order-incident')>()
+vi.mock('./order-incident.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./order-incident.service')>()
   return { ...actual, applySureIncidents: vi.fn() }
 })
 

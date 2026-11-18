@@ -7,5 +7,6 @@ export function invalidateOrderQueries(queryClient: QueryClient, orderId?: strin
 
   if (orderId) {
     queryClient.invalidateQueries({ queryKey: ['order', orderId] })
+    queryClient.invalidateQueries({ queryKey: ['order-notes', orderId] })
   }
 }

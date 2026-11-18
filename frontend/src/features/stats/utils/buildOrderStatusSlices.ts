@@ -1,4 +1,4 @@
-import { ORDER_STATUS_LABELS } from '@/features/orders/orderStatus.constants'
+import { ORDER_STATUS_LABELS } from '@/shared/orderStatus.constants'
 import type { OrderStatus } from '@/features/orders/types/order.types'
 import type { OrdersByStatus } from '../types/stats.types'
 import type { StatsDonutSlice } from '../components/StatsDonutChart'

@@ -22,7 +22,7 @@ import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
-import { applySureIncidents, assertIncidentNote } from './order-incident'
+import { applySureIncidents, assertIncidentNote } from './order-incident.service'
 import type {
   CreateOrderInput,
   UpdateOrderInput,

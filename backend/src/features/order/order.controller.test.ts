@@ -428,6 +428,27 @@ describe('update', () => {
     )
   })
 
+  // Given an incident status and no explanation
+  // When updating an order
+  // Then a 400 is thrown and the service is not called
+  it('rejects an incident without a note before calling the service', async () => {
+    const updateSpy = vi.spyOn(orderService, 'updateOrder')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { id: 'order-1' },
+      body: { status: 'INCIDENT' },
+    })
+    const next = vi.fn()
+
+    await update(req, createMockResponse(), next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_INCIDENT_NOTE' }),
+    )
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
   // Given an unknown status value
   // When updating an order
   // Then it should throw a 400 AppError without calling the service

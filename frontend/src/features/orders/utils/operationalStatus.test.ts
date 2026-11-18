@@ -31,10 +31,16 @@ describe('lastOperationalStatus', () => {
 })
 
 describe('canCancelOrder', () => {
+  // Given an order that is still being prepared
+  // When asking if it can be cancelled
+  // Then the answer is yes
   it('allows cancelling an order that is still being prepared', () => {
     expect(canCancelOrder('PREPARING', [{ status: 'PREPARING' }])).toBe(true)
   })
 
+  // Given an order that was delivered, even if it now has an incident
+  // When asking if it can be cancelled
+  // Then the answer is no
   it('blocks cancelling a delivered order, including one that now has an incident', () => {
     expect(canCancelOrder('DELIVERED', [{ status: 'DELIVERED' }])).toBe(false)
     expect(canCancelOrder('INCIDENT', [{ status: 'DELIVERED' }, { status: 'INCIDENT' }])).toBe(
@@ -42,6 +48,9 @@ describe('canCancelOrder', () => {
     )
   })
 
+  // Given an order that is already cancelled
+  // When asking if it can be cancelled again
+  // Then the answer is no
   it('blocks cancelling an order that is already cancelled', () => {
     expect(canCancelOrder('CANCELLED', [{ status: 'PREPARING' }, { status: 'CANCELLED' }])).toBe(
       false,

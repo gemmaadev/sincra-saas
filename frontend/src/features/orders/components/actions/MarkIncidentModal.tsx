@@ -15,7 +15,7 @@ interface MarkIncidentModalProps {
 
 export function MarkIncidentModal({ orderId, opened, onClose }: MarkIncidentModalProps) {
   const markIncident = useMarkOrderIncident(orderId)
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState<string>('')
 
   function handleClose() {
     markIncident.reset()

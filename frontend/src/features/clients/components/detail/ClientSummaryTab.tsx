@@ -5,7 +5,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_ICONS,
-} from '@/features/orders/orderStatus.constants'
+} from '@/shared/orderStatus.constants'
 import type { ClientDetail } from '../../types/client.types'
 
 const RECENT_ORDERS_LIMIT = 3

@@ -5,7 +5,7 @@ import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_ICONS,
-} from '../orderStatus.constants'
+} from '@/shared/orderStatus.constants'
 import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [

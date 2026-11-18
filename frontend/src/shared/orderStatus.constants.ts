@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { BadgeColor } from '@/shared/components'
-import type { OrderStatus } from './types/order.types'
+import type { OrderStatus } from '@/features/orders/types/order.types'
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: 'Pendiente',

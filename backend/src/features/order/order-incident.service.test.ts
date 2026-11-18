@@ -6,7 +6,7 @@ import {
   applySureIncidents,
   incidentNoteFromExtraction,
   relatedOrderIdFromRaw,
-} from './order-incident'
+} from './order-incident.service'
 
 vi.mock('../extraction/extraction.model')
 vi.mock('./order.model')
