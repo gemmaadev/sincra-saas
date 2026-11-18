@@ -7,6 +7,7 @@ import {
   register,
   getMyBusinesses,
   selectBusiness,
+  switchBusiness,
   me,
   loginWithGoogle,
   completeOnboarding,
@@ -17,6 +18,7 @@ import {
 } from './auth.controller'
 import * as authService from './auth.service'
 import { AppError } from '../../shared/AppError'
+import { verifyToken } from '../../shared/jwt'
 
 function createMockRequest(overrides: Record<string, unknown> = {}): Request {
   return overrides as unknown as Request
@@ -366,6 +368,107 @@ describe('selectBusiness', () => {
     await selectBusiness(req, res, next as NextFunction)
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError))
+  })
+})
+
+describe('switchBusiness', () => {
+  const sessionMaxAge = 7 * 24 * 60 * 60 * 1000
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // Given a session whose user belongs to another business as an employee
+  // When they switch to it, even if the body tries to claim another role
+  // Then the new session cookie carries that business and the role stored for it
+  it('reissues the session cookie for a business the user belongs to', async () => {
+    vi.spyOn(authService, 'findMembership').mockResolvedValue({
+      businessId: 'biz-2',
+      userId: 'user-1',
+      role: 'EMPLOYEE',
+    } as never)
+
+    const req = createMockRequest({
+      userId: 'user-1',
+      businessId: 'biz-1',
+      body: { businessId: 'biz-2', role: 'ADMIN' },
+    })
+    const res = createMockResponse()
+
+    await switchBusiness(req, res, vi.fn() as NextFunction)
+
+    expect(authService.findMembership).toHaveBeenCalledWith('user-1', 'biz-2')
+    expect(res.cookie).toHaveBeenCalledWith(
+      'token',
+      expect.any(String),
+      expect.objectContaining({
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: sessionMaxAge,
+      }),
+    )
+    const token = vi.mocked(res.cookie).mock.calls[0][1] as string
+    expect(verifyToken(token)).toMatchObject({
+      userId: 'user-1',
+      businessId: 'biz-2',
+      role: 'EMPLOYEE',
+    })
+    expect(res.json).toHaveBeenCalledWith({ success: true })
+  })
+
+  // Given a business the session user does not belong to
+  // When they try to switch to it
+  // Then it should throw a 403 AppError and leave the session cookie untouched
+  it('throws a 403 AppError when the user does not belong to that business', async () => {
+    vi.spyOn(authService, 'findMembership').mockResolvedValue(null)
+
+    const req = createMockRequest({ userId: 'user-1', body: { businessId: 'biz-ajeno' } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await switchBusiness(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(403)
+    expect(calledError.code).toBe('FORBIDDEN')
+    expect(res.cookie).not.toHaveBeenCalled()
+  })
+
+  // Given a body without a business id
+  // When trying to switch
+  // Then it should throw a 400 AppError before looking up a membership
+  it('throws a 400 AppError when the business id is missing', async () => {
+    const findMembershipSpy = vi.spyOn(authService, 'findMembership')
+
+    const req = createMockRequest({ userId: 'user-1', body: {} })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await switchBusiness(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FIELDS')
+    expect(findMembershipSpy).not.toHaveBeenCalled()
+  })
+
+  // Given a business id that is not a string
+  // When trying to switch
+  // Then it should throw a 400 AppError
+  it('throws a 400 AppError when the business id is not a string', async () => {
+    const req = createMockRequest({ userId: 'user-1', body: { businessId: 12 } })
+    const res = createMockResponse()
+    const next = vi.fn()
+
+    await switchBusiness(req, res, next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(expect.any(AppError))
+    const calledError = next.mock.calls[0][0] as AppError
+    expect(calledError.statusCode).toBe(400)
+    expect(calledError.code).toBe('MISSING_FIELDS')
   })
 })
 

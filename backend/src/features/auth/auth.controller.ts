@@ -136,6 +136,19 @@ export const getMyBusinesses = asyncHandler(async (req: Request, res: Response) 
   res.json({ businesses })
 })
 
+function readBusinessId(body: unknown): string {
+  const businessId =
+    typeof body === 'object' && body !== null
+      ? (body as { businessId?: unknown }).businessId
+      : undefined
+
+  if (typeof businessId !== 'string' || businessId.trim() === '') {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
+  return businessId
+}
+
 export const selectBusiness = asyncHandler(async (req: Request, res: Response) => {
   const { businessId } = req.body as SelectBusinessBody
   const pendingToken = req.cookies?.token
@@ -160,6 +173,27 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
 
   const token = signToken({
     userId,
+    businessId: membership.businessId,
+    role: membership.role,
+  })
+
+  setSessionCookie(res, token)
+  res.json({ success: true })
+})
+
+// Switches the business already stored in the session cookie. verifyAuth has
+// checked the current membership; this checks the target one and re-issues the
+// cookie, which is what every later request reads as req.businessId.
+export const switchBusiness = asyncHandler(async (req: Request, res: Response) => {
+  const businessId = readBusinessId(req.body)
+  const membership = await findMembership(req.userId!, businessId)
+
+  if (!membership) {
+    throw new AppError('No perteneces a ese negocio', 403, 'FORBIDDEN')
+  }
+
+  const token = signToken({
+    userId: req.userId!,
     businessId: membership.businessId,
     role: membership.role,
   })
