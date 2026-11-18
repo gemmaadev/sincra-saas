@@ -1,7 +1,8 @@
 import type { Channel } from '@/shared/types'
 import type { Tag } from '@/features/tags/types/tag.types'
 
-export type OrderStatus = 'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type OrderStatus =
+  'PENDING' | 'PREPARING' | 'SHIPPED' | 'DELIVERED' | 'INCIDENT' | 'CANCELLED'
 export type OrderKind = 'PRODUCT' | 'SERVICE'
 
 export interface OrderClientSummary {
@@ -37,6 +38,7 @@ export interface OrderStatusChangeEntry {
   status: OrderStatus
   changedBy: string | null
   changedAt: string
+  note?: string | null
 }
 
 export interface OrderDetailClient {

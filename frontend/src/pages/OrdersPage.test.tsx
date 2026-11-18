@@ -129,12 +129,21 @@ describe('OrdersPage', () => {
   // Then each status KPI should show its own count, not the pending placeholder
   it('shows the real counts in the status KPIs', async () => {
     mockApiGet({
-      statusCounts: { PENDING: 5, PREPARING: 28, SHIPPED: 47, DELIVERED: 51, CANCELLED: 2 },
+      statusCounts: {
+        PENDING: 5,
+        PREPARING: 28,
+        SHIPPED: 47,
+        DELIVERED: 51,
+        INCIDENT: 4,
+        CANCELLED: 2,
+      },
     })
     renderOrdersPage()
     await waitFor(() => expect(screen.getByText('28')).toBeInTheDocument())
     expect(screen.getByText('47')).toBeInTheDocument()
     expect(screen.getByText('51')).toBeInTheDocument()
+    expect(screen.getByText('4')).toBeInTheDocument()
+    expect(screen.getByText('Incidencias')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 

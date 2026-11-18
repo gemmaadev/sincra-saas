@@ -9,6 +9,7 @@ const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   PREPARING: '#d99a34',
   SHIPPED: '#1e5eff',
   DELIVERED: '#3fa65c',
+  INCIDENT: '#e11d48',
   CANCELLED: '#e5484d',
 }
 
