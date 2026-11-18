@@ -8,9 +8,9 @@ describe('connectedAccountLabel', () => {
     )
   })
 
-  it('falls back when the email is missing', () => {
-    expect(connectedAccountLabel(null)).toBe('Cuenta conectada')
-    expect(connectedAccountLabel(undefined)).toBe('Cuenta conectada')
-    expect(connectedAccountLabel('   ')).toBe('Cuenta conectada')
+  it('returns nothing when the email is missing', () => {
+    expect(connectedAccountLabel(null)).toBeNull()
+    expect(connectedAccountLabel(undefined)).toBeNull()
+    expect(connectedAccountLabel('   ')).toBeNull()
   })
 })

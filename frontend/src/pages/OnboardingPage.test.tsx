@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MantineProvider } from '@mantine/core'
 import OnboardingPage from './OnboardingPage'
 import { TOTAL_CHANNELS_COUNT } from '@/features/onboarding/onboarding.constants'
 import { api } from '@/shared/services'
@@ -31,7 +32,13 @@ vi.mock('@/shared/services', async (importOriginal) => {
 })
 
 function renderOnboardingPage() {
-  return render(withQueryClient(<OnboardingPage />))
+  return render(
+    withQueryClient(
+      <MantineProvider>
+        <OnboardingPage />
+      </MantineProvider>,
+    ),
+  )
 }
 
 describe('OnboardingPage', () => {
@@ -119,6 +126,9 @@ describe('OnboardingPage', () => {
       .getByText('Outlook')
       .closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(outlookCard).getByRole('button', { name: 'Conectar' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Conectar Outlook' })
+    await user.type(within(dialog).getByLabelText('Email'), 'tienda@outlook.com')
+    await user.click(within(dialog).getByRole('button', { name: 'Conectar' }))
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 

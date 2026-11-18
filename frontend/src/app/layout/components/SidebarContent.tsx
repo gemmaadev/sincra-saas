@@ -68,20 +68,24 @@ export function SidebarContent() {
             return (
               <div
                 key={channel.channel}
-                className="flex items-start gap-2 px-3 py-1 text-sm text-ink-muted"
+                className={`flex gap-2 px-3 py-1 text-sm text-ink-muted ${
+                  accountLabel ? 'items-start' : 'items-center'
+                }`}
               >
                 {Icon && (
                   <Icon
                     size={16}
-                    className={`mt-0.5 shrink-0 ${brand?.colorClassName}`}
+                    className={`shrink-0 ${accountLabel ? 'mt-0.5' : ''} ${brand?.colorClassName}`}
                     aria-hidden="true"
                   />
                 )}
                 <span className="flex min-w-0 flex-col">
                   <span>{brand?.name ?? channel.channel}</span>
-                  <span className="truncate text-xs" title={accountLabel}>
-                    {accountLabel}
-                  </span>
+                  {accountLabel && (
+                    <span className="truncate text-xs" title={accountLabel}>
+                      {accountLabel}
+                    </span>
+                  )}
                 </span>
               </div>
             )

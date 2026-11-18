@@ -71,14 +71,15 @@ describe('Sidebar', () => {
     expect(screen.queryByText('WhatsApp')).not.toBeInTheDocument()
   })
 
-  it('shows a fallback when the connected channel has no email', async () => {
+  it('lists a connected channel without an email and without a status line', async () => {
     mockApiGet([{ channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null }])
     renderSidebar()
 
     await waitFor(() => {
       expect(screen.getByText('Outlook')).toBeInTheDocument()
     })
-    expect(screen.getByText('Cuenta conectada')).toBeInTheDocument()
+    expect(screen.queryByText('Cuenta conectada')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Conectado como/)).not.toBeInTheDocument()
   })
 
   // Given a business with no channel really connected (only disconnected/mocked ones)

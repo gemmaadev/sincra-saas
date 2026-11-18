@@ -1,5 +1,10 @@
-export function connectedAccountLabel(accountEmail?: string | null) {
-  if (typeof accountEmail !== 'string') return 'Cuenta conectada'
+export function normalizedAccountEmail(accountEmail?: string | null) {
+  if (typeof accountEmail !== 'string') return null
   const email = accountEmail.trim().toLowerCase()
-  return email ? `Conectado como ${email}` : 'Cuenta conectada'
+  return email || null
+}
+
+export function connectedAccountLabel(accountEmail?: string | null) {
+  const email = normalizedAccountEmail(accountEmail)
+  return email ? `Conectado como ${email}` : null
 }
