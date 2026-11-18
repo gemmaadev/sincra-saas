@@ -1,36 +1,36 @@
 ---
-description: Reglas globales Sincra — alcance, GitFlow y disciplina de docs.
+description: Global Sincra project rules — scope, GitFlow, and docs discipline.
 alwaysApply: true
 ---
 
-# Sincra — reglas de proyecto
+# Sincra — project rules
 
-## Fuente de verdad
+## Source of truth
 
-1. Tablero Trello (lista **Not MPV** = fuera de alcance, decisión cerrada).
-2. `CLAUDE.md` (actualizar en la misma sesión si cambia arquitectura, alcance o un patrón nuevo).
-3. `docs/architecture-notes.md` y `docs/refactor-backlog.md` cuando existan — léelos antes de trabajo no trivial.
-4. README = cara pública; si choca con Trello/`CLAUDE.md` en decisiones de producto, no uses el README como autoridad.
+1. Trello board (**Not MPV** list = out of scope, closed decision).
+2. `CLAUDE.md` (update in the same session when architecture, scope, or a lasting pattern changes).
+3. `docs/architecture-notes.md` and `docs/refactor-backlog.md` when they exist — read them before non-trivial work.
+4. README is user-facing; if it conflicts with Trello/`CLAUDE.md` on product decisions, do not treat the README as authority.
 
-Antes de asumir que una feature existe: **abre el archivo** (hay scaffolds vacíos: `inbox`/`communication`).
+Before assuming a feature exists: **open the file** (empty scaffolds exist: `inbox`/`communication`).
 
 ## GitFlow
 
-- Integración: PRs contra **`develop`** (no `main`).
-- `main` = producción.
+- Integration: PRs target **`develop`** (not `main`).
+- `main` = production.
 - Conventional Commits (`feat:`, `fix:`, `refactor:`, `chore:`, `test:`, `docs:`).
-- Una unidad de trabajo = una rama = un PR.
-- No hay `package.json` en la raíz: trabaja siempre dentro de `frontend/` o `backend/`.
+- One unit of work = one branch = one PR.
+- No root `package.json`: always work inside `frontend/` or `backend/`.
 
-## Alcance cerrado (no reabrir)
+## Closed scope (do not reopen)
 
-- No bandeja unificada ni ChannelAdapter.
-- AI = **Sincra** (detecta) + **Sincro** (escribe DB), orquestados por **Hermes**. Solo marca "Sugerido por IA"; sin flujo de confirmación humana por ahora.
-- No Stripe real, no sesiones activas reales, no push/email de notificaciones (prefs CRUD ≠ delivery).
-- Roles de negocio: solo `ADMIN` | `EMPLOYEE` por `businessId`.
+- No unified inbox and no ChannelAdapter.
+- AI = **Sincra** (detects) + **Sincro** (writes DB), orchestrated by **Hermes**. Mark creations "Sugerido por IA" only; no human-confirmation flow for now.
+- No real Stripe billing, no real active-session management, no real notification delivery (prefs CRUD ≠ delivery).
+- Business roles: only `ADMIN` | `EMPLOYEE` per `businessId`.
 
-## Calidad mínima antes de cerrar
+## Minimum quality before closing
 
-- `npm run lint` + `npm test` (+ `npm run build` si tocaste tipos/rutas) en el subproyecto afectado.
-- Mantén feature-based architecture; no erosiones capas FE/BE.
-- Nombres en inglés, descriptivos; UI/errores de usuario en español.
+- `npm run lint` + `npm test` (+ `npm run build` if you touched types/routes) in the affected subproject.
+- Keep feature-based architecture; do not erode FE/BE layering.
+- Code identifiers in English, descriptive; user-facing UI and API error messages in Spanish.

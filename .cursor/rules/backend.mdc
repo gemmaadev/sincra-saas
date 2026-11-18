@@ -1,68 +1,68 @@
 ---
-description: Reglas restrictivas del backend Sincra (Express/Prisma). Obligatorias al tocar API, features, middleware o Prisma.
+description: Restrictive Sincra backend rules (Express/Prisma). Required when touching API, features, middleware, or Prisma.
 globs: backend/**/*
 alwaysApply: false
 ---
 
-# Backend — reglas restrictivas
+# Backend — restrictive rules
 
-Fuente de verdad: `CLAUDE.md`. Trello "Not MPV" gana si hay conflicto; actualiza `CLAUDE.md` en la misma sesión.
+Source of truth: `CLAUDE.md`. Trello "Not MPV" wins on conflict; update `CLAUDE.md` in the same session.
 
-## Capas (obligatorias — no negociable)
+## Layers (mandatory — non-negotiable)
 
-Cada feature en `backend/src/features/<domain>/`:
+Each feature under `backend/src/features/<domain>/`:
 
-| Archivo | Responsabilidad | Prohibido |
+| File | Responsibility | Forbidden |
 | --- | --- | --- |
-| `*.routes.ts` | Rutas + middlewares | Lógica de negocio |
-| `*.controller.ts` | HTTP: validar input, cookies, status, llamar service | Prisma, hashing, geocoding, emails |
-| `*.service.ts` | Reglas de negocio, `AppError`, mapping de respuesta | `import` de `config/db` / Prisma client |
-| `*.model.ts` | Única capa con Prisma (`config/db`), queries nombradas, transacciones | Reglas de negocio, Express `req`/`res` |
-| `*.types.ts` | Tipos del feature | |
+| `*.routes.ts` | Routes + middlewares | Business logic |
+| `*.controller.ts` | HTTP: validate input, cookies, status, call service | Prisma, hashing, geocoding, emails |
+| `*.service.ts` | Business rules, `AppError`, response mapping | Importing `config/db` / Prisma client |
+| `*.model.ts` | Only layer with Prisma (`config/db`), named queries, transactions | Business rules, Express `req`/`res` |
+| `*.types.ts` | Feature types | |
 
-- Cross-feature data: **solo** vía el `*.model` del otro feature (ej. `calendar` → `order.model`, `note` → `client.model`). **No** importes el service de otro dominio para leer tablas.
-- Duplicar helpers pequeños entre features (ej. geocoding de order vs client) está bien si respeta ownership; no crees un "god service" cruzado.
-- Subcarpeta de sub-tópico cuando el feature supera ~10 archivos (ej. `features/client/map/`, `features/order/map/`). Rutas siguen en el `*.routes.ts` padre, **antes** de wildcards (`/:id`).
-- Router nuevo → registrarlo en `app.ts`.
-- `src/generated/prisma`: regenerar con `npx prisma generate`. **Nunca** editar a mano.
+- Cross-feature data: **only** through the other feature's `*.model` (e.g. `calendar` → `order.model`, `note` → `client.model`). **Do not** import another domain's service to read tables.
+- Duplicating small helpers across features (e.g. order vs client geocoding) is fine for ownership; do not create a cross-cutting god service.
+- Subfolder a self-contained sub-topic when a feature grows past ~10 files (e.g. `features/client/map/`, `features/order/map/`). Routes stay on the parent `*.routes.ts`, declared **before** wildcards (`/:id`).
+- New router → register it in `app.ts`.
+- `src/generated/prisma`: regenerate with `npx prisma generate`. **Never** hand-edit.
 
-## Auth, multi-tenant y seguridad
+## Auth, multi-tenant, security
 
-- Rutas de negocio detrás de `verifyAuth` (salvo auth/onboarding/accept-invite públicos ya existentes).
-- Acciones de admin: `requireRole('ADMIN')` en la ruta. No confíes solo en el frontend.
-- **Siempre** scope por `req.businessId` (o el `businessId` pasado al service). Ningún list/get/update/delete sin filtrar negocio.
-- JWT solo en cookie httpOnly; CORS con `credentials: true` y `FRONTEND_URL`.
-- Errores de dominio: `throw new AppError(messageEs, status, 'CODE')`. Controllers envueltos en `asyncHandler`.
-- Forma de error fija: `{ error: { message, code } }` vía `errorHandler`. No inventes otro shape.
-- Mensajes de error al cliente en **español**; `code` en `SCREAMING_SNAKE`.
-- Rate limit en endpoints sensibles (auth, invite, address-search) con los middlewares existentes.
-- Mantén `helmet()`, no aflojes CORS a `*`.
+- Business routes behind `verifyAuth` (except existing public auth/onboarding/accept-invite routes).
+- Admin actions: `requireRole('ADMIN')` on the route. Do not rely on the frontend alone.
+- **Always** scope by `req.businessId` (or the `businessId` passed into the service). No list/get/update/delete without business filtering.
+- JWT only in an httpOnly cookie; CORS with `credentials: true` and `FRONTEND_URL`.
+- Domain errors: `throw new AppError(spanishMessage, status, 'CODE')`. Controllers wrapped in `asyncHandler`.
+- Fixed error shape: `{ error: { message, code } }` via `errorHandler`. Do not invent another shape.
+- Client-facing error messages in **Spanish**; `code` in `SCREAMING_SNAKE`.
+- Rate-limit sensitive endpoints (auth, invite, address-search) with existing middlewares.
+- Keep `helmet()`; do not loosen CORS to `*`.
 
-## Validación y reglas de dominio ya fijadas
+## Validation and fixed domain rules
 
-- Controller valida presencia/forma; service aplica reglas (existencia, ownership, transiciones).
-- Orders: `price` **solo** server-side desde `items`. Nunca aceptes `price` del body.
-- Cancelar pedido = `PATCH` con `status: 'CANCELLED'`. `DELETE` = hard delete solo para errores/duplicados.
-- Transición de estado: desde final (DELIVERED/CANCELLED) se puede reabrir a flujo abierto; **prohibido** DELIVERED↔CANCELLED directo (`ORDER_STATUS_FINAL`).
-- Notes: exactamente uno de `clientId` | `orderId` (enforced en `note.service`, no en DB).
-- Geocoding Nominatim: nunca bloquea el save; timeout 3s; 1 req/s; no search-as-you-type; coords validadas juntas o 400 `INVALID_COORDINATES`.
-- Stats dashboard: **un** `GET /stats/dashboard`, no un endpoint por gráfico.
-- Calendar list: merge en service (eventos + orders con `expectedDate`); orders no se persisten como `CalendarEvent` sintéticos.
-- AI: solo pipeline Sincra/Sincro (Hermes orquesta). Todo lo creado por IA lleva marca `aiGenerated` / "Sugerido por IA". **No** inventes flujo de confirmación humana (Not planned yet).
+- Controller validates presence/shape; service applies rules (existence, ownership, transitions).
+- Orders: `price` is **server-side only** from `items`. Never accept `price` from the body.
+- Cancel order = `PATCH` with `status: 'CANCELLED'`. `DELETE` = hard delete only for mistakes/duplicates.
+- Status transition: from a final status (DELIVERED/CANCELLED) you may reopen into the open flow; **forbidden** to swap DELIVERED↔CANCELLED directly (`ORDER_STATUS_FINAL`).
+- Notes: exactly one of `clientId` | `orderId` (enforced in `note.service`, not in the DB).
+- Nominatim geocoding: never blocks a save; 3s timeout; 1 req/s; no search-as-you-type; coordinates validated together or 400 `INVALID_COORDINATES`.
+- Stats dashboard: **one** `GET /stats/dashboard`, not one endpoint per chart.
+- Calendar list: merge in the service (events + orders with `expectedDate`); do not persist synthetic order rows as `CalendarEvent`.
+- AI: Sincra/Sincro pipeline only (Hermes orchestrates). Everything AI-created is marked `aiGenerated` / "Sugerido por IA". **Do not** invent a human-confirmation flow (not planned yet).
 
-## Naming, estilo y tests
+## Naming, style, tests
 
-- Nombres en **inglés**, descriptivos. `catch (error)`, no `catch (e)`.
-- Tipado explícito en inputs/outputs de service y tipos de request body.
-- Comentarios solo si aportan decisión no obvia; el código debe hablar solo.
-- Tests Vitest, estilo **Given/When/Then** en comentarios. Service tests mockean `*.model` y shared services; model tests pueden usar Prisma mock/db según el patrón del archivo vecino.
-- Tras tocar schema: `npx prisma generate` (+ migrate si cambia DB). Luego `cd backend && npm test && npm run lint`.
+- Names in **English**, descriptive. `catch (error)`, not `catch (e)`.
+- Explicit typing on service inputs/outputs and request body types.
+- Comments only for non-obvious decisions; code should speak for itself.
+- Vitest tests with **Given/When/Then** comments. Service tests mock `*.model` and shared services; model tests follow the neighboring file's Prisma mock/db pattern.
+- After schema changes: `npx prisma generate` (+ migrate if the DB changes). Then `cd backend && npm test && npm run lint`.
 
 ## Render / runtime
 
-- Bind HTTP a `0.0.0.0` y `process.env.PORT` (Render). Filesystem efímero: no persistir uploads en disco local; usa Cloudinary/DB.
-- Secrets solo por env (`.env.example` como contrato). Nunca hardcodees keys.
+- Bind HTTP to `0.0.0.0` and `process.env.PORT` (Render). Ephemeral filesystem: do not persist uploads on local disk; use Cloudinary/DB.
+- Secrets only via env (`.env.example` is the contract). Never hardcode keys.
 
-## Alcance prohibido (Not MPV)
+## Forbidden scope (Not MPV)
 
-No implementes: ChannelAdapter / inbox unificado, CRUD de communications, WhatsApp/Instagram/Messenger APIs, billing Stripe, rol developer cross-business, delivery real de notificaciones, tabla `Session` / revoke de sesiones. `notificationPrefs` CRUD sí puede existir; el envío no.
+Do not implement: ChannelAdapter / unified inbox, communications CRUD, WhatsApp/Instagram/Messenger APIs, Stripe billing, cross-business developer role, real notification delivery, `Session` table / session revoke. `notificationPrefs` CRUD may exist; sending must not.
