@@ -106,8 +106,8 @@ export function NotesTab({
                         src="/avatar-sincro-agent.png"
                         alt=""
                         width={16}
-                        height={16}
-                        className="size-4 shrink-0 rounded-full object-cover"
+                        height={20}
+                        className="size-8 shrink-0 mb-1 rounded-full object-cover"
                       />
                       <span className="text-sm font-bold text-ink">{SINCRO_NOTE_LABEL}</span>
                     </span>
