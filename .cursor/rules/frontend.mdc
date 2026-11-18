@@ -1,0 +1,72 @@
+---
+description: Reglas restrictivas del frontend Sincra (React/Vite). Obligatorias al tocar UI, pages, features o shared.
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Frontend — reglas restrictivas
+
+Fuente de verdad: `CLAUDE.md`. Si una decisión aquí choca con Trello "Not MPV", gana el tablero y se actualiza `CLAUDE.md`.
+
+## Estructura (obligatoria)
+
+- Feature-based: código de dominio en `frontend/src/features/<domain>/{components,hooks,types,utils}`.
+- Páginas delgadas en `frontend/src/pages/`: orquestan hooks + componentes. **Prohibido** meter fetch, mutaciones o lógica de negocio gorda en la page.
+- Shell solo en `frontend/src/app/{layout,router,providers}`.
+- Cross-feature solo en `frontend/src/shared/{components,hooks,services,utils,types,store,config}` con barrel `index.ts` cuando ya exista el patrón.
+- Constantes de dominio (labels/colores/iconos, no funciones): archivo plano bajo `shared/` (ej. `orderStatus.constants.ts`), **sin** pasar por barrel — igual que en backend `defaultTags.ts`.
+- Alias `@/*` → `src/*`. No uses rutas relativas largas que crucen features.
+- `inbox` / `communication` son scaffold vacío (Not MPV). **No** implementar bandeja unificada, ChannelAdapter, ni UI de conversaciones.
+
+## Exports y routing
+
+- `pages/*`: **solo** `export default function XPage()`.
+- Resto (components, hooks, utils, services): **solo** named exports.
+- Página nueva = entrada `lazyPage(() => import('@/pages/XPage'))` en `app/router/index.tsx`. Sin lazy = no merge.
+
+## UI y design system
+
+- Usa primero `frontend/src/shared/components` (`SincraButton`, `Input`, `Select`, `SincraModal`, `ConfirmDeleteModal`, `Table`, `Tabs`, `Drawer`, `EmptyState`, `KpiCardsRow`, `DateRangeFilter`, etc.).
+- **Prohibido** inventar un botón/modal/input paralelo si ya existe en shared.
+- Colores y tipografía: tokens de `frontend/src/index.css` (`bg-primary`, `text-ink-muted`, `text-error`, …). **No** hex ad-hoc en Tailwind salvo excepciones ya documentadas (ECharts canvas no resuelve CSS vars → hex permitido solo ahí).
+- Iconos: `lucide-react` (salvo avatares de agentes IA = PNG en `public/`).
+- Copy de UI en **español**. Mensajes técnicos al usuario: no "OAuth", no nombres internos de APIs salvo que la pantalla ya lo haga.
+- Desktop-first. No rediseños mobile-first. Mínimo aceptable: scroll horizontal en tablas. Sidebar ya es `max-md:hidden` — no lo conviertas en drawer salvo petición explícita.
+- No cambiar basemap a CARTO (watermark API KEY). Mantén OpenStreetMap + patrones Leaflet actuales (`divIcon`, `isolate`, `clients-map.css`).
+
+## Estado y datos
+
+- Remoto: **TanStack Query** en hooks de feature (`useClients`, `useSaveOrder`, …). Query keys estables y jerárquicas (`['clients']`, `['clients','map',filters]`, `['orders', id]`).
+- Mutaciones: invalidan vía helpers del feature (`invalidateClientQueries`, `invalidateOrderQueries`). No invalides a ciegas todo el árbol.
+- `channel` / `dateFrom` / `dateTo` compartidos Map/Stats/Orders: **solo** `shared/store/filtersStore` (Zustand). Filtros de página (search, status, page, granularity) quedan locales.
+- Tests que toquen el store: `useFiltersStore.getState().clearFilters()` en `beforeEach`.
+- HTTP: **solo** `api` de `@/shared/services` (`credentials: 'include'`). No `fetch` suelto a la API.
+- Notificaciones: `notifySuccess` / `notifyError` / `notifyWithUndo` de shared. No montes toasts ad-hoc.
+- Auth/sesión: cookies httpOnly vía backend; no guardes JWT en `localStorage`.
+
+## Ownership entre features
+
+- Client y Order se mantienen separados a propósito. Tabs Notas/Etiquetas pueden ser copias cercanas; **no** abstraigas un mega-componente genérico ClientOrOrderNotes sin decisión explícita.
+- Reutiliza shared cuando el patrón ya es cross-cutting (`NotesTab`, `DateRangeFilter`, `ConfirmDeleteModal`).
+- Mapa: capa Clientes/Pedidos es **binaria** (sin "Ambos"). Respeta colores: clientes `primary`, pedidos `primary-dark`. `approximate` = sin dirección escrita.
+
+## React / TypeScript (buenas prácticas del repo)
+
+- Nombres en **inglés**, descriptivos. `catch (error)`, nunca `catch (e)`. Callbacks: `(client) => …`, no `(c) => …`.
+- Tipado explícito en props, datos de API y generics (`useState<Set<string>>(new Set())`).
+- `setState(prev => …)` cuando el nuevo valor depende del anterior.
+- `useMemo` solo si el coste es real (listas derivadas caras, columnas de tabla, KPIs). No por defecto.
+- Componentes pequeños. Si una page/componente mezcla fetch + UI + navegación + modales, extrae hooks/subcomponentes **antes** de seguir creciendo.
+- Accesibilidad en interactivos: teclado, focus, `aria-*` en botones loading (`aria-busy`), iconos decorativos `aria-hidden`.
+- Formularios: patrones existentes (react-hook-form donde ya esté, validación con `EMAIL_PATTERN` shared cuando aplique).
+
+## Tests
+
+- Vitest + Testing Library. Estilo **Given/When/Then** en comentarios sobre el `it(...)`, como el resto del repo.
+- Coloca `*.test.ts(x)` junto al archivo.
+- Mockea `api` / ECharts (`vi.mock`) cuando jsdom no soporta el runtime real.
+- Tras cambios de feature: `cd frontend && npm test` (o el archivo tocado) y `npm run lint` antes de dar por cerrado.
+
+## Alcance prohibido (Not MPV)
+
+No implementes: bandeja unificada, adapters de WhatsApp/Instagram/Messenger, Automatizaciones interactivas (toggles de 4 agentes), paywall Stripe real, sesiones activas reales, envío real de notificaciones. La página Agentes IA es **informativa/estática** (Sincra/Sincro; sin Hermes en UI).

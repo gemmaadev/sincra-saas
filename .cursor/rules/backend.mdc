@@ -1,0 +1,68 @@
+---
+description: Reglas restrictivas del backend Sincra (Express/Prisma). Obligatorias al tocar API, features, middleware o Prisma.
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend — reglas restrictivas
+
+Fuente de verdad: `CLAUDE.md`. Trello "Not MPV" gana si hay conflicto; actualiza `CLAUDE.md` en la misma sesión.
+
+## Capas (obligatorias — no negociable)
+
+Cada feature en `backend/src/features/<domain>/`:
+
+| Archivo | Responsabilidad | Prohibido |
+| --- | --- | --- |
+| `*.routes.ts` | Rutas + middlewares | Lógica de negocio |
+| `*.controller.ts` | HTTP: validar input, cookies, status, llamar service | Prisma, hashing, geocoding, emails |
+| `*.service.ts` | Reglas de negocio, `AppError`, mapping de respuesta | `import` de `config/db` / Prisma client |
+| `*.model.ts` | Única capa con Prisma (`config/db`), queries nombradas, transacciones | Reglas de negocio, Express `req`/`res` |
+| `*.types.ts` | Tipos del feature | |
+
+- Cross-feature data: **solo** vía el `*.model` del otro feature (ej. `calendar` → `order.model`, `note` → `client.model`). **No** importes el service de otro dominio para leer tablas.
+- Duplicar helpers pequeños entre features (ej. geocoding de order vs client) está bien si respeta ownership; no crees un "god service" cruzado.
+- Subcarpeta de sub-tópico cuando el feature supera ~10 archivos (ej. `features/client/map/`, `features/order/map/`). Rutas siguen en el `*.routes.ts` padre, **antes** de wildcards (`/:id`).
+- Router nuevo → registrarlo en `app.ts`.
+- `src/generated/prisma`: regenerar con `npx prisma generate`. **Nunca** editar a mano.
+
+## Auth, multi-tenant y seguridad
+
+- Rutas de negocio detrás de `verifyAuth` (salvo auth/onboarding/accept-invite públicos ya existentes).
+- Acciones de admin: `requireRole('ADMIN')` en la ruta. No confíes solo en el frontend.
+- **Siempre** scope por `req.businessId` (o el `businessId` pasado al service). Ningún list/get/update/delete sin filtrar negocio.
+- JWT solo en cookie httpOnly; CORS con `credentials: true` y `FRONTEND_URL`.
+- Errores de dominio: `throw new AppError(messageEs, status, 'CODE')`. Controllers envueltos en `asyncHandler`.
+- Forma de error fija: `{ error: { message, code } }` vía `errorHandler`. No inventes otro shape.
+- Mensajes de error al cliente en **español**; `code` en `SCREAMING_SNAKE`.
+- Rate limit en endpoints sensibles (auth, invite, address-search) con los middlewares existentes.
+- Mantén `helmet()`, no aflojes CORS a `*`.
+
+## Validación y reglas de dominio ya fijadas
+
+- Controller valida presencia/forma; service aplica reglas (existencia, ownership, transiciones).
+- Orders: `price` **solo** server-side desde `items`. Nunca aceptes `price` del body.
+- Cancelar pedido = `PATCH` con `status: 'CANCELLED'`. `DELETE` = hard delete solo para errores/duplicados.
+- Transición de estado: desde final (DELIVERED/CANCELLED) se puede reabrir a flujo abierto; **prohibido** DELIVERED↔CANCELLED directo (`ORDER_STATUS_FINAL`).
+- Notes: exactamente uno de `clientId` | `orderId` (enforced en `note.service`, no en DB).
+- Geocoding Nominatim: nunca bloquea el save; timeout 3s; 1 req/s; no search-as-you-type; coords validadas juntas o 400 `INVALID_COORDINATES`.
+- Stats dashboard: **un** `GET /stats/dashboard`, no un endpoint por gráfico.
+- Calendar list: merge en service (eventos + orders con `expectedDate`); orders no se persisten como `CalendarEvent` sintéticos.
+- AI: solo pipeline Sincra/Sincro (Hermes orquesta). Todo lo creado por IA lleva marca `aiGenerated` / "Sugerido por IA". **No** inventes flujo de confirmación humana (Not planned yet).
+
+## Naming, estilo y tests
+
+- Nombres en **inglés**, descriptivos. `catch (error)`, no `catch (e)`.
+- Tipado explícito en inputs/outputs de service y tipos de request body.
+- Comentarios solo si aportan decisión no obvia; el código debe hablar solo.
+- Tests Vitest, estilo **Given/When/Then** en comentarios. Service tests mockean `*.model` y shared services; model tests pueden usar Prisma mock/db según el patrón del archivo vecino.
+- Tras tocar schema: `npx prisma generate` (+ migrate si cambia DB). Luego `cd backend && npm test && npm run lint`.
+
+## Render / runtime
+
+- Bind HTTP a `0.0.0.0` y `process.env.PORT` (Render). Filesystem efímero: no persistir uploads en disco local; usa Cloudinary/DB.
+- Secrets solo por env (`.env.example` como contrato). Nunca hardcodees keys.
+
+## Alcance prohibido (Not MPV)
+
+No implementes: ChannelAdapter / inbox unificado, CRUD de communications, WhatsApp/Instagram/Messenger APIs, billing Stripe, rol developer cross-business, delivery real de notificaciones, tabla `Session` / revoke de sesiones. `notificationPrefs` CRUD sí puede existir; el envío no.
