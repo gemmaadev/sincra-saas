@@ -7,6 +7,7 @@ import { ApiError } from '@/shared/services'
 import { formatDateTime } from '@/shared/utils/date'
 import { notifySuccess } from '@/shared/utils/notify'
 import type { Note } from '@/shared/types'
+import { isSincroNote, SINCRO_NOTE_LABEL, sincroNoteBody } from './sincroNote'
 
 interface NotesTabProps {
   notesQuery: UseQueryResult<Note[], Error>
@@ -16,7 +17,13 @@ interface NotesTabProps {
   emptyMessage: string
 }
 
-export function NotesTab({ notesQuery, createNote, deleteNote, placeholder, emptyMessage }: NotesTabProps) {
+export function NotesTab({
+  notesQuery,
+  createNote,
+  deleteNote,
+  placeholder,
+  emptyMessage,
+}: NotesTabProps) {
   const [content, setContent] = useState('')
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null)
   const { data: notes = [], isLoading, isError } = notesQuery
@@ -83,27 +90,44 @@ export function NotesTab({ notesQuery, createNote, deleteNote, placeholder, empt
       )}
       {!isLoading && !isError && notes.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {notes.map((note) => (
-            <li
-              key={note.id}
-              className="flex items-start justify-between gap-2 rounded-lg border border-neutral-100 p-3"
-            >
-              <div className="flex flex-col gap-1">
-                <p className="whitespace-pre-wrap text-sm text-ink">{note.content}</p>
-                <span className="text-xs text-ink-muted">
-                  {formatDateTime(new Date(note.createdAt))}
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-label="Eliminar nota"
-                onClick={() => setNoteToDelete(note)}
-                className="shrink-0 text-ink-muted hover:text-error cursor-pointer"
+          {notes.map((note) => {
+            const suggested = isSincroNote(note)
+            const body = suggested ? sincroNoteBody(note.content) : note.content
+
+            return (
+              <li
+                key={note.id}
+                className="flex items-start justify-between gap-2 rounded-lg border border-neutral-100 p-3"
               >
-                <Trash2 size={14} aria-hidden="true" />
-              </button>
-            </li>
-          ))}
+                <div className="flex flex-col gap-1">
+                  {suggested && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <img
+                        src="/avatar-sincro-agent.png"
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="size-4 shrink-0 rounded-full object-cover"
+                      />
+                      <span className="text-sm font-bold text-ink">{SINCRO_NOTE_LABEL}</span>
+                    </span>
+                  )}
+                  {body !== '' && <p className="whitespace-pre-wrap text-sm text-ink">{body}</p>}
+                  <span className="text-xs text-ink-muted">
+                    {formatDateTime(new Date(note.createdAt))}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Eliminar nota"
+                  onClick={() => setNoteToDelete(note)}
+                  className="shrink-0 text-ink-muted hover:text-error cursor-pointer"
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
 

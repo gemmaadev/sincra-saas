@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AiSuggestedBadge, Avatar, IconButton, Tabs, Spinner } from '@/shared/components'
 import { useOrderDetail } from '../../hooks/useOrderDetail'
+import { useOrderNotes } from '../../hooks/useOrderNotes'
 import { OrderFormModal } from '../form/OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
 import { OrderItemsList } from './OrderItemsList'
@@ -19,6 +20,7 @@ interface OrderDetailPanelProps {
 export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
   const navigate = useNavigate()
   const { data: order, isLoading, isError } = useOrderDetail(id)
+  const notesQuery = useOrderNotes(id)
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState<boolean>(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
@@ -92,8 +94,18 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
             content: <OrderItemsList items={order.items} />,
           },
           { key: 'seguimiento', label: 'Seguimiento', content: <OrderTimeline order={order} /> },
-          { key: 'notas', label: 'Notas', content: <OrderNotesTab orderId={order.id} /> },
-          { key: 'etiquetas', label: 'Etiquetas', content: <OrderTagsTab order={order} /> },
+          {
+            key: 'notas',
+            label: 'Notas',
+            count: notesQuery.data?.length,
+            content: <OrderNotesTab orderId={order.id} />,
+          },
+          {
+            key: 'etiquetas',
+            label: 'Etiquetas',
+            count: order.orderTags.length,
+            content: <OrderTagsTab order={order} />,
+          },
         ]}
       />
 
