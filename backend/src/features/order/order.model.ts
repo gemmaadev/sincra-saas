@@ -1,16 +1,22 @@
 import prisma from '../../config/db'
 import type { Prisma, OrderStatus } from '../../generated/prisma/client'
 
+// Active assignments are included in full (no field select), so each tag keeps aiGenerated.
+const ACTIVE_ORDER_TAGS_INCLUDE = {
+  orderTags: { where: { removedAt: null }, include: { tag: true } },
+} satisfies Prisma.OrderInclude
+
 const ORDER_LIST_INCLUDE = {
   client: { select: { id: true, name: true } },
   items: { select: { product: true, quantity: true } },
+  ...ACTIVE_ORDER_TAGS_INCLUDE,
 } satisfies Prisma.OrderInclude
 
 const ORDER_DETAIL_INCLUDE = {
   client: { select: { id: true, name: true, email: true, phone: true, channels: true } },
   items: true,
   statusHistory: { orderBy: { changedAt: 'asc' } },
-  orderTags: { where: { removedAt: null }, include: { tag: true } },
+  ...ACTIVE_ORDER_TAGS_INCLUDE,
 } satisfies Prisma.OrderInclude
 
 export async function findMaxOrderNumber(businessId: string) {
@@ -79,7 +85,7 @@ interface OrderItemData {
   product: string
   description?: string | null
   quantity: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 interface OrderStatusChangeData {

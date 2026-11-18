@@ -1,4 +1,4 @@
-import { Badge } from '@/shared/components'
+import { Badge, MissingPrice, TagPill } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
@@ -18,6 +18,18 @@ export const ordersTableColumns = [
     key: 'client',
     header: 'Cliente',
     render: (order: Order) => <span className="text-ink">{order.client.name}</span>,
+  },
+  {
+    key: 'tags',
+    header: 'Etiquetas',
+    render: (order: Order) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {order.orderTags.length === 0 && <span className="text-sm text-ink-muted">—</span>}
+        {order.orderTags.map(({ id, tag, aiGenerated }) => (
+          <TagPill key={id} name={tag.name} color={tag.color} aiGenerated={aiGenerated} />
+        ))}
+      </div>
+    ),
   },
   {
     key: 'product',
@@ -60,7 +72,7 @@ export const ordersTableColumns = [
     header: 'Total',
     render: (order: Order) => (
       <span className="font-medium text-ink">
-        {order.price !== null ? formatCurrency(Number(order.price)) : '—'}
+        {order.price != null ? formatCurrency(Number(order.price)) : <MissingPrice />}
       </span>
     ),
   },

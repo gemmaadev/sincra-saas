@@ -70,7 +70,10 @@ describe('create', () => {
   // Then it should throw a 400 AppError without calling the service
   it('throws a 400 AppError when there are no items', async () => {
     const createSpy = vi.spyOn(orderService, 'createOrder')
-    const req = createMockRequest({ businessId: 'biz-1', body: { clientId: 'client-1', items: [] } })
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: { clientId: 'client-1', items: [] },
+    })
     const next = vi.fn()
 
     await create(req, createMockResponse(), next as NextFunction)
@@ -100,18 +103,112 @@ describe('create', () => {
     expect(createSpy).not.toHaveBeenCalled()
   })
 
-  // Given an item with no price, or a price that is zero or negative
+  // Given an item with no price, or an explicit null price
   // When creating an order
-  // Then it should throw a 400 AppError without calling the service
+  // Then the line is accepted and the price is passed through as null
   it.each([
-    ['missing', { product: 'Camiseta' }],
-    ['zero', { product: 'Camiseta', unitPrice: 0 }],
-    ['negative', { product: 'Camiseta', unitPrice: -5 }],
-  ])('throws a 400 AppError when the price is %s', async (_label, item) => {
+    ['omitted', { product: 'Camiseta' }],
+    ['null', { product: 'Camiseta', unitPrice: null }],
+  ])('accepts an item whose price is %s and keeps it null', async (_label, item) => {
+    const createSpy = vi
+      .spyOn(orderService, 'createOrder')
+      .mockResolvedValue({ id: 'order-1' } as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: { clientId: 'client-1', items: [item] },
+    })
+    const res = createMockResponse()
+
+    await create(req, res, vi.fn() as NextFunction)
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'user-1',
+      expect.objectContaining({
+        items: [expect.objectContaining({ product: 'Camiseta', unitPrice: null })],
+      }),
+    )
+    const passedItems = createSpy.mock.calls[0]?.[2].items ?? []
+    expect(passedItems[0]?.unitPrice).toBeNull()
+  })
+
+  // Given one priced line and one line with no price
+  // When creating an order
+  // Then the priced line keeps its price and the other stays null
+  it('keeps a priced line and a missing price on the same order', async () => {
+    const createSpy = vi
+      .spyOn(orderService, 'createOrder')
+      .mockResolvedValue({ id: 'order-1' } as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: {
+        clientId: 'client-1',
+        items: [{ product: 'Camiseta', quantity: 2, unitPrice: 15 }, { product: 'Pañuelo' }],
+      },
+    })
+
+    await create(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(createSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'user-1',
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({ product: 'Camiseta', quantity: 2, unitPrice: 15 }),
+          expect.objectContaining({ product: 'Pañuelo', unitPrice: null }),
+        ],
+      }),
+    )
+  })
+
+  // Given an item with a price of 0
+  // When creating an order
+  // Then it is accepted and stored as 0
+  it('accepts a price of 0 and keeps it as zero', async () => {
+    const createSpy = vi
+      .spyOn(orderService, 'createOrder')
+      .mockResolvedValue({ id: 'order-1' } as never)
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: { clientId: 'client-1', items: [{ product: 'Regalo', unitPrice: 0 }] },
+    })
+
+    await create(req, createMockResponse(), vi.fn() as NextFunction)
+
+    const passedItems = createSpy.mock.calls[0]?.[2].items ?? []
+    expect(passedItems[0]?.unitPrice).toBe(0)
+  })
+
+  // Given an item with a negative price
+  // When creating an order
+  // Then it should throw a 400 INVALID_PRICE without calling the service
+  it('throws INVALID_PRICE when the price is negative', async () => {
     const createSpy = vi.spyOn(orderService, 'createOrder')
     const req = createMockRequest({
       businessId: 'biz-1',
-      body: { clientId: 'client-1', items: [item] },
+      body: { clientId: 'client-1', items: [{ product: 'Camiseta', unitPrice: -5 }] },
+    })
+    const next = vi.fn()
+
+    await create(req, createMockResponse(), next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_PRICE' }),
+    )
+    expect(createSpy).not.toHaveBeenCalled()
+  })
+
+  // Given an item whose price is not a number
+  // When creating an order
+  // Then it should throw a 400 MISSING_PRICE without calling the service
+  it('throws MISSING_PRICE when the price is not a number', async () => {
+    const createSpy = vi.spyOn(orderService, 'createOrder')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      body: { clientId: 'client-1', items: [{ product: 'Camiseta', unitPrice: 'gratis' }] },
     })
     const next = vi.fn()
 
@@ -174,7 +271,9 @@ describe('create', () => {
 
     await create(req, createMockResponse(), next as NextFunction)
 
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400, code: 'INVALID_DATE' }))
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_DATE' }),
+    )
     expect(createSpy).not.toHaveBeenCalled()
   })
 })
@@ -318,7 +417,9 @@ describe('update', () => {
 
     await update(req, createMockResponse(), next as NextFunction)
 
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 400, code: 'INVALID_STATUS' }))
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'INVALID_STATUS' }),
+    )
     expect(updateSpy).not.toHaveBeenCalled()
   })
 

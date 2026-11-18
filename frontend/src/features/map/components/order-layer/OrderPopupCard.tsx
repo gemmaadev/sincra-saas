@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { ArrowRight, MapPin, Pencil, X, Trash2 } from 'lucide-react'
-import { Badge, IconButton } from '@/shared/components'
+import { Badge, IconButton, MissingPrice } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatCurrency } from '@/shared/utils'
 import {
@@ -40,10 +40,12 @@ export function OrderPopupCard({ order, onEdit, onCancel, onDelete }: OrderPopup
               <ChannelIcons channels={[order.channel]} size={16} />
             </div>
           )}
-          <p>{formatCurrency(Number(order.price))}</p>
+          <p>{order.price != null ? formatCurrency(Number(order.price)) : <MissingPrice />}</p>
         </div>
         {order.approximate && (
-          <p className="text-xs">Ubicación aproximada: la del cliente, el pedido no tiene dirección propia.</p>
+          <p className="text-xs">
+            Ubicación aproximada: la del cliente, el pedido no tiene dirección propia.
+          </p>
         )}
       </div>
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Avatar, IconButton, Tabs, Spinner } from '@/shared/components'
+import { AiSuggestedBadge, Avatar, IconButton, Tabs, Spinner } from '@/shared/components'
 import { useOrderDetail } from '../../hooks/useOrderDetail'
 import { OrderFormModal } from '../form/OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
@@ -38,7 +38,10 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex shrink-0 items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold text-ink">Pedido #{order.number}</h2>
+          {order.aiGenerated && <AiSuggestedBadge />}
+        </div>
         <div className="flex gap-2">
           <IconButton
             icon={Pencil}

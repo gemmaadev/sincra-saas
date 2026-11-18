@@ -24,10 +24,15 @@ describe('settings routes', () => {
       const res = await request(app)
         .post('/channels/connect')
         .set('Cookie', adminCookie)
-        .send({ channel: 'GMAIL' })
+        .send({ channel: 'GMAIL', accessToken: 'token-1' })
 
       expect(res.status).toBe(200)
-      expect(settingsService.connectChannel).toHaveBeenCalledWith('biz-1', 'GMAIL', 'admin-1')
+      expect(settingsService.connectChannel).toHaveBeenCalledWith(
+        'biz-1',
+        'GMAIL',
+        'admin-1',
+        'token-1',
+      )
     })
 
     // Given a request from an authenticated employee (not an admin)

@@ -39,6 +39,8 @@ describe('StatsChannelPerformance', () => {
           revenue: 300,
           averageTicket: 100,
           percentage: 75,
+          hasPriceData: true,
+          missingPriceCount: 0,
         },
         {
           label: 'WhatsApp',
@@ -47,6 +49,8 @@ describe('StatsChannelPerformance', () => {
           revenue: 100,
           averageTicket: 50,
           percentage: 25,
+          hasPriceData: true,
+          missingPriceCount: 0,
         },
       ],
     })
@@ -55,5 +59,53 @@ describe('StatsChannelPerformance', () => {
     expect(screen.getByText('300,00 €')).toBeInTheDocument()
     expect(screen.getByText('WhatsApp')).toBeInTheDocument()
     expect(screen.getByText('100,00 €')).toBeInTheDocument()
+  })
+
+  // Given a channel with no known prices
+  // When the block is rendered
+  // Then the zero revenue should be marked as having no price data
+  it('marks zero revenue when the channel has no price data', () => {
+    renderPerformance({
+      rows: [
+        {
+          label: 'Gmail',
+          icon: SiGmail,
+          colorClassName: 'text-gmail',
+          revenue: 0,
+          averageTicket: 0,
+          percentage: 0,
+          hasPriceData: false,
+          missingPriceCount: 2,
+        },
+      ],
+    })
+
+    expect(screen.getByText('0,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sin datos de precio en ningún pedido')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Faltan precios/)).not.toBeInTheDocument()
+  })
+
+  // Given a channel where only some orders have a price
+  // When the block is rendered
+  // Then the revenue should show how many prices are missing
+  it('shows how many prices are missing when the channel still has some', () => {
+    renderPerformance({
+      rows: [
+        {
+          label: 'Gmail',
+          icon: SiGmail,
+          colorClassName: 'text-gmail',
+          revenue: 100,
+          averageTicket: 100,
+          percentage: 100,
+          hasPriceData: true,
+          missingPriceCount: 2,
+        },
+      ],
+    })
+
+    expect(screen.getByText('100,00 €')).toBeInTheDocument()
+    expect(screen.getByLabelText('Faltan precios en 2 pedidos')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Sin datos de precio en ningún pedido')).not.toBeInTheDocument()
   })
 })

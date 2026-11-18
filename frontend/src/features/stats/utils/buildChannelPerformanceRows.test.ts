@@ -26,6 +26,8 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 300,
         averageTicket: 100,
         percentage: 75,
+        hasPriceData: true,
+        missingPriceCount: 0,
       },
       {
         label: 'WhatsApp',
@@ -34,6 +36,8 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 100,
         averageTicket: 50,
         percentage: 25,
+        hasPriceData: true,
+        missingPriceCount: 0,
       },
     ])
   })
@@ -54,6 +58,8 @@ describe('buildChannelPerformanceRows', () => {
         revenue: 50,
         averageTicket: 50,
         percentage: 100,
+        hasPriceData: true,
+        missingPriceCount: 0,
       },
     ])
   })
@@ -65,5 +71,40 @@ describe('buildChannelPerformanceRows', () => {
     const rows = buildChannelPerformanceRows({ entries: [] })
 
     expect(rows).toEqual([])
+  })
+
+  // Given a channel whose orders all lack a price
+  // When building the rows
+  // Then the row should be marked as having no price data
+  it('marks a channel with no known prices', () => {
+    const rows = buildChannelPerformanceRows({
+      entries: [
+        { channel: 'GMAIL', orderCount: 2, revenue: '0', averageTicket: '0', hasPriceData: false },
+      ],
+    })
+
+    expect(rows[0]?.hasPriceData).toBe(false)
+    expect(rows[0]?.missingPriceCount).toBe(0)
+  })
+
+  // Given a channel with some priced orders and some without a price
+  // When building the rows
+  // Then the row should keep the count of orders that lack a price
+  it('keeps the count of orders that lack a price', () => {
+    const rows = buildChannelPerformanceRows({
+      entries: [
+        {
+          channel: 'GMAIL',
+          orderCount: 3,
+          revenue: '100',
+          averageTicket: '100',
+          hasPriceData: true,
+          pricedCount: 1,
+          missingPriceCount: 2,
+        },
+      ],
+    })
+
+    expect(rows[0]).toMatchObject({ hasPriceData: true, missingPriceCount: 2 })
   })
 })

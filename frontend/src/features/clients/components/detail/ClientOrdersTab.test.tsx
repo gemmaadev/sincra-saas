@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect } from 'vitest'
 import { ClientOrdersTab } from './ClientOrdersTab'
 import type { ClientDetail } from '../../types/client.types'
@@ -15,6 +16,7 @@ const mockClient: ClientDetail = {
   latitude: null,
   longitude: null,
   lastContact: null,
+  aiGenerated: false,
   clientTags: [],
   orders: [],
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -59,5 +61,36 @@ describe('ClientOrdersTab', () => {
     expect(screen.getByText('Chaqueta oversize x2, Bolso de piel')).toBeInTheDocument()
     expect(screen.getByText('Entregado')).toBeInTheDocument()
     expect(screen.getByText('89,90 €')).toBeInTheDocument()
+  })
+
+  // Given an order with no price
+  // When ClientOrdersTab is rendered
+  // Then that order should show a missing-price mark and no invented amount
+  it('shows a missing-price mark when an order has no price', () => {
+    render(
+      <MantineProvider>
+        <ClientOrdersTab
+          client={{
+            ...mockClient,
+            orders: [
+              {
+                id: 'order-1',
+                number: 42,
+                status: 'PENDING',
+                kind: 'PRODUCT',
+                channel: null,
+                price: null,
+                expectedDate: null,
+                createdAt: '2026-10-07T10:16:33.000Z',
+                description: null,
+              },
+            ],
+          }}
+        />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByLabelText('Precio aún no definido')).toBeInTheDocument()
+    expect(screen.queryByText('0,00 €')).not.toBeInTheDocument()
   })
 })

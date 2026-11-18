@@ -28,8 +28,8 @@ export const clientsTableColumns = [
     render: (client: Client) => (
       <div className="flex flex-wrap items-center gap-2">
         {client.clientTags.length === 0 && <span className="text-sm text-ink-muted">—</span>}
-        {client.clientTags.map(({ id, tag }) => (
-          <TagPill key={id} name={tag.name} color={tag.color} />
+        {client.clientTags.map(({ id, tag, aiGenerated }) => (
+          <TagPill key={id} name={tag.name} color={tag.color} aiGenerated={aiGenerated} />
         ))}
       </div>
     ),

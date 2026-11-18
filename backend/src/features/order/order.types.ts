@@ -5,7 +5,7 @@ export interface OrderItemInput {
   product: string
   description?: string | null
   quantity?: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 export interface CreateOrderInput {

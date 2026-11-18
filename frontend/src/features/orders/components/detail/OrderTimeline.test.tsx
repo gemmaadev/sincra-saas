@@ -28,6 +28,7 @@ const mockOrder: OrderDetail = {
     { id: 'change-1', status: 'PENDING', changedBy: null, changedAt: '2025-04-12T10:24:00.000Z' },
     { id: 'change-2', status: 'PREPARING', changedBy: null, changedAt: '2025-04-12T14:32:00.000Z' },
   ],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2025-04-12T10:24:00.000Z',
   updatedAt: '2025-04-12T14:32:00.000Z',
@@ -121,7 +122,9 @@ describe('OrderTimeline', () => {
   it('reverts to a step when it is clicked', async () => {
     renderTimeline({ ...mockOrder, status: 'PREPARING' })
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Volver a "Pedido recibido"' }))
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Volver a "Pedido recibido"' }))
 
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'PENDING' }),
@@ -134,7 +137,9 @@ describe('OrderTimeline', () => {
   it('does not make the current or future steps clickable', () => {
     renderTimeline({ ...mockOrder, status: 'PREPARING' })
 
-    expect(screen.queryByRole('button', { name: /Volver a "En preparación"/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Volver a "En preparación"/ }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Volver a "Enviado"/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Volver a "Entregado"/ })).not.toBeInTheDocument()
   })
@@ -146,7 +151,9 @@ describe('OrderTimeline', () => {
   it('keeps steps already reached clickable even once the order is cancelled', async () => {
     renderTimeline({ ...mockOrder, status: 'CANCELLED' })
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Volver a "Pedido recibido"' }))
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Volver a "Pedido recibido"' }))
 
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'PENDING' }),
@@ -162,10 +169,30 @@ describe('OrderTimeline', () => {
       ...mockOrder,
       status: 'PREPARING',
       statusHistory: [
-        { id: 'change-1', status: 'PENDING', changedBy: null, changedAt: '2026-01-01T12:00:00.000Z' },
-        { id: 'change-2', status: 'PREPARING', changedBy: null, changedAt: '2026-01-01T12:00:00.000Z' },
-        { id: 'change-3', status: 'PENDING', changedBy: null, changedAt: '2026-06-15T12:00:00.000Z' },
-        { id: 'change-4', status: 'PREPARING', changedBy: null, changedAt: '2026-06-20T12:00:00.000Z' },
+        {
+          id: 'change-1',
+          status: 'PENDING',
+          changedBy: null,
+          changedAt: '2026-01-01T12:00:00.000Z',
+        },
+        {
+          id: 'change-2',
+          status: 'PREPARING',
+          changedBy: null,
+          changedAt: '2026-01-01T12:00:00.000Z',
+        },
+        {
+          id: 'change-3',
+          status: 'PENDING',
+          changedBy: null,
+          changedAt: '2026-06-15T12:00:00.000Z',
+        },
+        {
+          id: 'change-4',
+          status: 'PREPARING',
+          changedBy: null,
+          changedAt: '2026-06-20T12:00:00.000Z',
+        },
       ],
     })
 

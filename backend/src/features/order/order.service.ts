@@ -22,15 +22,28 @@ import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
-import type { CreateOrderInput, UpdateOrderInput, ListOrdersFilters, OrderItemInput } from './order.types'
+import type {
+  CreateOrderInput,
+  UpdateOrderInput,
+  ListOrdersFilters,
+  OrderItemInput,
+} from './order.types'
 
 const MAX_NUMBER_ATTEMPTS = 3
 
-function computeItemsTotal(items: OrderItemInput[]) {
-  return items.reduce(
-    (total, item) => total.plus(new Prisma.Decimal(item.unitPrice).mul(item.quantity ?? 1)),
-    new Prisma.Decimal(0),
-  )
+// The order total exists only when every line has a price. One missing price makes the
+// whole total unknown — it is stored as null, never as 0.
+function computeItemsTotal(items: OrderItemInput[]): Prisma.Decimal | null {
+  if (items.length === 0) return null
+
+  let total = new Prisma.Decimal(0)
+
+  for (const item of items) {
+    if (item.unitPrice == null) return null
+    total = total.plus(new Prisma.Decimal(item.unitPrice).mul(item.quantity ?? 1))
+  }
+
+  return total
 }
 
 function toItemsData(items: OrderItemInput[]) {
@@ -38,7 +51,7 @@ function toItemsData(items: OrderItemInput[]) {
     product: item.product,
     description: item.description,
     quantity: item.quantity ?? 1,
-    unitPrice: item.unitPrice,
+    unitPrice: item.unitPrice ?? null,
   }))
 }
 
@@ -245,14 +258,21 @@ export async function listOrders(businessId: string, filters: ListOrdersFilters)
   }
 }
 
-const ALL_ORDER_STATUSES: OrderStatus[] = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const ALL_ORDER_STATUSES: OrderStatus[] = [
+  'PENDING',
+  'PREPARING',
+  'SHIPPED',
+  'DELIVERED',
+  'CANCELLED',
+]
 
 function buildStatusCounts(
   groups: { status: OrderStatus; _count: number }[],
 ): Record<OrderStatus, number> {
-  const counts = Object.fromEntries(
-    ALL_ORDER_STATUSES.map((status) => [status, 0]),
-  ) as Record<OrderStatus, number>
+  const counts = Object.fromEntries(ALL_ORDER_STATUSES.map((status) => [status, 0])) as Record<
+    OrderStatus,
+    number
+  >
 
   for (const group of groups) {
     counts[group.status] = group._count

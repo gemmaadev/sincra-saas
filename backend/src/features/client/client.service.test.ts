@@ -95,6 +95,38 @@ describe('listClients', () => {
     expect(result.data[1]).toMatchObject({ id: 'client-2', orderCount: 0, lastOrderAt: null })
   })
 
+  // Given a client the AI created, with a tag the AI assigned
+  // When listClients maps the row
+  // Then aiGenerated should stay on the client and on the tag
+  it('keeps aiGenerated on the client and on each tag', async () => {
+    vi.mocked(clientModel.findClientsPage).mockResolvedValue([
+      {
+        id: 'client-1',
+        name: 'Anna',
+        aiGenerated: true,
+        clientTags: [
+          {
+            id: 'assignment-1',
+            tagId: 'tag-1',
+            aiGenerated: true,
+            tag: { id: 'tag-1', name: 'Nuevo cliente' },
+          },
+        ],
+        _count: { orders: 0 },
+        orders: [],
+      },
+    ] as never)
+
+    const result = await listClients('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      aiGenerated: true,
+      clientTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Nuevo cliente' } }],
+    })
+    expect(result.data[0]).not.toHaveProperty('_count')
+    expect(result.data[0]).not.toHaveProperty('orders')
+  })
+
   // Given an active channel filter on the list
   // When listClients is called
   // Then recurringClientsCount should be scoped to that same filter, not the whole business
@@ -137,7 +169,11 @@ describe('getClientById', () => {
     vi.mocked(clientModel.findClientWithDetails).mockResolvedValue({
       id: 'client-1',
       orders: [
-        { id: 'order-1', description: 'Pedido de temporada', items: [{ product: 'Camiseta', quantity: 1 }] },
+        {
+          id: 'order-1',
+          description: 'Pedido de temporada',
+          items: [{ product: 'Camiseta', quantity: 1 }],
+        },
         {
           id: 'order-2',
           description: null,
@@ -156,6 +192,25 @@ describe('getClientById', () => {
       description: 'Chaqueta oversize x2, Bolso de piel',
     })
     expect(result?.orders[0]).not.toHaveProperty('items')
+  })
+
+  // Given a client the AI created, with a tag the AI assigned
+  // When the client detail is fetched
+  // Then aiGenerated should stay on the client and on the tag
+  it('keeps aiGenerated on the client and on each tag', async () => {
+    vi.mocked(clientModel.findClientWithDetails).mockResolvedValue({
+      id: 'client-1',
+      aiGenerated: true,
+      clientTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Consulta' } }],
+      orders: [],
+    } as never)
+
+    const result = await getClientById('business-1', 'client-1')
+
+    expect(result).toMatchObject({
+      aiGenerated: true,
+      clientTags: [{ id: 'assignment-1', aiGenerated: true }],
+    })
   })
 
   // Given a client id that does not exist

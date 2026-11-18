@@ -1,4 +1,4 @@
-import { Card } from '@/shared/components'
+import { Card, MissingPrice } from '@/shared/components'
 import { formatCurrency } from '@/shared/utils'
 import type { OrderItem } from '../../types/order.types'
 
@@ -23,7 +23,9 @@ export function OrderItemsList({ items }: OrderItemsListProps) {
               )}
             </div>
             <div className="flex shrink-0 items-center gap-3 text-sm text-ink-muted">
-              <span>{formatCurrency(Number(item.unitPrice))}</span>
+              <span>
+                {item.unitPrice != null ? formatCurrency(Number(item.unitPrice)) : <MissingPrice />}
+              </span>
               <span>x{item.quantity}</span>
             </div>
           </Card>

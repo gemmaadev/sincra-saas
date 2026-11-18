@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect } from 'vitest'
 import { OrderSummaryTab } from './OrderSummaryTab'
 import type { OrderDetail } from '../../types/order.types'
@@ -17,6 +18,7 @@ const mockOrder: OrderDetail = {
   client: { id: 'client-1', name: 'Laura García', email: null, phone: null, channels: [] },
   items: [],
   statusHistory: [],
+  aiGenerated: false,
   orderTags: [],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -53,7 +55,9 @@ describe('OrderSummaryTab', () => {
   it('shows the order items', () => {
     renderOrderSummaryTab({
       ...mockOrder,
-      items: [{ id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' }],
+      items: [
+        { id: 'item-1', product: 'Camiseta', description: null, quantity: 1, unitPrice: '15.00' },
+      ],
     })
 
     expect(screen.getByText('Productos')).toBeInTheDocument()
@@ -103,5 +107,21 @@ describe('OrderSummaryTab', () => {
     renderOrderSummaryTab(mockOrder)
 
     expect(screen.getByText('Fecha prevista').nextSibling).toHaveTextContent('—')
+  })
+
+  // Given an order with no price
+  // When the tab is rendered
+  // Then the total should show a missing-price mark instead of 0 €
+  it('shows a missing-price mark when the order has no price', () => {
+    render(
+      <MantineProvider>
+        <OrderSummaryTab order={{ ...mockOrder, price: null }} />
+      </MantineProvider>,
+    )
+
+    expect(screen.getByText('Total').parentElement).toContainElement(
+      screen.getByLabelText('Precio aún no definido'),
+    )
+    expect(screen.queryByText('0,00 €')).not.toBeInTheDocument()
   })
 })

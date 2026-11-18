@@ -61,6 +61,86 @@ describe('createOrder', () => {
     expect(String(data.price)).toBe('40')
   })
 
+  // Given an order whose lines have no price
+  // When it is created
+  // Then the order price and every line price stay null
+  it('stores a null order price when no line has a price', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [
+        { product: 'Camiseta', quantity: 2 },
+        { product: 'Pañuelo', unitPrice: null },
+      ],
+    })
+
+    const data = vi.mocked(orderModel.insertOrder).mock.calls[0][0] as never as {
+      price: unknown
+      items: { create: { unitPrice: number | null }[] }
+    }
+
+    expect(data.price).toBeNull()
+    expect(data.items.create.map((item) => item.unitPrice)).toEqual([null, null])
+  })
+
+  // Given an order with one priced line and one line without a price
+  // When it is created
+  // Then the order price stays null, the priced line is kept, and the other stays null
+  it('stores a null order price when only some lines have a price', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [
+        { product: 'Camiseta', quantity: 2, unitPrice: 15 },
+        { product: 'Pañuelo', unitPrice: null },
+      ],
+    })
+
+    const data = vi.mocked(orderModel.insertOrder).mock.calls[0][0] as never as {
+      price: unknown
+      items: { create: { product: string; quantity: number; unitPrice: number | null }[] }
+    }
+
+    expect(data.price).toBeNull()
+    expect(data.items.create).toEqual([
+      { product: 'Camiseta', description: undefined, quantity: 2, unitPrice: 15 },
+      { product: 'Pañuelo', description: undefined, quantity: 1, unitPrice: null },
+    ])
+  })
+
+  // Given a free line and a priced line
+  // When the order is created
+  // Then the free line counts as 0 and the total is the sum of the known prices
+  it('counts a free line as zero in the total', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [
+        { product: 'Regalo', quantity: 2, unitPrice: 0 },
+        { product: 'Pañuelo', unitPrice: 10 },
+      ],
+    })
+
+    const data = vi.mocked(orderModel.insertOrder).mock.calls[0][0] as never as {
+      price: unknown
+      items: { create: { unitPrice: number | null }[] }
+    }
+
+    expect(String(data.price)).toBe('10')
+    expect(data.items.create.map((item) => item.unitPrice)).toEqual([0, 10])
+  })
+
+  // Given only free lines
+  // When the order is created
+  // Then the order price is 0, not null
+  it('stores a zero total when every line is free', async () => {
+    await createOrder('business-1', 'user-1', {
+      clientId: 'client-1',
+      items: [{ product: 'Regalo', unitPrice: 0 }],
+    })
+
+    const data = vi.mocked(orderModel.insertOrder).mock.calls[0][0] as never as { price: unknown }
+    expect(String(data.price)).toBe('0')
+    expect(data.price).not.toBeNull()
+  })
+
   // Given no existing orders in the business
   // When an order is created
   // Then it should be numbered 1
@@ -384,6 +464,36 @@ describe('listOrders', () => {
       description: 'Chaqueta oversize x2, Bolso de piel',
     })
   })
+
+  // Given an order the AI created, with a tag the AI assigned
+  // When orders are listed
+  // Then aiGenerated should stay on the order and on the tag, and the raw items should not
+  it('keeps aiGenerated on the order and on each tag', async () => {
+    vi.mocked(orderModel.findOrdersPage).mockResolvedValue([
+      {
+        id: 'order-1',
+        description: 'Pedido de temporada',
+        aiGenerated: true,
+        items: [{ product: 'Camiseta', quantity: 1 }],
+        orderTags: [
+          {
+            id: 'assignment-1',
+            tagId: 'tag-1',
+            aiGenerated: true,
+            tag: { id: 'tag-1', name: 'Pedido' },
+          },
+        ],
+      },
+    ] as never)
+
+    const result = await listOrders('business-1', {})
+
+    expect(result.data[0]).toMatchObject({
+      aiGenerated: true,
+      orderTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Pedido' } }],
+    })
+    expect(result.data[0]).not.toHaveProperty('items')
+  })
 })
 
 describe('getOrderById', () => {
@@ -435,6 +545,27 @@ describe('getOrderById', () => {
     expect(result).toMatchObject({ description: 'Chaqueta oversize x2, Bolso de piel' })
   })
 
+  // Given an order the AI created, with a tag the AI assigned
+  // When it is requested
+  // Then aiGenerated should stay on the order and on the tag
+  it('keeps aiGenerated on the order and on each tag', async () => {
+    vi.mocked(orderModel.findOrderWithDetails).mockResolvedValue({
+      id: 'order-1',
+      description: 'Pedido de temporada',
+      aiGenerated: true,
+      items: [{ product: 'Camiseta', quantity: 1 }],
+      orderTags: [{ id: 'assignment-1', aiGenerated: true, tag: { name: 'Pedido' } }],
+    } as never)
+
+    const result = await getOrderById('business-1', 'order-1')
+
+    expect(result).toMatchObject({
+      aiGenerated: true,
+      orderTags: [{ id: 'assignment-1', aiGenerated: true }],
+      items: [{ product: 'Camiseta', quantity: 1 }],
+    })
+  })
+
   // Given an order with items
   // When it is requested
   // Then the items should still be returned, unlike the list endpoint which drops them
@@ -455,7 +586,10 @@ describe('getOrderById', () => {
 describe('updateOrder', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1', status: 'PENDING' } as never)
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'PENDING',
+    } as never)
     vi.mocked(orderModel.updateOrderWithItems).mockResolvedValue({ id: 'order-1' } as never)
   })
 
@@ -519,17 +653,20 @@ describe('updateOrder', () => {
   it.each([
     ['DELIVERED', 'CANCELLED'],
     ['CANCELLED', 'DELIVERED'],
-  ])('rejects swapping directly between final statuses (%s -> %s)', async (currentStatus, nextStatus) => {
-    vi.mocked(orderModel.findOrderById).mockResolvedValue({
-      id: 'order-1',
-      status: currentStatus,
-    } as never)
+  ])(
+    'rejects swapping directly between final statuses (%s -> %s)',
+    async (currentStatus, nextStatus) => {
+      vi.mocked(orderModel.findOrderById).mockResolvedValue({
+        id: 'order-1',
+        status: currentStatus,
+      } as never)
 
-    await expect(
-      updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never }),
-    ).rejects.toMatchObject({ statusCode: 400, code: 'ORDER_STATUS_FINAL' })
-    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
-  })
+      await expect(
+        updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never }),
+      ).rejects.toMatchObject({ statusCode: 400, code: 'ORDER_STATUS_FINAL' })
+      expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+    },
+  )
 
   // Given an order marked DELIVERED or CANCELLED by mistake
   // When it is moved back into the normal (non-final) flow
@@ -579,21 +716,24 @@ describe('updateOrder', () => {
     ['PENDING', 'SHIPPED'],
     ['SHIPPED', 'PREPARING'],
     ['PREPARING', 'CANCELLED'],
-  ])('allows moving freely between non-final statuses (%s -> %s)', async (currentStatus, nextStatus) => {
-    vi.mocked(orderModel.findOrderById).mockResolvedValue({
-      id: 'order-1',
-      status: currentStatus,
-    } as never)
+  ])(
+    'allows moving freely between non-final statuses (%s -> %s)',
+    async (currentStatus, nextStatus) => {
+      vi.mocked(orderModel.findOrderById).mockResolvedValue({
+        id: 'order-1',
+        status: currentStatus,
+      } as never)
 
-    await updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never })
+      await updateOrder('business-1', 'user-1', 'order-1', { status: nextStatus as never })
 
-    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
-      'order-1',
-      { status: nextStatus },
-      undefined,
-      { status: nextStatus, changedBy: 'user-1' },
-    )
-  })
+      expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+        'order-1',
+        { status: nextStatus },
+        undefined,
+        { status: nextStatus, changedBy: 'user-1' },
+      )
+    },
+  )
 
   // Given a new list of items
   // When the order is updated
@@ -605,12 +745,51 @@ describe('updateOrder', () => {
 
     const [, data, items] = vi.mocked(orderModel.updateOrderWithItems).mock.calls[0]
     expect(String((data as never as { price: unknown }).price)).toBe('30')
-    expect(items).toEqual([{ product: 'Camiseta', description: undefined, quantity: 3, unitPrice: 10 }])
+    expect(items).toEqual([
+      { product: 'Camiseta', description: undefined, quantity: 3, unitPrice: 10 },
+    ])
+  })
+
+  // Given replacement lines that mix a price with a missing one
+  // When the order is updated
+  // Then the previous total is cleared and the missing line stays null
+  it('clears the price when a replacement line has no price', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      items: [
+        { product: 'Camiseta', quantity: 2, unitPrice: 15 },
+        { product: 'Pañuelo', quantity: 1, unitPrice: null },
+      ],
+    })
+
+    const [, data, items] = vi.mocked(orderModel.updateOrderWithItems).mock.calls[0]
+    expect((data as { price: unknown }).price).toBeNull()
+    expect(items).toEqual([
+      { product: 'Camiseta', description: undefined, quantity: 2, unitPrice: 15 },
+      { product: 'Pañuelo', description: undefined, quantity: 1, unitPrice: null },
+    ])
+  })
+
+  // Given replacement lines that all lack a price
+  // When the order is updated
+  // Then the order price and every line price stay null
+  it('clears the price when every replacement line has no price', async () => {
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      items: [{ product: 'Camiseta' }, { product: 'Pañuelo', unitPrice: null }],
+    })
+
+    const [, data, items] = vi.mocked(orderModel.updateOrderWithItems).mock.calls[0]
+    expect((data as { price: unknown }).price).toBeNull()
+    expect(items?.map((item) => item.unitPrice)).toEqual([null, null])
   })
 })
 
 describe('updateOrder geocoding', () => {
-  const existingOrder = { id: 'order-1', status: 'PENDING', address: 'Carrer Major 1', zone: 'Sabadell' }
+  const existingOrder = {
+    id: 'order-1',
+    status: 'PENDING',
+    address: 'Carrer Major 1',
+    zone: 'Sabadell',
+  }
 
   beforeEach(() => {
     vi.resetAllMocks()

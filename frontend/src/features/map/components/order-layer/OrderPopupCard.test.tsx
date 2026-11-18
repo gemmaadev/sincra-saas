@@ -48,6 +48,16 @@ describe('OrderPopupCard', () => {
     expect(screen.getByText('50,00 €')).toBeInTheDocument()
   })
 
+  // Given an order with no price
+  // When the card is rendered
+  // Then it should show a missing-price mark and no invented amount
+  it('shows a missing-price mark when the order has no price', () => {
+    renderCard({ ...mockOrder, price: null })
+
+    expect(screen.getByLabelText('Precio aún no definido')).toBeInTheDocument()
+    expect(screen.queryByText('0,00 €')).not.toBeInTheDocument()
+  })
+
   // Given an order with no channel
   // When the card is rendered
   // Then the channel row should be omitted

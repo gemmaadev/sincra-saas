@@ -11,12 +11,21 @@ import {
   assignTagToOrder,
   removeTagFromOrder,
 } from './order.service'
-import type { CreateOrderInput, UpdateOrderInput, ListOrdersFilters, OrderItemInput } from './order.types'
+import type {
+  CreateOrderInput,
+  UpdateOrderInput,
+  ListOrdersFilters,
+  OrderItemInput,
+} from './order.types'
 
 const VALID_STATUSES = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 
 function isPositiveNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
 function isPositiveInteger(value: unknown): value is number {
@@ -29,10 +38,7 @@ function assertValidItems(items: unknown): OrderItemInput[] {
   }
 
   return items.map((rawItem, index) => {
-    const { product, description, quantity, unitPrice } = (rawItem ?? {}) as Record<
-      string,
-      unknown
-    >
+    const { product, description, quantity, unitPrice } = (rawItem ?? {}) as Record<string, unknown>
 
     if (typeof product !== 'string' || !product.trim()) {
       throw new AppError(
@@ -42,23 +48,27 @@ function assertValidItems(items: unknown): OrderItemInput[] {
       )
     }
 
-    if (!isPositiveNumber(unitPrice)) {
-      throw new AppError(
-        `El precio del artículo ${index + 1} es obligatorio y debe ser mayor que 0`,
-        400,
-        'MISSING_PRICE',
-      )
+    if (typeof unitPrice === 'number' && unitPrice < 0) {
+      throw new AppError(`El precio del artículo ${index + 1} no es válido`, 400, 'INVALID_PRICE')
+    }
+
+    if (unitPrice !== undefined && unitPrice !== null && !isNonNegativeNumber(unitPrice)) {
+      throw new AppError(`El precio del artículo ${index + 1} no es válido`, 400, 'MISSING_PRICE')
     }
 
     if (quantity !== undefined && !isPositiveInteger(quantity)) {
-      throw new AppError(`La cantidad del artículo ${index + 1} no es válida`, 400, 'INVALID_QUANTITY')
+      throw new AppError(
+        `La cantidad del artículo ${index + 1} no es válida`,
+        400,
+        'INVALID_QUANTITY',
+      )
     }
 
     return {
       product: product.trim(),
       description: typeof description === 'string' ? description.trim() : undefined,
       quantity: quantity as number | undefined,
-      unitPrice,
+      unitPrice: isNonNegativeNumber(unitPrice) ? unitPrice : null,
     }
   })
 }

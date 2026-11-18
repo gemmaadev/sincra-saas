@@ -36,7 +36,7 @@ export interface MapOrder {
   number: number
   status: OrderStatus
   channel: Channel | null
-  price: string
+  price: string | null
   zone: string | null
   clientName: string
   latitude: number
@@ -48,6 +48,10 @@ export interface MapOrder {
 export interface OrderMapResponse {
   total: number
   deliveredRevenue: string
+  // false only when every delivered price is null. A price of 0 is known data.
+  hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
   zones: OrderMapZoneSummary[]
   orders: MapOrder[]
 }

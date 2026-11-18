@@ -18,6 +18,7 @@ const mockClient: ClientDetail = {
   latitude: null,
   longitude: null,
   lastContact: null,
+  aiGenerated: false,
   clientTags: [],
   orders: [],
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -91,11 +92,14 @@ describe('ClientTagsTab', () => {
 
   // Given a tag that the AI assigned and one that a person assigned
   // When ClientTagsTab is rendered
-  // Then only the AI one should carry the "Sugerido por IA" badge
+  // Then only the AI tag should show the suggestion mark inside its pill
   it('marks the tags assigned by the AI', () => {
     renderClientTagsTab(clientWithTags([{ tag: vipTag, aiGenerated: true }, { tag: urgentTag }]))
 
-    expect(screen.getAllByText('Sugerido por IA')).toHaveLength(1)
+    expect(screen.getByText('VIP')).toContainElement(screen.getByLabelText('Sugerido por IA'))
+    expect(screen.getByText('Urgente')).not.toContainElement(
+      screen.getByLabelText('Sugerido por IA'),
+    )
   })
 
   // Given a client with a tag

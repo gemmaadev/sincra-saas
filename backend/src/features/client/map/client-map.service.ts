@@ -98,10 +98,26 @@ export function computeZoneCentroids(points: ZonePoint[]): Map<string, Coordinat
   return centroids
 }
 
-function sumDeliveredRevenue(orders: { price: Prisma.Decimal | null }[]): string {
-  return orders
-    .reduce((total, order) => total.plus(order.price ?? 0), new Prisma.Decimal(0))
+function sumDeliveredRevenue(orders: { price: Prisma.Decimal | null }[]): {
+  amount: string
+  hasPriceData: boolean
+  pricedCount: number
+  missingPriceCount: number
+} {
+  const pricedCount = orders.filter((order) => order.price != null).length
+  const amount = orders
+    .reduce((total, order) => {
+      if (order.price == null) return total
+      return total.plus(order.price)
+    }, new Prisma.Decimal(0))
     .toString()
+
+  return {
+    amount,
+    hasPriceData: pricedCount > 0,
+    pricedCount,
+    missingPriceCount: orders.length - pricedCount,
+  }
 }
 
 export function buildMapClients(
@@ -113,7 +129,12 @@ export function buildMapClients(
   for (const record of records) {
     const { latitude, longitude, address, _count, orders, ...rest } = record
     const orderCount = _count.orders
-    const deliveredRevenue = sumDeliveredRevenue(orders)
+    const {
+      amount: deliveredRevenue,
+      hasPriceData,
+      pricedCount,
+      missingPriceCount,
+    } = sumDeliveredRevenue(orders)
 
     if (latitude !== null && longitude !== null) {
       mapClients.push({
@@ -123,6 +144,9 @@ export function buildMapClients(
         approximate: !address?.trim(),
         orderCount,
         deliveredRevenue,
+        hasPriceData,
+        pricedCount,
+        missingPriceCount,
       })
       continue
     }
@@ -130,7 +154,16 @@ export function buildMapClients(
     const zoneKey = getZoneKey(record.zone)
     const centroid = zoneKey ? centroids.get(zoneKey) : undefined
     if (centroid) {
-      mapClients.push({ ...rest, ...centroid, approximate: true, orderCount, deliveredRevenue })
+      mapClients.push({
+        ...rest,
+        ...centroid,
+        approximate: true,
+        orderCount,
+        deliveredRevenue,
+        hasPriceData,
+        pricedCount,
+        missingPriceCount,
+      })
     }
   }
 

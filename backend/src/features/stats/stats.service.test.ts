@@ -47,6 +47,9 @@ describe('getOverview', () => {
       ordersCreated: 12,
       averageDeliveryDays: 1.5,
       revenue: '150',
+      hasPriceData: true,
+      pricedCount: 2,
+      missingPriceCount: 0,
     })
   })
 
@@ -65,6 +68,9 @@ describe('getOverview', () => {
       ordersCreated: 0,
       averageDeliveryDays: null,
       revenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
   })
 
@@ -83,6 +89,93 @@ describe('getOverview', () => {
 
     expect(overview.averageDeliveryDays).toBeNull()
     expect(overview.revenue).toBe('10')
+  })
+
+  // Given one delivered order with a price and another without one
+  // When getting the overview
+  // Then revenue should be only the known price
+  it('ignores delivered orders with no price when summing revenue', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([
+      {
+        id: 'order-1',
+        price: 100 as never,
+        createdAt: new Date('2026-10-01T00:00:00'),
+        statusHistory: [{ changedAt: new Date('2026-10-02T00:00:00') }],
+      },
+      {
+        id: 'order-2',
+        price: null,
+        createdAt: new Date('2026-10-03T00:00:00'),
+        statusHistory: [{ changedAt: new Date('2026-10-04T00:00:00') }],
+      },
+    ] as never)
+
+    const overview = await getOverview('business-1', {})
+
+    expect(overview.revenue).toBe('100')
+    expect(overview.hasPriceData).toBe(true)
+    expect(overview.pricedCount).toBe(1)
+    expect(overview.missingPriceCount).toBe(1)
+  })
+
+  // Given a free delivered order and a priced one
+  // When getting the overview
+  // Then the free order counts as 0 and the revenue is treated as known
+  it('counts a free delivered order in the revenue', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([
+      { id: 'order-1', price: 0 as never, createdAt: new Date(), statusHistory: [] },
+      { id: 'order-2', price: 50 as never, createdAt: new Date(), statusHistory: [] },
+    ] as never)
+
+    const overview = await getOverview('business-1', {})
+
+    expect(overview.revenue).toBe('50')
+    expect(overview.hasPriceData).toBe(true)
+    expect(overview.pricedCount).toBe(2)
+    expect(overview.missingPriceCount).toBe(0)
+  })
+
+  // Given a free delivered order and one with no price
+  // When getting the overview
+  // Then the free order counts as known data and the other as missing
+  it('counts a free order as priced and a null price as missing', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([
+      { id: 'order-1', price: 0 as never, createdAt: new Date(), statusHistory: [] },
+      { id: 'order-2', price: null, createdAt: new Date(), statusHistory: [] },
+    ] as never)
+
+    const overview = await getOverview('business-1', {})
+
+    expect(overview).toMatchObject({
+      revenue: '0',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
+    })
+  })
+
+  // Given delivered orders that all lack a price
+  // When getting the overview
+  // Then revenue should be zero, which is the sum of no known prices
+  it('reports zero revenue when no delivered order has a price', async () => {
+    vi.spyOn(statsModel, 'countClientsCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'countOrdersCreatedInRange').mockResolvedValue(0)
+    vi.spyOn(statsModel, 'findDeliveredOrdersInRange').mockResolvedValue([
+      { id: 'order-1', price: null, createdAt: new Date(), statusHistory: [] },
+    ] as never)
+
+    const overview = await getOverview('business-1', {})
+
+    expect(overview.revenue).toBe('0')
+    expect(overview.hasPriceData).toBe(false)
+    expect(overview.pricedCount).toBe(0)
+    expect(overview.missingPriceCount).toBe(1)
   })
 
   // Given dateFrom/dateTo query strings
@@ -410,16 +503,36 @@ describe('getChannelPerformance', () => {
   // Then it should compute revenue and average ticket per channel, sorted by revenue descending
   it('computes revenue and average ticket per channel, sorted by revenue descending', async () => {
     vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
-      { channel: 'WHATSAPP', _sum: { price: new Prisma.Decimal(100) }, _count: 2 },
-      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(300) }, _count: 3 },
+      {
+        channel: 'WHATSAPP',
+        _sum: { price: new Prisma.Decimal(100) },
+        _count: { _all: 2, price: 2 },
+      },
+      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(300) }, _count: { _all: 3, price: 3 } },
     ] as never)
 
     const result = await getChannelPerformance('business-1', {})
 
     expect(result).toEqual({
       entries: [
-        { channel: 'GMAIL', orderCount: 3, revenue: '300', averageTicket: '100' },
-        { channel: 'WHATSAPP', orderCount: 2, revenue: '100', averageTicket: '50' },
+        {
+          channel: 'GMAIL',
+          orderCount: 3,
+          revenue: '300',
+          averageTicket: '100',
+          hasPriceData: true,
+          pricedCount: 3,
+          missingPriceCount: 0,
+        },
+        {
+          channel: 'WHATSAPP',
+          orderCount: 2,
+          revenue: '100',
+          averageTicket: '50',
+          hasPriceData: true,
+          pricedCount: 2,
+          missingPriceCount: 0,
+        },
       ],
     })
   })
@@ -429,7 +542,7 @@ describe('getChannelPerformance', () => {
   // Then its average ticket should be zero, not a division error
   it('reports a zero average ticket instead of dividing by zero', async () => {
     vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
-      { channel: 'GMAIL', _sum: { price: null }, _count: 0 },
+      { channel: 'GMAIL', _sum: { price: null }, _count: { _all: 0, price: 0 } },
     ] as never)
 
     const result = await getChannelPerformance('business-1', {})
@@ -439,6 +552,9 @@ describe('getChannelPerformance', () => {
       orderCount: 0,
       revenue: '0',
       averageTicket: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
   })
 
@@ -451,6 +567,48 @@ describe('getChannelPerformance', () => {
     const result = await getChannelPerformance('business-1', {})
 
     expect(result).toEqual({ entries: [] })
+  })
+
+  // Given two delivered orders on one channel, only one of them priced
+  // When getting channel performance
+  // Then revenue and the average ticket use the priced order, while orderCount keeps both
+  it('averages the ticket only across orders that have a price', async () => {
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
+      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(100) }, _count: { _all: 2, price: 1 } },
+    ] as never)
+
+    const result = await getChannelPerformance('business-1', {})
+
+    expect(result.entries[0]).toEqual({
+      channel: 'GMAIL',
+      orderCount: 2,
+      revenue: '100',
+      averageTicket: '100',
+      hasPriceData: true,
+      pricedCount: 1,
+      missingPriceCount: 1,
+    })
+  })
+
+  // Given delivered orders that all lack a price
+  // When getting channel performance
+  // Then revenue and the average ticket should be zero
+  it('reports zero revenue and zero average ticket when no order has a price', async () => {
+    vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
+      { channel: 'GMAIL', _sum: { price: null }, _count: { _all: 2, price: 0 } },
+    ] as never)
+
+    const result = await getChannelPerformance('business-1', {})
+
+    expect(result.entries[0]).toEqual({
+      channel: 'GMAIL',
+      orderCount: 2,
+      revenue: '0',
+      averageTicket: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 2,
+    })
   })
 })
 
@@ -478,7 +636,7 @@ describe('getDashboard', () => {
     vi.spyOn(statsModel, 'countAiGeneratedClientsInRange').mockResolvedValue(2)
     vi.spyOn(statsModel, 'countAiGeneratedOrdersInRange').mockResolvedValue(4)
     vi.spyOn(statsModel, 'findDeliveredOrdersByChannelInRange').mockResolvedValue([
-      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(100) }, _count: 2 },
+      { channel: 'GMAIL', _sum: { price: new Prisma.Decimal(100) }, _count: { _all: 2, price: 2 } },
     ] as never)
 
     const dashboard = await getDashboard('business-1', {
@@ -491,6 +649,9 @@ describe('getDashboard', () => {
       ordersCreated: 12,
       averageDeliveryDays: null,
       revenue: '0',
+      hasPriceData: false,
+      pricedCount: 0,
+      missingPriceCount: 0,
     })
     expect(dashboard.ordersByStatus.total).toBe(3)
     expect(dashboard.ordersEvolution).toEqual({
@@ -506,7 +667,17 @@ describe('getDashboard', () => {
     })
     expect(dashboard.aiSummary).toEqual({ clientsDetected: 2, ordersDetected: 4 })
     expect(dashboard.channelPerformance).toEqual({
-      entries: [{ channel: 'GMAIL', orderCount: 2, revenue: '100', averageTicket: '50' }],
+      entries: [
+        {
+          channel: 'GMAIL',
+          orderCount: 2,
+          revenue: '100',
+          averageTicket: '50',
+          hasPriceData: true,
+          pricedCount: 2,
+          missingPriceCount: 0,
+        },
+      ],
     })
   })
 })

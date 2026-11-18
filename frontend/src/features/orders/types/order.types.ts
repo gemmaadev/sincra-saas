@@ -20,6 +20,8 @@ export interface Order {
   createdAt: string
   client: OrderClientSummary
   description: string | null
+  aiGenerated: boolean
+  orderTags: OrderTag[]
 }
 
 export interface OrderItem {
@@ -27,7 +29,7 @@ export interface OrderItem {
   product: string
   description: string | null
   quantity: number
-  unitPrice: string
+  unitPrice: string | null
 }
 
 export interface OrderStatusChangeEntry {
@@ -66,6 +68,7 @@ export interface OrderDetail {
   client: OrderDetailClient
   items: OrderItem[]
   statusHistory: OrderStatusChangeEntry[]
+  aiGenerated: boolean
   orderTags: OrderTag[]
   createdAt: string
   updatedAt: string
@@ -100,7 +103,7 @@ export interface OrderFormItemValues {
   product: string
   description: string
   quantity: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 export interface OrderFormValues {
@@ -120,7 +123,7 @@ export interface OrderItemPayload {
   product: string
   description: string | null
   quantity: number
-  unitPrice: number
+  unitPrice: number | null
 }
 
 export interface OrderPayload {

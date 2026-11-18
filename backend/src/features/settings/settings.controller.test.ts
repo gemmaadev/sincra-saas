@@ -38,13 +38,13 @@ describe('connect', () => {
     const req = createMockRequest({
       businessId: 'biz-1',
       userId: 'user-1',
-      body: { channel: 'GMAIL' },
+      body: { channel: 'GMAIL', accessToken: 'token-1' },
     })
     const res = createMockResponse()
 
     await connect(req, res, vi.fn() as NextFunction)
 
-    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1')
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', 'token-1')
     expect(res.json).toHaveBeenCalledWith({ connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' } })
   })
 
@@ -64,6 +64,20 @@ describe('connect', () => {
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.statusCode).toBe(400)
     expect(calledError.code).toBe('INVALID_CHANNEL')
+    expect(connectSpy).not.toHaveBeenCalled()
+  })
+
+  it('rejects Gmail without an access token', async () => {
+    const connectSpy = vi.spyOn(settingsService, 'connectChannel')
+    const next = vi.fn()
+
+    await connect(
+      createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'GMAIL' } }),
+      createMockResponse(),
+      next as NextFunction,
+    )
+
+    expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'GMAIL_TOKEN_REQUIRED' })
     expect(connectSpy).not.toHaveBeenCalled()
   })
 })

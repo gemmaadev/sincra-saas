@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import type { UseMutationResult } from '@tanstack/react-query'
-import { TagPill, AiSuggestedBadge } from '@/shared/components'
+import { TagPill } from '@/shared/components'
 import { ApiError } from '@/shared/services'
 import { TagPicker } from './TagPicker'
 import { useTags } from '../hooks/useTags'
@@ -23,7 +23,13 @@ interface TagsTabProps {
   ariaLabel: string
 }
 
-export function TagsTab({ assignedTags, assignTag, removeTag, emptyMessage, ariaLabel }: TagsTabProps) {
+export function TagsTab({
+  assignedTags,
+  assignTag,
+  removeTag,
+  emptyMessage,
+  ariaLabel,
+}: TagsTabProps) {
   const { data: tags = [] } = useTags()
   const createTag = useCreateTag()
 
@@ -69,8 +75,7 @@ export function TagsTab({ assignedTags, assignTag, removeTag, emptyMessage, aria
         <ul aria-label={ariaLabel} className="flex flex-wrap gap-3">
           {assignedTags.map(({ id, tagId, aiGenerated, tag }) => (
             <li key={id} className="inline-flex items-center gap-1.5">
-              <TagPill name={tag.name} color={tag.color} />
-              {aiGenerated && <AiSuggestedBadge />}
+              <TagPill name={tag.name} color={tag.color} aiGenerated={aiGenerated} />
               <button
                 type="button"
                 aria-label={`Quitar etiqueta ${tag.name}`}

@@ -63,7 +63,7 @@ export async function findDeliveredOrdersByChannelInRange(
       ...(createdAtRange && { createdAt: createdAtRange }),
     },
     _sum: { price: true },
-    _count: true,
+    _count: { _all: true, price: true },
   })
 }
 

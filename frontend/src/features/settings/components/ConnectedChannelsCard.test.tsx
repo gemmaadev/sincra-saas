@@ -1,9 +1,28 @@
-import { render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
+import { notifyError } from '@/shared/utils/notify'
 import { ConnectedChannelsCard } from './ConnectedChannelsCard'
+
+const googleLogin = vi.hoisted(() => ({ cancel: false }))
+
+vi.mock('@react-oauth/google', () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: (options: {
+    onSuccess: (response: { access_token: string }) => void
+    onNonOAuthError: () => void
+  }) => {
+    return () =>
+      googleLogin.cancel
+        ? options.onNonOAuthError()
+        : options.onSuccess({ access_token: 'google-access-token' })
+  },
+}))
+
+vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
@@ -23,10 +42,17 @@ function renderCard(canEdit = true) {
   return { user: userEvent.setup() }
 }
 
+function connectButton(channelName: string) {
+  const row = screen.getByText(channelName).closest('div.justify-between') as HTMLElement
+  return within(row).getByRole('button', { name: 'Conectar' })
+}
+
 describe('ConnectedChannelsCard', () => {
   beforeEach(() => {
+    googleLogin.cancel = false
     vi.mocked(api.get).mockReset().mockResolvedValue({ channels: mockChannels })
     vi.mocked(api.post).mockReset().mockResolvedValue({})
+    vi.mocked(notifyError).mockReset()
   })
 
   // Given the channels endpoint resolves
@@ -62,6 +88,39 @@ describe('ConnectedChannelsCard', () => {
     await user.click(await screen.findByRole('button', { name: 'Conectar' }))
 
     expect(api.post).toHaveBeenCalledWith('/channels/connect', { channel: 'OUTLOOK' })
+  })
+
+  it('sends the Google access token when connecting Gmail', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL' ? { ...channel, status: 'DISCONNECTED' } : channel,
+      ),
+    })
+    const { user } = renderCard()
+
+    await user.click(await screen.findByText('Gmail').then(() => connectButton('Gmail')))
+
+    expect(api.post).toHaveBeenCalledWith('/channels/connect', {
+      channel: 'GMAIL',
+      accessToken: 'google-access-token',
+    })
+  })
+
+  it('does not save Gmail when Google sign-in is cancelled', async () => {
+    googleLogin.cancel = true
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL' ? { ...channel, status: 'DISCONNECTED' } : channel,
+      ),
+    })
+    const { user } = renderCard()
+
+    await user.click(await screen.findByText('Gmail').then(() => connectButton('Gmail')))
+
+    expect(api.post).not.toHaveBeenCalled()
+    expect(notifyError).toHaveBeenCalledWith(
+      'No se ha podido guardar el cambio. Inténtalo de nuevo.',
+    )
   })
 
   // Given a non-admin viewing the channels
