@@ -1,10 +1,14 @@
 import { Check } from 'lucide-react'
 import type { ChannelBrand } from './channels'
+import { connectedAccountLabel } from './connectedAccountLabel'
 
 interface ChannelConnectionRowProps {
   channel: ChannelBrand
   description: string
   status: 'connected' | 'disconnected' | 'mocked'
+  // null means the channel is connected but the address is unknown.
+  // Omit it to keep the channel description.
+  accountEmail?: string | null
   disabled?: boolean
   bordered?: boolean
   onToggle?: () => void
@@ -14,12 +18,16 @@ export function ChannelConnectionRow({
   channel,
   description,
   status,
+  accountEmail,
   disabled = false,
   bordered = true,
   onToggle,
 }: ChannelConnectionRowProps) {
   const Icon = channel.icon
   const isMocked = status === 'mocked'
+  const showsAccount = status === 'connected' && accountEmail !== undefined
+  const detail = showsAccount ? connectedAccountLabel(accountEmail) : description
+  const breakEmail = showsAccount && Boolean(accountEmail?.trim())
 
   return (
     <div
@@ -27,13 +35,13 @@ export function ChannelConnectionRow({
         bordered ? 'rounded-xl border border-neutral-100 p-4' : 'py-3 first:pt-0 last:pb-0'
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-neutral-50">
           <Icon size={22} className={channel.colorClassName} />
         </span>
-        <div className="flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <span className="font-semibold text-ink">{channel.name}</span>
-          <p className="text-sm text-ink-muted">{description}</p>
+          <p className={`text-sm text-ink-muted ${breakEmail ? 'break-all' : ''}`}>{detail}</p>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'
 import { SincraButton } from '@/shared/components/button'
 import { ONBOARDING_CHANNELS } from '../onboarding.constants'
+import type { OnboardingChannel } from '../onboarding.types'
 import type { ChannelId } from '@/shared/channels/channels'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
+import { useConnectedChannels } from '@/features/settings/hooks/useConnectedChannels'
 import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
 import { notifyError } from '@/shared/utils/notify'
 
@@ -27,7 +29,15 @@ export function ChannelsStep(props: ChannelsStepProps) {
 
 function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
   // TODO: para Outlook, sustituir por el flujo OAuth real cuando el backend esté listo.
+  const { data: channels } = useConnectedChannels()
   const toggleChannelConnection = useToggleChannelConnection()
+
+  function accountEmailFor(channel: OnboardingChannel) {
+    if (!connectedChannels.includes(channel.id) || channel.integration !== 'real') return undefined
+    const stored = channels?.find((item) => item.channel.toLowerCase() === channel.id)
+    if (stored?.status !== 'CONNECTED') return null
+    return stored.accountEmail ?? null
+  }
 
   const requestGmailAccess = useGoogleLogin({
     flow: 'implicit',
@@ -96,6 +106,7 @@ function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: Ch
             channel={channel}
             description={channel.description}
             status={connectedChannels.includes(channel.id) ? 'connected' : 'disconnected'}
+            accountEmail={accountEmailFor(channel)}
             onToggle={() => toggleConnection(channel.id)}
           />
         ))}

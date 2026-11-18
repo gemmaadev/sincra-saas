@@ -30,7 +30,7 @@ vi.mock('@/shared/services', async (importOriginal) => {
 })
 
 const mockChannels = [
-  { channel: 'GMAIL', status: 'CONNECTED' },
+  { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' },
   { channel: 'OUTLOOK', status: 'DISCONNECTED' },
   { channel: 'WHATSAPP', status: 'MOCKED' },
   { channel: 'INSTAGRAM', status: 'MOCKED' },
@@ -62,6 +62,7 @@ describe('ConnectedChannelsCard', () => {
     renderCard()
 
     expect(await screen.findByRole('button', { name: 'Desconectar Gmail' })).toBeInTheDocument()
+    expect(screen.getByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Conectar' })).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: 'Conectar WhatsApp (no disponible)' }),
@@ -121,6 +122,52 @@ describe('ConnectedChannelsCard', () => {
     expect(notifyError).toHaveBeenCalledWith(
       'No se ha podido guardar el cambio. Inténtalo de nuevo.',
     )
+  })
+
+  it('lowercases the connected account email', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'GMAIL'
+          ? { ...channel, accountEmail: '  SincraManager@Outlook.es ' }
+          : channel,
+      ),
+    })
+    renderCard()
+
+    expect(await screen.findByText('Conectado como sincramanager@outlook.es')).toBeInTheDocument()
+  })
+
+  it('shows a fallback when the connected account has no email', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'OUTLOOK'
+          ? { channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: '   ' }
+          : channel,
+      ),
+    })
+    renderCard()
+
+    const outlookRow = (await screen.findByText('Outlook')).closest(
+      'div.justify-between',
+    ) as HTMLElement
+    expect(within(outlookRow).getByText('Cuenta conectada')).toBeInTheDocument()
+  })
+
+  it('keeps the description of a disconnected channel', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: mockChannels.map((channel) =>
+        channel.channel === 'OUTLOOK' ? { ...channel, accountEmail: 'vieja@outlook.com' } : channel,
+      ),
+    })
+    renderCard()
+
+    expect(await screen.findByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
+    expect(screen.queryByText(/vieja@outlook.com/)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Conecta tu cuenta de Outlook usando OAuth para recibir correos de forma segura.',
+      ),
+    ).toBeInTheDocument()
   })
 
   // Given a non-admin viewing the channels

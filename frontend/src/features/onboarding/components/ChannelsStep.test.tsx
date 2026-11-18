@@ -28,7 +28,7 @@ vi.mock('@react-oauth/google', () => ({
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
-  return { ...actual, api: { post: vi.fn() } }
+  return { ...actual, api: { get: vi.fn(), post: vi.fn() } }
 })
 
 vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
@@ -50,6 +50,7 @@ function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsS
 describe('ChannelsStep', () => {
   beforeEach(() => {
     googleLogin.outcome = 'success'
+    vi.mocked(api.get).mockReset().mockResolvedValue({ channels: [] })
     vi.mocked(api.post).mockReset().mockResolvedValue({})
     vi.mocked(notifyError).mockReset()
   })
@@ -103,6 +104,25 @@ describe('ChannelsStep', () => {
     await user.click(disconnectButton)
 
     expect(handleChange).toHaveBeenCalledWith(['outlook'])
+  })
+
+  it('Scenario: a connected channel shows which account it is', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: [
+        { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'Tienda@Gmail.com' },
+        { channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null },
+      ],
+    })
+    renderChannelsStep({ connectedChannels: ['gmail', 'outlook', 'whatsapp'] })
+
+    expect(await screen.findByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
+    const outlookCard = screen
+      .getByText('Outlook')
+      .closest('div[class*="rounded-xl"]') as HTMLElement
+    expect(within(outlookCard).getByText('Cuenta conectada')).toBeInTheDocument()
+    expect(
+      screen.getByText('Recibe y gestiona tus mensajes de WhatsApp en la plataforma.'),
+    ).toBeInTheDocument()
   })
 
   it('Scenario: a connected channel is shown as a check, not a button', () => {

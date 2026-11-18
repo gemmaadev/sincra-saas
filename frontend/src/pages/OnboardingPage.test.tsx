@@ -27,7 +27,7 @@ vi.mock('@/features/auth/hooks/useRegisterBusiness', () => ({
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
-  return { ...actual, api: { post: vi.fn() } }
+  return { ...actual, api: { get: vi.fn(), post: vi.fn() } }
 })
 
 function renderOnboardingPage() {
@@ -39,6 +39,7 @@ describe('OnboardingPage', () => {
     mockNavigate.mockClear()
     mockRegisterBusiness.mockClear()
     mockRegisterBusiness.mockResolvedValue(true)
+    vi.mocked(api.get).mockReset().mockResolvedValue({ channels: [] })
     vi.mocked(api.post).mockReset().mockResolvedValue({})
   })
 
@@ -114,7 +115,9 @@ describe('OnboardingPage', () => {
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Flowers & Co')
     await user.click(screen.getByRole('button', { name: /siguiente/i }))
 
-    const outlookCard = screen.getByText('Outlook').closest('div[class*="rounded-xl"]') as HTMLElement
+    const outlookCard = screen
+      .getByText('Outlook')
+      .closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(outlookCard).getByRole('button', { name: 'Conectar' }))
 
     await user.click(screen.getByRole('button', { name: /siguiente/i }))

@@ -84,6 +84,7 @@ function ConnectedChannelsCardContent({ canEdit }: ConnectedChannelsCardProps) {
           {ONBOARDING_CHANNELS.map((channel) => {
             const backendChannel = channel.id.toUpperCase() as Channel
             const status = statusFor(backendChannel)
+            const stored = channels?.find((item) => item.channel === backendChannel)
 
             return (
               <ChannelConnectionRow
@@ -91,6 +92,7 @@ function ConnectedChannelsCardContent({ canEdit }: ConnectedChannelsCardProps) {
                 channel={channel}
                 description={channel.description}
                 status={status}
+                accountEmail={status === 'connected' ? (stored?.accountEmail ?? null) : undefined}
                 bordered={false}
                 disabled={!canEdit || toggleChannelConnection.isPending}
                 onToggle={() => toggle(backendChannel, status)}

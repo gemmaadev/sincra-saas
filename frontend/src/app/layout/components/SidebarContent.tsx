@@ -18,6 +18,7 @@ import { TagPill } from '@/shared/components/tag-pill'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { useConnectedChannels } from '@/features/settings/hooks/useConnectedChannels'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
+import { connectedAccountLabel } from '@/shared/channels/connectedAccountLabel'
 import { Link, useNavigate } from 'react-router'
 
 const navItems = [
@@ -62,16 +63,26 @@ export function SidebarContent() {
               (channelBrand) => channelBrand.id === channel.channel.toLowerCase(),
             )
             const Icon = brand?.icon
+            const accountLabel = connectedAccountLabel(channel.accountEmail)
 
             return (
               <div
                 key={channel.channel}
-                className="flex items-center gap-2 px-3 py-1 text-sm text-ink-muted"
+                className="flex items-start gap-2 px-3 py-1 text-sm text-ink-muted"
               >
                 {Icon && (
-                  <Icon size={16} className={brand?.colorClassName} aria-hidden="true" />
+                  <Icon
+                    size={16}
+                    className={`mt-0.5 shrink-0 ${brand?.colorClassName}`}
+                    aria-hidden="true"
+                  />
                 )}
-                {brand?.name ?? channel.channel}
+                <span className="flex min-w-0 flex-col">
+                  <span>{brand?.name ?? channel.channel}</span>
+                  <span className="truncate text-xs" title={accountLabel}>
+                    {accountLabel}
+                  </span>
+                </span>
               </div>
             )
           })}
