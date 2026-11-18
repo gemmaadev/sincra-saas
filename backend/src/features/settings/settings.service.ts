@@ -3,7 +3,7 @@ import { AppError } from '../../shared/AppError'
 import { findBusinessById, updateBusiness } from '../auth/auth.model'
 import { verifyGmailAccessToken } from './gmail-token'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
-import type { UpdateBusinessSettingsBody } from './settings.types'
+import type { ConnectedChannelStatus, UpdateBusinessSettingsBody } from './settings.types'
 
 export async function connectChannel(
   businessId: string,
@@ -56,14 +56,30 @@ export async function deleteAccount(businessId: string, userId: string) {
 const MOCKED_CHANNELS: Channel[] = ['WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 const ALL_CHANNELS: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 
-export async function getConnectedChannelsStatus(businessId: string) {
-  const connectedChannels = await findConnectedChannels(businessId)
-  const statusByChannel = new Map(connectedChannels.map((row) => [row.channel, row.status]))
+function normalizeAccountEmail(email: string | null | undefined) {
+  if (typeof email !== 'string') return null
+  const normalized = email.trim().toLowerCase()
+  return normalized || null
+}
 
-  return ALL_CHANNELS.map((channel) => ({
-    channel,
-    status: MOCKED_CHANNELS.includes(channel)
+export async function getConnectedChannelsStatus(
+  businessId: string,
+): Promise<ConnectedChannelStatus[]> {
+  const connectedChannels = await findConnectedChannels(businessId)
+  const rowByChannel = new Map(connectedChannels.map((row) => [row.channel, row]))
+
+  return ALL_CHANNELS.map((channel) => {
+    const row = rowByChannel.get(channel)
+    const status = MOCKED_CHANNELS.includes(channel)
       ? ('MOCKED' as const)
-      : (statusByChannel.get(channel) ?? ('DISCONNECTED' as const)),
-  }))
+      : (row?.status ?? ('DISCONNECTED' as const))
+
+    // A disconnected row can still store the previous address. Only a real
+    // connection should tell the business which account is in use.
+    return {
+      channel,
+      status,
+      accountEmail: status === 'CONNECTED' ? normalizeAccountEmail(row?.accountEmail) : null,
+    }
+  })
 }

@@ -1,8 +1,14 @@
-import type { Channel } from '../../generated/prisma/client'
+import type { Channel, ChannelConnectionStatus } from '../../generated/prisma/client'
 
 export interface ChannelActionBody {
   channel: Channel
   accessToken?: string
+}
+
+export interface ConnectedChannelStatus {
+  channel: Channel
+  status: ChannelConnectionStatus | 'MOCKED'
+  accountEmail: string | null
 }
 
 export interface UpdateBusinessSettingsBody {

@@ -45,7 +45,9 @@ describe('connect', () => {
     await connect(req, res, vi.fn() as NextFunction)
 
     expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', 'token-1')
-    expect(res.json).toHaveBeenCalledWith({ connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' } })
+    expect(res.json).toHaveBeenCalledWith({
+      connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' },
+    })
   })
 
   // Given a request with an invalid channel name
@@ -54,7 +56,11 @@ describe('connect', () => {
   it('throws a 400 AppError when the channel is invalid', async () => {
     const connectSpy = vi.spyOn(settingsService, 'connectChannel')
 
-    const req = createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'FAX' } })
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: { channel: 'FAX' },
+    })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -187,7 +193,7 @@ describe('getChannelsStatus', () => {
   // When fetching the channels status
   // Then it should return the channels from the service
   it('returns the channels for the authenticated business', async () => {
-    const channels = [{ channel: 'GMAIL', status: 'CONNECTED' }]
+    const channels = [{ channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' }]
     vi.spyOn(settingsService, 'getConnectedChannelsStatus').mockResolvedValue(channels as never)
 
     const req = createMockRequest({ businessId: 'biz-1' })
