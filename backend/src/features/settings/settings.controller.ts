@@ -8,11 +8,24 @@ import {
   updateBusinessSettings,
   getConnectedChannelsStatus,
   deleteAccount,
-  requireAccountEmail,
 } from './settings.service'
 import type { ChannelActionBody, UpdateBusinessSettingsBody } from './settings.types'
 
 const VALID_CHANNELS = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
+const ACCOUNT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function requireAccountEmail(email: unknown) {
+  if (typeof email !== 'string' || !email.trim()) {
+    throw new AppError('Falta el email de la cuenta', 400, 'ACCOUNT_EMAIL_REQUIRED')
+  }
+
+  const accountEmail = email.trim().toLowerCase()
+  if (!ACCOUNT_EMAIL_PATTERN.test(accountEmail)) {
+    throw new AppError('El email no tiene un formato válido', 400, 'INVALID_ACCOUNT_EMAIL')
+  }
+
+  return accountEmail
+}
 
 export const connect = asyncHandler(async (req: Request, res: Response) => {
   const { channel, accessToken, accountEmail } = req.body as ChannelActionBody

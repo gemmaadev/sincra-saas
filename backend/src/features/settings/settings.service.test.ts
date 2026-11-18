@@ -22,6 +22,9 @@ describe('connectChannel', () => {
     vi.clearAllMocks()
   })
 
+  // Given an Outlook address with spaces and capitals
+  // When connecting that channel
+  // Then the stored email is trimmed and lowercase
   it('saves a non-Gmail account email trimmed and in lowercase', async () => {
     await connectChannel('biz-1', 'OUTLOOK', 'user-1', {
       accountEmail: '  Tienda@Outlook.com ',
@@ -36,6 +39,9 @@ describe('connectChannel', () => {
     )
   })
 
+  // Given a missing or invalid account email
+  // When connecting a channel that is not Gmail
+  // Then it rejects the request and does not write a row
   it('rejects a non-Gmail channel without a valid email', async () => {
     await expect(connectChannel('biz-1', 'OUTLOOK', 'user-1')).rejects.toMatchObject({
       code: 'ACCOUNT_EMAIL_REQUIRED',
@@ -46,6 +52,9 @@ describe('connectChannel', () => {
     expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
   })
 
+  // Given a verified Google token and a different email sent by the client
+  // When connecting Gmail
+  // Then only the verified Google email and sub are stored
   it('saves the Gmail email and sub after the token is verified', async () => {
     vi.mocked(gmailToken.verifyGmailAccessToken).mockResolvedValue({
       email: 'tienda@gmail.com',
@@ -67,6 +76,9 @@ describe('connectChannel', () => {
     )
   })
 
+  // Given a missing or rejected Gmail token
+  // When connecting Gmail
+  // Then nothing is stored
   it('does not save Gmail when the token is missing or rejected', async () => {
     await expect(connectChannel('biz-1', 'GMAIL', 'user-1')).rejects.toMatchObject({
       code: 'GMAIL_TOKEN_REQUIRED',
@@ -253,6 +265,9 @@ describe('getConnectedChannelsStatus', () => {
     ])
   })
 
+  // Given a disconnected channel that still stores an address
+  // When reading the channels status for that business
+  // Then the address is not exposed
   it('hides a stored email once the channel is disconnected', async () => {
     vi.mocked(settingsModel.findConnectedChannels).mockResolvedValue([
       { channel: 'OUTLOOK', status: 'DISCONNECTED', accountEmail: 'Vieja@Outlook.com' },

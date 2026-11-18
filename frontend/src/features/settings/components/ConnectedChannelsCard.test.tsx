@@ -102,8 +102,8 @@ describe('ConnectedChannelsCard', () => {
   })
 
   // Given Outlook is disconnected
-  // When an admin clicks "Conectar"
-  // Then it should POST to /channels/connect
+  // When an admin confirms a valid email in the modal
+  // Then it connects that channel and stores the lowercase email
   it('connects a disconnected channel', async () => {
     const { user } = renderCard()
 
@@ -116,6 +116,9 @@ describe('ConnectedChannelsCard', () => {
     })
   })
 
+  // Given the Outlook email modal is empty
+  // When the admin tries to confirm it
+  // Then the channel is not connected
   it('does not connect Outlook without a valid email', async () => {
     const { user } = renderCard()
 
@@ -127,6 +130,9 @@ describe('ConnectedChannelsCard', () => {
     expect(api.post).not.toHaveBeenCalled()
   })
 
+  // Given Gmail is disconnected
+  // When the admin types an email and Google sign-in succeeds
+  // Then the typed email is the login hint and only the access token is saved
   it('sends the Google access token when connecting Gmail', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: mockChannels.map((channel) =>
@@ -145,6 +151,9 @@ describe('ConnectedChannelsCard', () => {
     })
   })
 
+  // Given the typed Gmail address is not the one Google verifies
+  // When the connection succeeds
+  // Then a quiet notice names the account that was actually connected
   it('warns when Google connects a different email', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: mockChannels.map((channel) =>
@@ -164,6 +173,9 @@ describe('ConnectedChannelsCard', () => {
     ).toBeInTheDocument()
   })
 
+  // Given Google sign-in is cancelled after the email modal
+  // When the admin confirms the email
+  // Then nothing is saved and the existing error toast is shown
   it('does not save Gmail when Google sign-in is cancelled', async () => {
     googleLogin.cancel = true
     vi.mocked(api.get).mockResolvedValue({
@@ -182,6 +194,9 @@ describe('ConnectedChannelsCard', () => {
     )
   })
 
+  // Given a connected Gmail row whose stored email has capitals and spaces
+  // When the card renders
+  // Then the label shows that email in lowercase
   it('lowercases the connected account email', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: mockChannels.map((channel) =>
@@ -195,6 +210,9 @@ describe('ConnectedChannelsCard', () => {
     expect(await screen.findByText('Conectado como sincramanager@outlook.es')).toBeInTheDocument()
   })
 
+  // Given Outlook is connected and has no email
+  // When the admin adds one from the row
+  // Then that email is saved and no status sentence is shown beforehand
   it('lets a connected channel without an email add one', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: mockChannels.map((channel) =>
@@ -218,6 +236,9 @@ describe('ConnectedChannelsCard', () => {
     })
   })
 
+  // Given Outlook is disconnected but a previous email is still stored
+  // When the card renders
+  // Then that email is hidden and the connect description stays
   it('keeps the description of a disconnected channel', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: mockChannels.map((channel) =>

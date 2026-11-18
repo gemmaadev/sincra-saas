@@ -3,11 +3,15 @@ import { AppError } from '../../shared/AppError'
 import { findBusinessById, updateBusiness } from '../auth/auth.model'
 import { verifyGmailAccessToken } from './gmail-token'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
-import type { ConnectedChannelStatus, UpdateBusinessSettingsBody } from './settings.types'
+import type {
+  ConnectChannelInput,
+  ConnectedChannelStatus,
+  UpdateBusinessSettingsBody,
+} from './settings.types'
 
 const ACCOUNT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export function requireAccountEmail(email: unknown) {
+function requireAccountEmail(email: unknown) {
   if (typeof email !== 'string' || !email.trim()) {
     throw new AppError('Falta el email de la cuenta', 400, 'ACCOUNT_EMAIL_REQUIRED')
   }
@@ -24,7 +28,7 @@ export async function connectChannel(
   businessId: string,
   channel: Channel,
   userId: string,
-  input: { accessToken?: string; accountEmail?: string } = {},
+  input: ConnectChannelInput = {},
 ) {
   if (channel === 'GMAIL') {
     if (!input.accessToken?.trim()) {

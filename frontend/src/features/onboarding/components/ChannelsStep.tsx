@@ -5,16 +5,12 @@ import { ONBOARDING_CHANNELS } from '../onboarding.constants'
 import type { OnboardingChannel } from '../onboarding.types'
 import type { ChannelId } from '@/shared/channels/channels'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
+import { gmailAccountNotice } from '@/shared/channels/gmailAccountNotice'
 import { normalizedAccountEmail } from '@/shared/channels/connectedAccountLabel'
-import {
-  ChannelAccountEmailModal,
-  type ChannelEmailPurpose,
-} from '@/shared/channels/ChannelAccountEmailModal'
+import { ChannelAccountEmailModal, type ChannelEmailPurpose } from '@/shared/components'
 import { useConnectedChannels } from '@/features/settings/hooks/useConnectedChannels'
-import {
-  useToggleChannelConnection,
-  type ConnectedChannelResponse,
-} from '../hooks/useToggleChannelConnection'
+import type { ConnectedChannelMutationResult } from '@/features/settings/types/settings.types'
+import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
 import { notifyError } from '@/shared/utils/notify'
 
 interface ChannelsStepProps {
@@ -32,11 +28,6 @@ interface EmailPrompt {
   channelId: ChannelId
   purpose: ChannelEmailPurpose
   initialEmail: string
-}
-
-function savedAccountEmail(response: ConnectedChannelResponse | undefined) {
-  const email = response?.connectedChannel?.accountEmail
-  return typeof email === 'string' ? email.trim().toLowerCase() : null
 }
 
 export function ChannelsStep(props: ChannelsStepProps) {
@@ -66,7 +57,7 @@ function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: Ch
     channelId: ChannelId,
     previous: ChannelId[],
     input: { accessToken?: string; accountEmail?: string },
-    onSaved?: (response: ConnectedChannelResponse) => void,
+    onSaved?: (response: ConnectedChannelMutationResult) => void,
   ) {
     onChange(previous.includes(channelId) ? previous : [...previous, channelId])
     toggleChannelConnection.mutate(
@@ -92,12 +83,7 @@ function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: Ch
         return
       }
       connectPersisted('gmail', connectedChannels, { accessToken }, (response) => {
-        const saved = savedAccountEmail(response)
-        setGmailNotice(
-          typed && saved && typed !== saved
-            ? `El email escrito no coincide. Se ha conectado ${saved}.`
-            : null,
-        )
+        setGmailNotice(gmailAccountNotice(typed, response.connectedChannel?.accountEmail ?? null))
       })
     },
     onError: () => notifyError(SAVE_ERROR),

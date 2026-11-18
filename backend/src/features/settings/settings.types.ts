@@ -6,6 +6,11 @@ export interface ChannelActionBody {
   accountEmail?: string
 }
 
+export interface ConnectChannelInput {
+  accessToken?: string
+  accountEmail?: string
+}
+
 export interface ConnectedChannelStatus {
   channel: Channel
   status: ChannelConnectionStatus | 'MOCKED'

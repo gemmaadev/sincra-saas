@@ -71,6 +71,9 @@ describe('Sidebar', () => {
     expect(screen.queryByText('WhatsApp')).not.toBeInTheDocument()
   })
 
+  // Given Outlook is connected and has no email
+  // When the sidebar renders
+  // Then the channel name is shown and there is no status line
   it('lists a connected channel without an email and without a status line', async () => {
     mockApiGet([{ channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null }])
     renderSidebar()

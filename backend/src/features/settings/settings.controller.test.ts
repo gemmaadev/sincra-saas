@@ -87,6 +87,9 @@ describe('connect', () => {
     expect(connectSpy).not.toHaveBeenCalled()
   })
 
+  // Given an Outlook email with spaces and capitals
+  // When connecting that channel for this business
+  // Then the service receives the trimmed lowercase email
   it('saves a trimmed lowercase email when connecting Outlook', async () => {
     const connectSpy = vi.spyOn(settingsService, 'connectChannel').mockResolvedValue({} as never)
 
@@ -105,6 +108,9 @@ describe('connect', () => {
     })
   })
 
+  // Given Outlook without an email, or with one that is not an email
+  // When connecting it
+  // Then the request is rejected before the service runs
   it('rejects Outlook without a valid email', async () => {
     const connectSpy = vi.spyOn(settingsService, 'connectChannel')
     const next = vi.fn()

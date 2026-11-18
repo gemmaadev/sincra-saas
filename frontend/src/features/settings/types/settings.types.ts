@@ -34,3 +34,9 @@ export interface ConnectedChannelStatus {
   status: ChannelConnectionStatus
   accountEmail?: string | null
 }
+
+export interface ConnectedChannelMutationResult {
+  connectedChannel?: {
+    accountEmail?: string | null
+  }
+}

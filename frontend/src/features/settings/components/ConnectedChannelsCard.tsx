@@ -3,18 +3,13 @@ import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google'
 import { Radio } from 'lucide-react'
 import { Spinner, SectionHeader } from '@/shared/components'
 import { ChannelConnectionRow } from '@/shared/channels/ChannelConnectionRow'
-import {
-  ChannelAccountEmailModal,
-  type ChannelEmailPurpose,
-} from '@/shared/channels/ChannelAccountEmailModal'
+import { gmailAccountNotice } from '@/shared/channels/gmailAccountNotice'
 import { normalizedAccountEmail } from '@/shared/channels/connectedAccountLabel'
+import { ChannelAccountEmailModal, type ChannelEmailPurpose } from '@/shared/components'
 import { ONBOARDING_CHANNELS } from '@/features/onboarding/onboarding.constants'
 import { notifyError } from '@/shared/utils/notify'
 import { useConnectedChannels } from '../hooks/useConnectedChannels'
-import {
-  useToggleChannelConnection,
-  type ConnectedChannelResponse,
-} from '../hooks/useToggleChannelConnection'
+import { useToggleChannelConnection } from '../hooks/useToggleChannelConnection'
 import type { ChannelConnectionStatus } from '../types/settings.types'
 import type { Channel } from '@/shared/types'
 
@@ -35,11 +30,6 @@ const STATUS_MAP: Record<ChannelConnectionStatus, 'connected' | 'disconnected' |
 }
 
 const SAVE_ERROR = 'No se ha podido guardar el cambio. Inténtalo de nuevo.'
-
-function savedAccountEmail(response: ConnectedChannelResponse | undefined) {
-  const email = response?.connectedChannel?.accountEmail
-  return typeof email === 'string' ? email.trim().toLowerCase() : null
-}
 
 export function ConnectedChannelsCard(props: ConnectedChannelsCardProps) {
   return (
@@ -69,11 +59,8 @@ function ConnectedChannelsCardContent({ canEdit }: ConnectedChannelsCardProps) {
         { channel: 'GMAIL', connect: true, accessToken: tokenResponse.access_token },
         {
           onSuccess: (response) => {
-            const saved = savedAccountEmail(response)
             setGmailNotice(
-              typed && saved && typed !== saved
-                ? `El email escrito no coincide. Se ha conectado ${saved}.`
-                : null,
+              gmailAccountNotice(typed, response?.connectedChannel?.accountEmail ?? null),
             )
           },
           onError: () => notifyError(SAVE_ERROR),

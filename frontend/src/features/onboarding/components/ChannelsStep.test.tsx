@@ -120,6 +120,9 @@ describe('ChannelsStep', () => {
     expect(handleChange).toHaveBeenCalledWith(['outlook'])
   })
 
+  // Given Gmail is connected with an email and Outlook is connected without one
+  // When the step renders
+  // Then Gmail shows the account and Outlook only offers to add the email
   it('Scenario: a connected channel shows which account it is', async () => {
     vi.mocked(api.get).mockResolvedValue({
       channels: [
