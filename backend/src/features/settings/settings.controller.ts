@@ -8,13 +8,14 @@ import {
   updateBusinessSettings,
   getConnectedChannelsStatus,
   deleteAccount,
+  requireAccountEmail,
 } from './settings.service'
 import type { ChannelActionBody, UpdateBusinessSettingsBody } from './settings.types'
 
 const VALID_CHANNELS = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
 
 export const connect = asyncHandler(async (req: Request, res: Response) => {
-  const { channel, accessToken } = req.body as ChannelActionBody
+  const { channel, accessToken, accountEmail } = req.body as ChannelActionBody
 
   if (!channel || !VALID_CHANNELS.includes(channel)) {
     throw new AppError('Canal no válido', 400, 'INVALID_CHANNEL')
@@ -24,12 +25,11 @@ export const connect = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Falta el token de Gmail', 400, 'GMAIL_TOKEN_REQUIRED')
   }
 
-  const connectedChannel = await connectChannel(
-    req.businessId!,
-    channel,
-    req.userId!,
-    channel === 'GMAIL' ? accessToken : undefined,
-  )
+  const connectedChannel = await connectChannel(req.businessId!, channel, req.userId!, {
+    ...(channel === 'GMAIL'
+      ? { accessToken }
+      : { accountEmail: requireAccountEmail(accountEmail) }),
+  })
   res.json({ connectedChannel })
 })
 

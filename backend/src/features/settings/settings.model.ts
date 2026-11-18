@@ -10,8 +10,15 @@ export async function upsertConnectedChannel(
   channel: Channel,
   status: ChannelConnectionStatus,
   userId: string,
-  account?: { accountEmail: string; providerAccountId: string },
+  account?: { accountEmail: string; providerAccountId?: string },
 ) {
+  const accountFields = account
+    ? {
+        accountEmail: account.accountEmail,
+        ...(account.providerAccountId ? { providerAccountId: account.providerAccountId } : {}),
+      }
+    : {}
+
   return prisma.connectedChannel.upsert({
     where: { businessId_channel: { businessId, channel } },
     create: {
@@ -20,10 +27,9 @@ export async function upsertConnectedChannel(
       status,
       createdBy: userId,
       updatedBy: userId,
-      accountEmail: account?.accountEmail,
-      providerAccountId: account?.providerAccountId,
+      ...accountFields,
     },
-    update: { status, updatedBy: userId, ...account },
+    update: { status, updatedBy: userId, ...accountFields },
   })
 }
 

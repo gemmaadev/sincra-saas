@@ -22,18 +22,28 @@ describe('connectChannel', () => {
     vi.clearAllMocks()
   })
 
-  // Given a business and a channel other than Gmail
-  // When connecting it
-  // Then it should upsert the ConnectedChannel row with status CONNECTED
-  it('upserts the channel as CONNECTED', async () => {
-    await connectChannel('biz-1', 'OUTLOOK', 'user-1')
+  it('saves a non-Gmail account email trimmed and in lowercase', async () => {
+    await connectChannel('biz-1', 'OUTLOOK', 'user-1', {
+      accountEmail: '  Tienda@Outlook.com ',
+    })
 
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
       'biz-1',
       'OUTLOOK',
       'CONNECTED',
       'user-1',
+      { accountEmail: 'tienda@outlook.com' },
     )
+  })
+
+  it('rejects a non-Gmail channel without a valid email', async () => {
+    await expect(connectChannel('biz-1', 'OUTLOOK', 'user-1')).rejects.toMatchObject({
+      code: 'ACCOUNT_EMAIL_REQUIRED',
+    })
+    await expect(
+      connectChannel('biz-1', 'OUTLOOK', 'user-1', { accountEmail: 'no-es-un-email' }),
+    ).rejects.toMatchObject({ code: 'INVALID_ACCOUNT_EMAIL' })
+    expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
   })
 
   it('saves the Gmail email and sub after the token is verified', async () => {
@@ -42,7 +52,10 @@ describe('connectChannel', () => {
       sub: 'sub-1',
     })
 
-    await connectChannel('biz-1', 'GMAIL', 'user-1', 'token-1')
+    await connectChannel('biz-1', 'GMAIL', 'user-1', {
+      accessToken: 'token-1',
+      accountEmail: 'otro@gmail.com',
+    })
 
     expect(gmailToken.verifyGmailAccessToken).toHaveBeenCalledWith('token-1')
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
@@ -64,7 +77,9 @@ describe('connectChannel', () => {
         code: 'GMAIL_TOKEN_INVALID',
       }),
     )
-    await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'bad-token')).rejects.toMatchObject({
+    await expect(
+      connectChannel('biz-1', 'GMAIL', 'user-1', { accessToken: 'bad-token' }),
+    ).rejects.toMatchObject({
       code: 'GMAIL_TOKEN_INVALID',
     })
     expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()

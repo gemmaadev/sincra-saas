@@ -44,7 +44,7 @@ describe('connect', () => {
 
     await connect(req, res, vi.fn() as NextFunction)
 
-    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', 'token-1')
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', { accessToken: 'token-1' })
     expect(res.json).toHaveBeenCalledWith({
       connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' },
     })
@@ -84,6 +84,48 @@ describe('connect', () => {
     )
 
     expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'GMAIL_TOKEN_REQUIRED' })
+    expect(connectSpy).not.toHaveBeenCalled()
+  })
+
+  it('saves a trimmed lowercase email when connecting Outlook', async () => {
+    const connectSpy = vi.spyOn(settingsService, 'connectChannel').mockResolvedValue({} as never)
+
+    await connect(
+      createMockRequest({
+        businessId: 'biz-1',
+        userId: 'user-1',
+        body: { channel: 'OUTLOOK', accountEmail: '  Tienda@Outlook.com ' },
+      }),
+      createMockResponse(),
+      vi.fn() as NextFunction,
+    )
+
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'OUTLOOK', 'user-1', {
+      accountEmail: 'tienda@outlook.com',
+    })
+  })
+
+  it('rejects Outlook without a valid email', async () => {
+    const connectSpy = vi.spyOn(settingsService, 'connectChannel')
+    const next = vi.fn()
+
+    await connect(
+      createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'OUTLOOK' } }),
+      createMockResponse(),
+      next as NextFunction,
+    )
+    await connect(
+      createMockRequest({
+        businessId: 'biz-1',
+        userId: 'user-1',
+        body: { channel: 'OUTLOOK', accountEmail: 'correo' },
+      }),
+      createMockResponse(),
+      next as NextFunction,
+    )
+
+    expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'ACCOUNT_EMAIL_REQUIRED' })
+    expect(next.mock.calls[1][0]).toMatchObject({ statusCode: 400, code: 'INVALID_ACCOUNT_EMAIL' })
     expect(connectSpy).not.toHaveBeenCalled()
   })
 })

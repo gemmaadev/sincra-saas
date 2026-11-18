@@ -5,24 +5,41 @@ import { verifyGmailAccessToken } from './gmail-token'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
 import type { ConnectedChannelStatus, UpdateBusinessSettingsBody } from './settings.types'
 
+const ACCOUNT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+export function requireAccountEmail(email: unknown) {
+  if (typeof email !== 'string' || !email.trim()) {
+    throw new AppError('Falta el email de la cuenta', 400, 'ACCOUNT_EMAIL_REQUIRED')
+  }
+
+  const accountEmail = email.trim().toLowerCase()
+  if (!ACCOUNT_EMAIL_PATTERN.test(accountEmail)) {
+    throw new AppError('El email no tiene un formato válido', 400, 'INVALID_ACCOUNT_EMAIL')
+  }
+
+  return accountEmail
+}
+
 export async function connectChannel(
   businessId: string,
   channel: Channel,
   userId: string,
-  accessToken?: string,
+  input: { accessToken?: string; accountEmail?: string } = {},
 ) {
-  if (channel !== 'GMAIL') {
-    return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId)
+  if (channel === 'GMAIL') {
+    if (!input.accessToken?.trim()) {
+      throw new AppError('Falta el token de Gmail', 400, 'GMAIL_TOKEN_REQUIRED')
+    }
+
+    const account = await verifyGmailAccessToken(input.accessToken)
+    return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId, {
+      accountEmail: account.email,
+      providerAccountId: account.sub,
+    })
   }
 
-  if (!accessToken?.trim()) {
-    throw new AppError('Falta el token de Gmail', 400, 'GMAIL_TOKEN_REQUIRED')
-  }
-
-  const account = await verifyGmailAccessToken(accessToken)
   return upsertConnectedChannel(businessId, channel, 'CONNECTED', userId, {
-    accountEmail: account.email,
-    providerAccountId: account.sub,
+    accountEmail: requireAccountEmail(input.accountEmail),
   })
 }
 

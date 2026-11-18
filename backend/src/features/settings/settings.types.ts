@@ -3,6 +3,7 @@ import type { Channel, ChannelConnectionStatus } from '../../generated/prisma/cl
 export interface ChannelActionBody {
   channel: Channel
   accessToken?: string
+  accountEmail?: string
 }
 
 export interface ConnectedChannelStatus {
