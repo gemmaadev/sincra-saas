@@ -2,11 +2,13 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { Resend } from 'resend'
 import { hashPassword } from '../../shared/hash'
+import { AppError } from '../../shared/AppError'
 import * as userModel from '../user/user.model'
 import * as authModel from './auth.model'
 import type {
   RegisterInput,
   OnboardingInput,
+  SessionMembership,
   SocialProfile,
   GoogleUserInfoResponse,
   MicrosoftTokenResponse,
@@ -35,6 +37,23 @@ export async function findUserByEmail(email: string) {
 
 export async function findMembership(userId: string, businessId: string) {
   return authModel.findActiveMembership(userId, businessId)
+}
+
+export async function requireActiveMembership(
+  userId: string,
+  businessId: string,
+): Promise<SessionMembership> {
+  const membership = await authModel.findActiveMembership(userId, businessId)
+
+  if (!membership) {
+    throw new AppError('No perteneces a ese negocio', 403, 'FORBIDDEN')
+  }
+
+  return {
+    userId: membership.userId,
+    businessId: membership.businessId,
+    role: membership.role,
+  }
 }
 
 export async function registerBusinessOwner(input: RegisterInput) {

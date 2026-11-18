@@ -2,8 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation, useNavigate } from 'react-router'
 import { api, ApiError } from '@/shared/services'
 import type { SuccessResponse } from '@/shared/types'
+import { clearQueriesAfterBusinessSwitch } from '../utils/clearQueriesAfterBusinessSwitch'
+import { toPathAfterBusinessSwitch } from '../utils/toPathAfterBusinessSwitch'
 import { useAuth } from './useAuth'
-import { routeAfterBusinessSwitch } from '../utils/routeAfterBusinessSwitch'
 
 export function useSwitchBusiness() {
   const queryClient = useQueryClient()
@@ -15,15 +16,11 @@ export function useSwitchBusiness() {
     mutationFn: (businessId: string) =>
       api.post<SuccessResponse>('/auth/switch-business', { businessId }),
     onSuccess: async () => {
-      const nextPath = routeAfterBusinessSwitch(location.pathname)
-      // Cancel in-flight reads first so they cannot write the previous
-      // business back into the cache after it has been dropped. removeQueries
-      // drops cached data without touching the mutation that is switching.
-      await queryClient.cancelQueries()
-      queryClient.removeQueries()
-      navigate(nextPath)
-      await login()
-      await queryClient.invalidateQueries()
+      const nextPath = toPathAfterBusinessSwitch(location.pathname)
+      await clearQueriesAfterBusinessSwitch(queryClient, async () => {
+        navigate(nextPath)
+        await login()
+      })
     },
   })
 

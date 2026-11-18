@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { sessionBusinessesKey } from '@/features/auth/hooks/useSessionBusinesses'
 import { AppHeader } from './AppHeader'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
@@ -194,7 +195,7 @@ describe('HeaderApp', () => {
 
     await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
     await waitFor(() =>
-      expect(queryClient.getQueryState(['session-businesses'])?.status).toBe('success'),
+      expect(queryClient.getQueryState(sessionBusinessesKey)?.status).toBe('success'),
     )
 
     expect(screen.queryByText('Cambiar de negocio')).not.toBeInTheDocument()

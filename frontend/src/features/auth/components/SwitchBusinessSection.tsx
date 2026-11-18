@@ -1,12 +1,7 @@
 import { Building2, Check } from 'lucide-react'
-import { useSessionBusinesses } from '@/features/auth/hooks/useSessionBusinesses'
-import { useSwitchBusiness } from '@/features/auth/hooks/useSwitchBusiness'
-import type { UserBusiness } from '@/features/auth/types/business.types'
-
-const BUSINESS_ROLE_LABEL: Record<UserBusiness['role'], string> = {
-  ADMIN: 'Administrador',
-  EMPLOYEE: 'Empleado',
-}
+import { BUSINESS_ROLE_LABELS } from '../auth.constants'
+import { useSessionBusinesses } from '../hooks/useSessionBusinesses'
+import { useSwitchBusiness } from '../hooks/useSwitchBusiness'
 
 interface SwitchBusinessSectionProps {
   currentBusinessId: string
@@ -35,6 +30,7 @@ export function SwitchBusinessSection({ currentBusinessId }: SwitchBusinessSecti
               type="button"
               role="menuitemradio"
               aria-checked={isCurrent}
+              aria-busy={isSwitching}
               aria-label={isCurrent ? `${business.name} (actual)` : business.name}
               disabled={isCurrent || switchingBusinessId !== null}
               onClick={() => switchBusiness(business.businessId)}
@@ -47,7 +43,7 @@ export function SwitchBusinessSection({ currentBusinessId }: SwitchBusinessSecti
                   {isSwitching ? 'Cambiando...' : business.name}
                 </span>
                 <span className="block truncate text-xs text-ink-muted">
-                  {BUSINESS_ROLE_LABEL[business.role]}
+                  {BUSINESS_ROLE_LABELS[business.role]}
                 </span>
               </span>
               {isCurrent && (

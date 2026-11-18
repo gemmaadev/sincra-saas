@@ -7,6 +7,7 @@ import {
   findUserWithBusinesses,
   findUserByEmail,
   findMembership,
+  requireActiveMembership,
   findActiveMembershipWithDetails,
   registerBusinessOwner,
   verifyGoogleAccessToken,
@@ -181,19 +182,14 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
   res.json({ success: true })
 })
 
-// Switches the business already stored in the session cookie. verifyAuth has
-// checked the current membership; this checks the target one and re-issues the
-// cookie, which is what every later request reads as req.businessId.
+// The cookie is the only source of req.businessId. Role is taken from the
+// membership the service returns, never from the request body.
 export const switchBusiness = asyncHandler(async (req: Request, res: Response) => {
   const businessId = readBusinessId(req.body)
-  const membership = await findMembership(req.userId!, businessId)
-
-  if (!membership) {
-    throw new AppError('No perteneces a ese negocio', 403, 'FORBIDDEN')
-  }
+  const membership = await requireActiveMembership(req.userId!, businessId)
 
   const token = signToken({
-    userId: req.userId!,
+    userId: membership.userId,
     businessId: membership.businessId,
     role: membership.role,
   })

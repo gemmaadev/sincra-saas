@@ -7,11 +7,10 @@ import { useDisclosure } from '@mantine/hooks'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 import { ConfirmDeleteModal } from '@/shared/components/modal'
+import { SwitchBusinessSection } from '@/features/auth/components/SwitchBusinessSection'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { useSessionBusinesses } from '@/features/auth/hooks/useSessionBusinesses'
 import { useProfile } from '@/features/profile/hooks/useProfile'
 import { SidebarContent } from './SidebarContent'
-import { SwitchBusinessSection } from './SwitchBusinessSection'
 
 interface MenuItemProps {
   icon: ReactNode
@@ -46,9 +45,6 @@ function MenuItem({ icon, children, to, onClick, danger = false }: MenuItemProps
 export function AppHeader() {
   const { user, business, logout } = useAuth()
   const { data: profile } = useProfile()
-  // Prefetch so the switcher is ready when the menu opens. The query is shared
-  // with SwitchBusinessSection and stays disabled until there is a session.
-  useSessionBusinesses()
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)

@@ -382,11 +382,11 @@ describe('switchBusiness', () => {
   // When they switch to it, even if the body tries to claim another role
   // Then the new session cookie carries that business and the role stored for it
   it('reissues the session cookie for a business the user belongs to', async () => {
-    vi.spyOn(authService, 'findMembership').mockResolvedValue({
+    vi.spyOn(authService, 'requireActiveMembership').mockResolvedValue({
       businessId: 'biz-2',
       userId: 'user-1',
       role: 'EMPLOYEE',
-    } as never)
+    })
 
     const req = createMockRequest({
       userId: 'user-1',
@@ -397,7 +397,7 @@ describe('switchBusiness', () => {
 
     await switchBusiness(req, res, vi.fn() as NextFunction)
 
-    expect(authService.findMembership).toHaveBeenCalledWith('user-1', 'biz-2')
+    expect(authService.requireActiveMembership).toHaveBeenCalledWith('user-1', 'biz-2')
     expect(res.cookie).toHaveBeenCalledWith(
       'token',
       expect.any(String),
@@ -417,11 +417,13 @@ describe('switchBusiness', () => {
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 
-  // Given a business the session user does not belong to
+  // Given the service rejects the target business
   // When they try to switch to it
-  // Then it should throw a 403 AppError and leave the session cookie untouched
-  it('throws a 403 AppError when the user does not belong to that business', async () => {
-    vi.spyOn(authService, 'findMembership').mockResolvedValue(null)
+  // Then the rejection reaches the error handler and the session cookie stays unchanged
+  it('does not replace the session cookie when the membership is rejected', async () => {
+    vi.spyOn(authService, 'requireActiveMembership').mockRejectedValue(
+      new AppError('No perteneces a ese negocio', 403, 'FORBIDDEN'),
+    )
 
     const req = createMockRequest({ userId: 'user-1', body: { businessId: 'biz-ajeno' } })
     const res = createMockResponse()
@@ -440,7 +442,7 @@ describe('switchBusiness', () => {
   // When trying to switch
   // Then it should throw a 400 AppError before looking up a membership
   it('throws a 400 AppError when the business id is missing', async () => {
-    const findMembershipSpy = vi.spyOn(authService, 'findMembership')
+    const membershipSpy = vi.spyOn(authService, 'requireActiveMembership')
 
     const req = createMockRequest({ userId: 'user-1', body: {} })
     const res = createMockResponse()
@@ -452,7 +454,7 @@ describe('switchBusiness', () => {
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.statusCode).toBe(400)
     expect(calledError.code).toBe('MISSING_FIELDS')
-    expect(findMembershipSpy).not.toHaveBeenCalled()
+    expect(membershipSpy).not.toHaveBeenCalled()
   })
 
   // Given a business id that is not a string
