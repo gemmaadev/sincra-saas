@@ -37,6 +37,10 @@ export interface SelectBusinessBody {
   businessId: string
 }
 
+export interface SwitchBusinessBody {
+  businessId?: string
+}
+
 export interface SessionMembership {
   userId: string
   businessId: string

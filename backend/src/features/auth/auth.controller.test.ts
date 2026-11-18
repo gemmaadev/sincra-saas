@@ -457,11 +457,12 @@ describe('switchBusiness', () => {
     expect(membershipSpy).not.toHaveBeenCalled()
   })
 
-  // Given a business id that is not a string
+  // Given a business id that is only whitespace
   // When trying to switch
-  // Then it should throw a 400 AppError
-  it('throws a 400 AppError when the business id is not a string', async () => {
-    const req = createMockRequest({ userId: 'user-1', body: { businessId: 12 } })
+  // Then it should throw a 400 AppError before looking up a membership
+  it('throws a 400 AppError when the business id is blank', async () => {
+    const membershipSpy = vi.spyOn(authService, 'requireActiveMembership')
+    const req = createMockRequest({ userId: 'user-1', body: { businessId: '   ' } })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -471,6 +472,7 @@ describe('switchBusiness', () => {
     const calledError = next.mock.calls[0][0] as AppError
     expect(calledError.statusCode).toBe(400)
     expect(calledError.code).toBe('MISSING_FIELDS')
+    expect(membershipSpy).not.toHaveBeenCalled()
   })
 })
 

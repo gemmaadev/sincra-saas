@@ -23,6 +23,7 @@ import type {
   RegisterInput,
   OnboardingInput,
   SelectBusinessBody,
+  SwitchBusinessBody,
   SocialLoginResult,
   GoogleLoginBody,
   ForgotPasswordBody,
@@ -137,19 +138,6 @@ export const getMyBusinesses = asyncHandler(async (req: Request, res: Response) 
   res.json({ businesses })
 })
 
-function readBusinessId(body: unknown): string {
-  const businessId =
-    typeof body === 'object' && body !== null
-      ? (body as { businessId?: unknown }).businessId
-      : undefined
-
-  if (typeof businessId !== 'string' || businessId.trim() === '') {
-    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
-  }
-
-  return businessId
-}
-
 export const selectBusiness = asyncHandler(async (req: Request, res: Response) => {
   const { businessId } = req.body as SelectBusinessBody
   const pendingToken = req.cookies?.token
@@ -185,7 +173,12 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
 // The cookie is the only source of req.businessId. Role is taken from the
 // membership the service returns, never from the request body.
 export const switchBusiness = asyncHandler(async (req: Request, res: Response) => {
-  const businessId = readBusinessId(req.body)
+  const { businessId } = req.body as SwitchBusinessBody
+
+  if (!businessId?.trim()) {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
   const membership = await requireActiveMembership(req.userId!, businessId)
 
   const token = signToken({
