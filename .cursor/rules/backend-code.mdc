@@ -1,0 +1,68 @@
+---
+description: "[BACKEND] Code style — TypeScript, Express handlers, naming, tests. Apply when writing or editing backend code."
+globs: backend/**/*.{ts,prisma}
+alwaysApply: false
+---
+
+# [BACKEND] Code style
+
+Copy the style of neighboring files in the same feature. Do not introduce a second pattern.
+
+## Formatting (Prettier — non-negotiable)
+
+- No semicolons, single quotes, trailing commas, `printWidth: 100`, `tabWidth: 2`.
+- `cd backend && npm run lint` must stay clean. Ignore/never edit `src/generated/**`.
+
+## Naming
+
+- Identifiers in **English**, descriptive. `catch (error)`, never `catch (e)`. Meaningful params: `businessId`, `clientId` — not `id` alone when ambiguity exists.
+- Feature files: `<domain>.{routes,controller,service,model,types}.ts` (+ matching `*.test.ts`).
+- Sub-topic files: `<domain>-<topic>.{controller,service,model,types}.ts` (e.g. `client-map.service.ts`).
+- Model functions: verb + noun — `findClientById`, `insertOrder`, `countOrdersByStatus`.
+- Service functions: use-case verbs — `createOrder`, `listEvents`, `getDashboard`.
+- Controllers: short HTTP names exported as named consts — `create`, `list`, `getById`, `update`, `remove`.
+- Error codes: `SCREAMING_SNAKE` (`CLIENT_NOT_FOUND`, `INVALID_COORDINATES`). Messages in Spanish.
+
+## TypeScript
+
+- Explicit types for service inputs/outputs and request bodies in `*.types.ts` (`CreateClientInput`, `ListOrdersFilters`).
+- `import type` for type-only imports.
+- No `any`. Prefer Prisma-generated types / `unknown` + narrowing.
+- Unused args: `_next`, `_req` pattern already used by ESLint `argsIgnorePattern: '^_'`.
+- Keep controller-local validators as pure helpers in the controller file or types module — not inline spaghetti inside the handler.
+
+## Handler / service / model shape
+
+```ts
+// controller — HTTP only
+export const create = asyncHandler(async (req, res) => {
+  // validate → throw AppError(400, …)
+  const result = await createThing(req.businessId!, body)
+  res.status(201).json({ thing: result })
+})
+
+// service — rules + orchestration, calls models only
+// model — thin Prisma queries, named exports
+```
+
+- Map/transform responses in the service (or small pure helpers), not deep inside the controller.
+- Prefer early `throw new AppError(...)` over deep nested conditionals.
+- Transactions live in the model (or a model function that owns the interactive transaction).
+
+## Shared utilities
+
+- Reuse existing shared modules: `AppError`, `asyncHandler`, `errorHandler`, `pagination`, `prismaErrors`, `coordinates`, `geocoding.service`, `hash`, `jwt`.
+- Flat shared constants (like `defaultTags.ts`) stay as single files under `shared/`, not forced into a barrel.
+
+## Tests
+
+- Vitest. **Given / When / Then** comments above each `it(...)`.
+- Service tests: `vi.mock` the feature `*.model` and external shared services; assert `AppError` via `rejects.toMatchObject({ statusCode, code })`.
+- Controller/route tests follow the neighboring `*.test.ts` pattern (supertest where already used).
+- Model tests follow the existing Prisma mock style in that feature.
+- After schema edits: `npx prisma generate` (+ `migrate dev` when the DB changes), then `npm test` and `npm run lint`.
+
+## Comments
+
+- No noise comments that restate the code.
+- Comment decisions that are easy to “fix” wrongly (e.g. why geocoding must not block save, why price is server-only, why a status transition is blocked).

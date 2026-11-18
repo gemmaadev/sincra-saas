@@ -1,0 +1,54 @@
+---
+description: "[FRONTEND] Architecture — folders, routing, state, design system. Apply when working under frontend/."
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# [FRONTEND] Architecture
+
+Source of truth: `CLAUDE.md`. Trello "Not MPV" wins on conflict.
+
+## Folder layout (mandatory)
+
+- Domain code: `frontend/src/features/<domain>/{components,hooks,types,utils}` (+ `context/` only for auth).
+- Thin pages: `frontend/src/pages/` — wire hooks + components only. **No** fetch/mutations/heavy logic in pages.
+- Shell: `frontend/src/app/{layout,router,providers}` only.
+- Cross-feature: `frontend/src/shared/{components,hooks,services,utils,types,store,config}` with barrel `index.ts` when the folder already uses one.
+- Domain constant maps (labels/colors/icons, not functions): flat file under `shared/` (e.g. `orderStatus.constants.ts`), import by path — **not** via barrel.
+- Path alias: `@/*` → `src/*`. No long relative imports across features.
+- `inbox` / `communication` = empty scaffold (Not MPV). Do not build unified inbox / ChannelAdapter / conversation UI.
+
+## Routing & exports
+
+- Pages: **only** `export default function XPage()`.
+- Everything else: **only** named exports.
+- New page requires `lazyPage(() => import('@/pages/XPage'))` in `app/router/index.tsx`.
+
+## Design system & UI surface
+
+- Prefer `shared/components` (`SincraButton`, `Input`, `Select`, `SincraModal`, `ConfirmDeleteModal`, `Table`, `Tabs`, `Drawer`, `EmptyState`, `KpiCardsRow`, `DateRangeFilter`, …).
+- Do not invent a parallel button/modal/input if shared already has one.
+- Colors/typography: tokens in `frontend/src/index.css`. No ad-hoc hex in Tailwind except ECharts canvas (CSS vars do not resolve there).
+- Icons: `lucide-react` (AI agent avatars = PNGs in `public/`).
+- UI copy in **Spanish**. Avoid technical jargon ("OAuth", internal API names) unless the screen already uses it.
+- Desktop-first. Sidebar stays `max-md:hidden` unless explicitly asked to change. Tables may scroll horizontally — do not block on mobile card redesigns.
+- Map: OpenStreetMap only (no CARTO). Keep `divIcon`, `isolate`, `clients-map.css`. Layer toggle is **binary** (Clients | Orders). Clients `primary`, orders `primary-dark`. `approximate` = no written address.
+
+## State & data flow
+
+- Remote: TanStack Query in feature hooks. Hierarchical keys: `['clients']`, `['clients','map',filters]`, `['orders', id]`.
+- Mutations invalidate via feature helpers (`invalidateClientQueries`, `invalidateOrderQueries`) — not the whole tree.
+- Shared filters `channel` / `dateFrom` / `dateTo` (Map/Stats/Orders): only `shared/store/filtersStore`. Page-local filters stay local.
+- Tests touching the store: `useFiltersStore.getState().clearFilters()` in `beforeEach`.
+- HTTP: only `api` from `@/shared/services` with `credentials: 'include'`. No bare `fetch` to the API.
+- Toasts: `notifySuccess` / `notifyError` / `notifyWithUndo` only.
+- Never store JWT in `localStorage` (httpOnly cookie auth).
+
+## Feature ownership
+
+- Keep Client and Order separate. Near-copy Notes/Tags tabs are OK; do not force a mega shared ClientOrOrder abstraction without an explicit decision.
+- Reuse shared when the pattern is already cross-cutting (`NotesTab`, `DateRangeFilter`, `ConfirmDeleteModal`).
+
+## Forbidden (Not MPV)
+
+No unified inbox, Meta channel adapters, interactive Automations toggles, Stripe paywall, real sessions UI, real notification delivery. Automations page = static Sincra/Sincro info (no Hermes in UI).
