@@ -4,10 +4,12 @@ import { MemoryRouter } from 'react-router'
 import { MantineProvider } from '@mantine/core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { sessionBusinessesKey } from '@/features/auth/hooks/useSessionBusinesses'
 import { AppHeader } from './AppHeader'
 import { AuthContext } from '@/features/auth/context/AuthContext'
 import type { AuthContextValue } from '@/features/auth/context/AuthContext'
-import { api } from '@/shared/services'
+import type { UserBusiness } from '@/features/auth/types/business.types'
+import { api, ApiError } from '@/shared/services'
 
 vi.mock('@/shared/services', () => {
   class ApiError extends Error {
@@ -25,34 +27,29 @@ vi.mock('@/shared/services', () => {
   }
 })
 
-function renderHeader(logout: () => Promise<void> = async () => {}) {
-  const authValue: AuthContextValue = {
-    user: { id: '1', name: 'Laura García', email: 'laura@tienda.com', role: 'admin' },
-    business: { id: 'biz-1', name: 'Tienda de Laura' },
-    isAuthenticated: true,
-    loading: false,
-    login: async () => {},
-    logout,
-  }
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+const ONE_BUSINESS: UserBusiness[] = [
+  { businessId: 'biz-1', name: 'Tienda de Laura', role: 'ADMIN' },
+]
 
-  return render(
-    <MantineProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={authValue}>
-          <MemoryRouter>
-            <AppHeader />
-          </MemoryRouter>
-        </AuthContext.Provider>
-      </QueryClientProvider>
-    </MantineProvider>,
-  )
-}
+const TWO_BUSINESSES: UserBusiness[] = [
+  { businessId: 'biz-1', name: 'Tienda de Laura', role: 'ADMIN' },
+  { businessId: 'biz-2', name: 'Floristería Ana', role: 'EMPLOYEE' },
+]
 
-describe('HeaderApp', () => {
-  beforeEach(() => {
-    vi.mocked(api.get).mockReset()
-    vi.mocked(api.get).mockResolvedValue({
+function renderHeader({
+  logout = async () => {},
+  login = async () => {},
+  businesses = ONE_BUSINESS,
+  initialPath = '/',
+}: {
+  logout?: () => Promise<void>
+  login?: () => Promise<void>
+  businesses?: UserBusiness[]
+  initialPath?: string
+} = {}) {
+  vi.mocked(api.get).mockImplementation(async (path: string) => {
+    if (path === '/auth/me/businesses') return { businesses }
+    return {
       user: {
         id: '1',
         name: 'Laura García',
@@ -63,7 +60,41 @@ describe('HeaderApp', () => {
         notificationPrefs: null,
         createdAt: '2025-04-12T10:24:00.000Z',
       },
-    })
+    }
+  })
+
+  const authValue: AuthContextValue = {
+    user: { id: '1', name: 'Laura García', email: 'laura@tienda.com', role: 'admin' },
+    business: { id: 'biz-1', name: 'Tienda de Laura' },
+    isAuthenticated: true,
+    loading: false,
+    login,
+    logout,
+  }
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+  queryClient.setQueryData(['clients'], [{ id: 'from-old-business' }])
+
+  const view = render(
+    <MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={authValue}>
+          <MemoryRouter initialEntries={[initialPath]}>
+            <AppHeader />
+          </MemoryRouter>
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    </MantineProvider>,
+  )
+
+  return { ...view, queryClient }
+}
+
+describe('HeaderApp', () => {
+  beforeEach(() => {
+    vi.mocked(api.get).mockReset()
+    vi.mocked(api.post).mockReset()
   })
 
   // Given the HeaderApp component
@@ -83,7 +114,7 @@ describe('HeaderApp', () => {
   // Then a confirmation modal should open instead of logging out right away
   it('asks for confirmation before logging out', async () => {
     const logout = vi.fn().mockResolvedValue(undefined)
-    renderHeader(logout)
+    renderHeader({ logout })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
@@ -98,7 +129,7 @@ describe('HeaderApp', () => {
   // Then it should actually log out
   it('logs out once the user confirms', async () => {
     const logout = vi.fn().mockResolvedValue(undefined)
-    renderHeader(logout)
+    renderHeader({ logout })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
@@ -114,7 +145,7 @@ describe('HeaderApp', () => {
   // Then it should close without logging out
   it('does not log out when the confirmation is cancelled', async () => {
     const logout = vi.fn().mockResolvedValue(undefined)
-    renderHeader(logout)
+    renderHeader({ logout })
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
@@ -153,5 +184,79 @@ describe('HeaderApp', () => {
     await waitFor(() =>
       expect(screen.queryByRole('link', { name: /Clientes/ })).not.toBeInTheDocument(),
     )
+  })
+
+  // Given the user belongs to a single business
+  // When the user menu is opened
+  // Then "Cambiar de negocio" should stay hidden
+  it('hides the business switcher when the user has one business', async () => {
+    const { queryClient } = renderHeader()
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
+    await waitFor(() =>
+      expect(queryClient.getQueryState(sessionBusinessesKey)?.status).toBe('success'),
+    )
+
+    expect(screen.queryByText('Cambiar de negocio')).not.toBeInTheDocument()
+  })
+
+  // Given the user belongs to more than one business
+  // When the user menu is opened
+  // Then each business is listed and the current one is marked
+  it('lists every business and marks the current one', async () => {
+    renderHeader({ businesses: TWO_BUSINESSES })
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
+
+    expect(await screen.findByText('Cambiar de negocio')).toBeInTheDocument()
+    expect(screen.getByRole('menuitemradio', { name: 'Tienda de Laura (actual)' })).toBeDisabled()
+    expect(screen.getByRole('menuitemradio', { name: 'Floristería Ana' })).toBeEnabled()
+    expect(screen.getByText('Actual')).toBeInTheDocument()
+    expect(screen.getByText('Administrador')).toBeInTheDocument()
+    expect(screen.getByText('Empleado')).toBeInTheDocument()
+  })
+
+  // Given another business is listed
+  // When the user chooses it
+  // Then the active business changes and cached data from the previous one is dropped
+  it('switches business and clears cached data from the previous one', async () => {
+    vi.mocked(api.post).mockResolvedValue({ success: true })
+    const login = vi.fn().mockResolvedValue(undefined)
+    const { queryClient } = renderHeader({
+      businesses: TWO_BUSINESSES,
+      login,
+      initialPath: '/clients/client-1',
+    })
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Floristería Ana' }))
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith('/auth/switch-business', { businessId: 'biz-2' })
+      expect(login).toHaveBeenCalledOnce()
+    })
+    expect(queryClient.getQueryData(['clients'])).toBeUndefined()
+  })
+
+  // Given the backend rejects the chosen business
+  // When the user tries to switch
+  // Then the menu explains why and the previous data stays
+  it('shows the error and keeps the previous data when the switch is rejected', async () => {
+    vi.mocked(api.post).mockRejectedValue(
+      new ApiError('No perteneces a ese negocio', 403, 'FORBIDDEN'),
+    )
+    const login = vi.fn().mockResolvedValue(undefined)
+    const { queryClient } = renderHeader({ businesses: TWO_BUSINESSES, login })
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Menú de usuario' }))
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Floristería Ana' }))
+
+    expect(await screen.findByText('No perteneces a ese negocio')).toBeInTheDocument()
+    expect(login).not.toHaveBeenCalled()
+    expect(queryClient.getQueryData(['clients'])).toEqual([{ id: 'from-old-business' }])
   })
 })

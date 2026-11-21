@@ -7,6 +7,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Avatar } from '@/shared/components/avatar'
 import { Input } from '@/shared/components/input'
 import { ConfirmDeleteModal } from '@/shared/components/modal'
+import { SwitchBusinessSection } from '@/features/auth/components/SwitchBusinessSection'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useProfile } from '@/features/profile/hooks/useProfile'
 import { SidebarContent } from './SidebarContent'
@@ -42,7 +43,7 @@ function MenuItem({ icon, children, to, onClick, danger = false }: MenuItemProps
 }
 
 export function AppHeader() {
-  const { user, logout } = useAuth()
+  const { user, business, logout } = useAuth()
   const { data: profile } = useProfile()
   const navigate = useNavigate()
   const location = useLocation()
@@ -120,7 +121,7 @@ export function AppHeader() {
         {open && (
           <div
             role="menu"
-            className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-56 rounded-lg border border-neutral-100 bg-white py-1 shadow-lg"
+            className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-72 rounded-lg border border-neutral-100 bg-white py-1 shadow-lg"
           >
             <div className="border-b border-neutral-100 px-4 py-2">
               <p className="truncate text-sm font-medium text-ink">{user.name}</p>
@@ -129,6 +130,7 @@ export function AppHeader() {
             <MenuItem to="/profile" icon={<User size={16} />} onClick={() => setOpen(false)}>
               Mi perfil
             </MenuItem>
+            <SwitchBusinessSection currentBusinessId={business?.id ?? ''} />
             <MenuItem icon={<LogOut size={16} />} onClick={handleLogoutClick} danger>
               Cerrar sesión
             </MenuItem>
