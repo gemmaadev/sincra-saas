@@ -67,7 +67,7 @@ export function SidebarContent() {
             return (
               <div
                 key={channel.channel}
-                className={`flex gap-2 px-3 py-1 text-sm text-ink-muted items-center`}
+                className="flex gap-2 px-3 py-1 text-sm text-ink-muted items-center"
               >
                 {Icon && (
                   <Icon

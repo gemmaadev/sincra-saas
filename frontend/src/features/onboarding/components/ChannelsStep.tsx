@@ -39,7 +39,7 @@ export function ChannelsStep(props: ChannelsStepProps) {
 }
 
 function ChannelsStepContent({ connectedChannels, onChange, onBack, onNext }: ChannelsStepProps) {
-  // TODO: para Outlook, sustituir este email por el flujo OAuth real cuando el backend esté listo.
+  // TODO: for Outlook, replace this email with the real OAuth flow once the backend is ready.
   const { data: channels } = useConnectedChannels()
   const toggleChannelConnection = useToggleChannelConnection()
   const [prompt, setPrompt] = useState<EmailPrompt | null>(null)
