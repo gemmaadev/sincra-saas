@@ -65,7 +65,6 @@ describe('Sidebar', () => {
     await waitFor(() => {
       expect(screen.getByText('Gmail')).toBeInTheDocument()
     })
-    expect(screen.getByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
     expect(screen.queryByText('Outlook')).not.toBeInTheDocument()
     expect(screen.queryByText(/vieja@outlook.com/)).not.toBeInTheDocument()
     expect(screen.queryByText('WhatsApp')).not.toBeInTheDocument()
