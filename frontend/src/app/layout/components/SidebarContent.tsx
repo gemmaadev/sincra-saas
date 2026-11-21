@@ -18,7 +18,6 @@ import { TagPill } from '@/shared/components/tag-pill'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { useConnectedChannels } from '@/features/settings/hooks/useConnectedChannels'
 import { CHANNEL_BRANDS } from '@/shared/channels/channels'
-import { connectedAccountLabel } from '@/shared/channels/connectedAccountLabel'
 import { Link, useNavigate } from 'react-router'
 
 const navItems = [
