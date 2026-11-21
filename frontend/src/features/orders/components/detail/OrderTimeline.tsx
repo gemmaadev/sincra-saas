@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Circle, CheckCircle, AlertTriangle, ChevronDown, PauseIcon } from 'lucide-react'
+import { Circle, CheckCircle, AlertTriangle, ChevronDown } from 'lucide-react'
 import { formatDateTime } from '@/shared/utils'
 import { AiSuggestedBadge, SincraButton } from '@/shared/components'
 import type { BadgeColor } from '@/shared/components'
