@@ -6,6 +6,7 @@ import {
   exchangeMicrosoftCode,
   requestPasswordReset,
   findOrCreateSocialUser,
+  requireActiveMembership,
   resetPassword,
 } from './auth.service'
 
@@ -29,6 +30,38 @@ function mockTokenResponse(idTokenPayload: Record<string, unknown>) {
     json: () => Promise.resolve({ id_token: idToken }),
   } as Response
 }
+
+describe('requireActiveMembership', () => {
+  // Given an active membership in the target business
+  // When the user switches to it
+  // Then the membership returned is the one stored for that business
+  it('returns the membership when the user belongs to the business', async () => {
+    vi.mocked(authModel.findActiveMembership).mockResolvedValue({
+      userId: 'user-1',
+      businessId: 'biz-2',
+      role: 'EMPLOYEE',
+    } as never)
+
+    await expect(requireActiveMembership('user-1', 'biz-2')).resolves.toEqual({
+      userId: 'user-1',
+      businessId: 'biz-2',
+      role: 'EMPLOYEE',
+    })
+    expect(authModel.findActiveMembership).toHaveBeenCalledWith('user-1', 'biz-2')
+  })
+
+  // Given no active membership for that business
+  // When the user tries to switch to it
+  // Then it rejects with FORBIDDEN and does not invent a membership
+  it('rejects when the user does not belong to the business', async () => {
+    vi.mocked(authModel.findActiveMembership).mockResolvedValue(null)
+
+    await expect(requireActiveMembership('user-1', 'biz-ajeno')).rejects.toMatchObject({
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    })
+  })
+})
 
 describe('exchangeMicrosoftCode', () => {
   beforeEach(() => {

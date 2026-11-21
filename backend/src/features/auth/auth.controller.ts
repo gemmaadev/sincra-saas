@@ -7,6 +7,7 @@ import {
   findUserWithBusinesses,
   findUserByEmail,
   findMembership,
+  requireActiveMembership,
   findActiveMembershipWithDetails,
   registerBusinessOwner,
   verifyGoogleAccessToken,
@@ -22,6 +23,7 @@ import type {
   RegisterInput,
   OnboardingInput,
   SelectBusinessBody,
+  SwitchBusinessBody,
   SocialLoginResult,
   GoogleLoginBody,
   ForgotPasswordBody,
@@ -160,6 +162,27 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
 
   const token = signToken({
     userId,
+    businessId: membership.businessId,
+    role: membership.role,
+  })
+
+  setSessionCookie(res, token)
+  res.json({ success: true })
+})
+
+// The cookie is the only source of req.businessId. Role is taken from the
+// membership the service returns, never from the request body.
+export const switchBusiness = asyncHandler(async (req: Request, res: Response) => {
+  const { businessId } = req.body as SwitchBusinessBody
+
+  if (!businessId?.trim()) {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
+  const membership = await requireActiveMembership(req.userId!, businessId)
+
+  const token = signToken({
+    userId: membership.userId,
     businessId: membership.businessId,
     role: membership.role,
   })
