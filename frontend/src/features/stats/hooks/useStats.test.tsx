@@ -17,7 +17,7 @@ const mockDashboard: StatsDashboard = {
   },
   ordersEvolution: {
     granularity: 'daily',
-    points: [{ date: '2026-10-01', count: 3 }],
+    points: [{ date: '2026-10-01', count: 3, incidentCount: 0 }],
   },
   clientsByType: {
     total: 5,

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
@@ -240,6 +240,33 @@ describe('OrderTimeline', () => {
     expect(screen.queryByText('Sugerido por IA')).not.toBeInTheDocument()
   })
 
+  // Given an order paused by an incident while it was being prepared
+  // When the timeline is rendered
+  // Then the step it's paused on shows a warning icon, not the plain green "done" checkmark
+  it('shows a paused warning icon instead of a success check on the step an incident paused', () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'El cliente recibió el pedido dañado',
+        },
+      ],
+    })
+
+    const pausedStepIcon = screen.getByText('En preparación').parentElement!.previousElementSibling!
+    expect(pausedStepIcon.className).toContain('bg-error')
+    expect(pausedStepIcon.className).not.toContain('bg-success')
+
+    const earlierStepIcon = screen.getByText('Pedido recibido').parentElement!.previousElementSibling!
+    expect(earlierStepIcon.className).toContain('bg-success')
+  })
+
   // Given Sincro marked the incident from an email
   // When the timeline is rendered
   // Then the note is shown as suggested by AI, without the raw prefix
@@ -264,8 +291,8 @@ describe('OrderTimeline', () => {
   })
 
   // Given an incident paused at En preparación
-  // When the user resolves it
-  // Then the order returns to En preparación
+  // When the user resolves it with a note
+  // Then the order returns to En preparación with the resolution note
   it('returns to the paused step when resolving the incident', async () => {
     renderTimeline({
       ...mockOrder,
@@ -281,12 +308,56 @@ describe('OrderTimeline', () => {
         },
       ],
     })
+    const user = userEvent.setup()
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Resolver incidencia' }))
+    await user.click(screen.getByRole('button', { name: 'Resolver incidencia' }))
+    const dialog = within(screen.getByRole('dialog'))
+    await user.type(dialog.getByLabelText('Cómo se ha resuelto'), 'Se ha reenviado el pedido')
+    await user.click(dialog.getByRole('button', { name: 'Resolver incidencia' }))
 
     await waitFor(() =>
-      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'PREPARING' }),
+      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', {
+        status: 'PREPARING',
+        resolutionNote: 'Se ha reenviado el pedido',
+      }),
     )
+  })
+
+  // Given an order that had an incident which has since been resolved
+  // When the timeline is rendered
+  // Then the resolved episode stays visible as a collapsed header, collapsed by default to
+  // save space, but its note and resolution note appear once expanded
+  it('keeps a resolved incident visible, collapsed by default, with its resolution note', async () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'PREPARING',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'Llegó dañado',
+        },
+        {
+          id: 'change-4',
+          status: 'PREPARING',
+          changedBy: 'user-1',
+          changedAt: '2026-06-21T12:00:00.000Z',
+          note: 'Se ha reenviado el pedido',
+        },
+      ],
+    })
+
+    expect(screen.getByText('Incidencia resuelta')).toBeInTheDocument()
+    expect(screen.queryByText('Llegó dañado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Resolver incidencia' })).not.toBeInTheDocument()
+
+    await userEvent.setup().click(screen.getByRole('button', { name: /Incidencia resuelta/ }))
+
+    expect(screen.getByText('Llegó dañado')).toBeInTheDocument()
+    expect(screen.getByText('Se ha reenviado el pedido')).toBeInTheDocument()
   })
 
   // Given an incident paused at En preparación

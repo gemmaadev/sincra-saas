@@ -51,6 +51,20 @@ export async function findOrderCreatedDatesInRange(
   })
 }
 
+export async function findOrderIncidentDatesInRange(
+  businessId: string,
+  changedAtRange?: Prisma.DateTimeFilter,
+) {
+  return prisma.orderStatusChange.findMany({
+    where: {
+      status: 'INCIDENT',
+      order: { businessId },
+      ...(changedAtRange && { changedAt: changedAtRange }),
+    },
+    select: { changedAt: true },
+  })
+}
+
 export async function findDeliveredOrdersByChannelInRange(
   businessId: string,
   createdAtRange?: Prisma.DateTimeFilter,

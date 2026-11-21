@@ -9,6 +9,7 @@ import {
   findDeliveredOrdersByChannelInRange,
   findDeliveredOrdersInRange,
   findOrderCreatedDatesInRange,
+  findOrderIncidentDatesInRange,
 } from './stats.model'
 import type {
   AiSummary,
@@ -208,12 +209,21 @@ export async function getOrdersEvolution(
 ): Promise<OrdersEvolution> {
   const granularity = filters.granularity ?? 'daily'
   const createdAtRange = buildCreatedAtRange(filters.dateFrom, filters.dateTo)
-  const orders = await findOrderCreatedDatesInRange(businessId, createdAtRange)
+  const [orders, incidents] = await Promise.all([
+    findOrderCreatedDatesInRange(businessId, createdAtRange),
+    findOrderIncidentDatesInRange(businessId, createdAtRange),
+  ])
 
   const counts = new Map<string, number>()
   for (const order of orders) {
     const key = toDateKey(bucketStart(order.createdAt, granularity))
     counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+
+  const incidentCounts = new Map<string, number>()
+  for (const incident of incidents) {
+    const key = toDateKey(bucketStart(incident.changedAt, granularity))
+    incidentCounts.set(key, (incidentCounts.get(key) ?? 0) + 1)
   }
 
   // If date range is incomplete, only plot buckets with actual data.
@@ -224,11 +234,15 @@ export async function getOrdersEvolution(
           previousDay(createdAtRange.lt as Date),
           granularity,
         )
-      : [...counts.keys()].sort()
+      : [...new Set([...counts.keys(), ...incidentCounts.keys()])].sort()
 
   return {
     granularity,
-    points: bucketKeys.map((date) => ({ date, count: counts.get(date) ?? 0 })),
+    points: bucketKeys.map((date) => ({
+      date,
+      count: counts.get(date) ?? 0,
+      incidentCount: incidentCounts.get(date) ?? 0,
+    })),
   }
 }
 
@@ -277,10 +291,7 @@ interface ChannelRevenueGroup {
   _count: { _all: number; price: number }
 }
 
-// Sorted by revenue descending — the channel that actually earns the most goes first.
-// Revenue is the sum of known prices (0 when none are known). The average ticket divides
-// by orders that have a price, so an unpriced order is not treated as 0. orderCount
-// still counts every delivered order.
+// Sorted by revenue descending; average ticket only divides across priced orders, not all of them.
 function buildChannelPerformance(groups: ChannelRevenueGroup[]): ChannelPerformance {
   const entries = groups
     .map((group) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Circle, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Circle, CheckCircle, AlertTriangle, ChevronDown, PauseIcon } from 'lucide-react'
 import { formatDateTime } from '@/shared/utils'
 import { AiSuggestedBadge, SincraButton } from '@/shared/components'
 import type { BadgeColor } from '@/shared/components'
@@ -9,6 +9,7 @@ import { ORDER_STATUS_ICONS, ORDER_STATUS_COLORS } from '@/shared/orderStatus.co
 import { useUpdateOrderStatus } from '../../hooks/useUpdateOrderStatus'
 import { lastOperationalStatus } from '../../utils/operationalStatus'
 import { MarkIncidentModal } from '../actions/MarkIncidentModal'
+import { ResolveIncidentModal } from '../actions/ResolveIncidentModal'
 import type { OrderDetail, OrderStatus, OrderStatusChangeEntry } from '../../types/order.types'
 
 const TIMELINE_STEPS: { status: OrderStatus; label: string }[] = [
@@ -37,7 +38,7 @@ interface OrderTimelineProps {
   order: OrderDetail
 }
 
-function incidentCopy(entry: OrderStatusChangeEntry | undefined): {
+function noteCopy(entry: OrderStatusChangeEntry | undefined): {
   text: string
   suggestedByAi: boolean
 } {
@@ -49,9 +50,33 @@ function incidentCopy(entry: OrderStatusChangeEntry | undefined): {
   return { text: body || 'Sin una nota escrita.', suggestedByAi }
 }
 
+interface IncidentEpisode {
+  startEntry: OrderStatusChangeEntry
+  resolutionEntry: OrderStatusChangeEntry | undefined
+}
+
+// Walks history chronologically pairing each INCIDENT entry with the change that ended it, if any —
+// an episode with no resolutionEntry is still open (only possible for the most recent one).
+function buildIncidentEpisodes(history: OrderStatusChangeEntry[]): IncidentEpisode[] {
+  const episodes: IncidentEpisode[] = []
+
+  for (let index = 0; index < history.length; index += 1) {
+    const entry = history[index]!
+    if (entry.status !== 'INCIDENT') continue
+
+    episodes.push({ startEntry: entry, resolutionEntry: history[index + 1] })
+  }
+
+  return episodes.reverse()
+}
+
 export function OrderTimeline({ order }: OrderTimelineProps) {
   const updateStatus = useUpdateOrderStatus(order.id)
   const [isIncidentModalOpen, setIsIncidentModalOpen] = useState<boolean>(false)
+  const [isResolveModalOpen, setIsResolveModalOpen] = useState<boolean>(false)
+  // Collapsed by default to save space, except the still-open incident (it needs attention).
+  // Keyed by startEntry.id so a toggle survives a re-render once the user has picked it.
+  const [expandedEpisodeIds, setExpandedEpisodeIds] = useState<Record<string, boolean>>({})
   const operationalStatus = lastOperationalStatus(order.status, order.statusHistory)
   const nextStatus = order.status === 'CANCELLED' ? undefined : NEXT_STATUS[operationalStatus]
   const isAside = order.status === 'CANCELLED' || order.status === 'INCIDENT'
@@ -63,10 +88,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
     : undefined
 
   const lastReachedIndex = TIMELINE_STEPS.findIndex((step) => step.status === operationalStatus)
-  const incidentEntry = [...order.statusHistory]
-    .reverse()
-    .find((entry) => entry.status === 'INCIDENT')
-  const incident = order.status === 'INCIDENT' ? incidentCopy(incidentEntry) : null
+  const incidentEpisodes = buildIncidentEpisodes(order.statusHistory)
 
   return (
     <div className="flex flex-col gap-4 p-3">
@@ -75,22 +97,30 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
           const isLast = index === TIMELINE_STEPS.length - 1
           const isCompleted = isAside ? index <= lastReachedIndex : index < lastReachedIndex
           const isCurrent = !isAside && index === lastReachedIndex
+          // The step an open incident is paused on isn't "done" — it shouldn't get the plain
+          // green checkmark, even though it's technically the last one reached.
+          const isPausedAt = order.status === 'INCIDENT' && index === lastReachedIndex
           // Show the most recent entry — a status can be reached more than once.
           const historyEntry = [...order.statusHistory]
             .reverse()
             .find((entry) => entry.status === step.status)
 
-          const Icon = isCompleted
-            ? CheckCircle
-            : isCurrent
-              ? ORDER_STATUS_ICONS[step.status]
-              : Circle
-          const bgClassName = isCompleted
-            ? 'bg-success'
-            : isCurrent
-              ? STATUS_BG_COLORS[ORDER_STATUS_COLORS[step.status]]
-              : 'bg-neutral-100'
-          const iconClassName = isCompleted || isCurrent ? 'text-white' : 'text-neutral-400'
+          const Icon = isPausedAt
+            ? AlertTriangle
+            : isCompleted
+              ? CheckCircle
+              : isCurrent
+                ? ORDER_STATUS_ICONS[step.status]
+                : Circle
+          const bgClassName = isPausedAt
+            ? 'bg-error'
+            : isCompleted
+              ? 'bg-success'
+              : isCurrent
+                ? STATUS_BG_COLORS[ORDER_STATUS_COLORS[step.status]]
+                : 'bg-neutral-100'
+          const iconClassName =
+            isCompleted || isCurrent || isPausedAt ? 'text-white' : 'text-neutral-400'
 
           const dateLabel =
             (isCompleted || isCurrent) && historyEntry
@@ -112,9 +142,22 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
             </>
           )
 
+          // While an incident is open, the connector right after the paused step shows the
+          // flow is paused rather than simply continuing — a dashed red line instead of a plain one.
+          const isPausedConnector = !isLast && isPausedAt
+
           return (
             <li key={step.status} className="relative pb-6">
-              {!isLast && <div className="absolute left-3.25 top-7 bottom-0 w-px bg-neutral-200" />}
+              {!isLast && (
+                <div
+                  className={
+                    isPausedConnector
+                      ? 'absolute left-3.25 top-7 bottom-0 w-px border-l-2 border-dashed border-error'
+                      : 'absolute left-3.25 top-7 bottom-0 w-px bg-neutral-200'
+                  }
+                  aria-hidden="true"
+                />
+              )}
               {/* Clicking a reached step reverts to it — works even from DELIVERED/CANCELLED/INCIDENT. */}
               {isCompleted ? (
                 <button
@@ -134,20 +177,6 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
         })}
       </ul>
 
-      {incident && (
-        <div className="flex flex-col gap-1 rounded-lg border border-error/40 bg-error/10 p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <AlertTriangle size={16} className="text-error" aria-hidden="true" />
-            <span className="text-sm font-medium text-ink">Incidencia</span>
-            {incident.suggestedByAi && <AiSuggestedBadge />}
-          </div>
-          <span className="text-sm text-ink-muted">
-            {incidentEntry ? formatDateTime(new Date(incidentEntry.changedAt)) : '—'}
-          </span>
-          <p className="text-sm whitespace-pre-wrap text-ink">{incident.text}</p>
-        </div>
-      )}
-
       {order.status === 'CANCELLED' && (
         <p className="text-sm text-error">Este pedido ha sido cancelado.</p>
       )}
@@ -156,8 +185,7 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
         <SincraButton
           variant="secondary"
           className="w-full"
-          loading={updateStatus.isPending}
-          onClick={() => updateStatus.mutate(operationalStatus)}
+          onClick={() => setIsResolveModalOpen(true)}
         >
           Resolver incidencia
         </SincraButton>
@@ -191,11 +219,86 @@ export function OrderTimeline({ order }: OrderTimelineProps) {
         </p>
       )}
 
+      {incidentEpisodes.map((episode) => {
+        const episodeId = episode.startEntry.id
+        const isOpen = episode.resolutionEntry === undefined
+        const isExpanded = expandedEpisodeIds[episodeId] ?? isOpen
+        const incident = noteCopy(episode.startEntry)
+        const resolution = episode.resolutionEntry ? noteCopy(episode.resolutionEntry) : null
+
+        return (
+          <div
+            key={episodeId}
+            className={
+              isOpen
+                ? 'flex flex-col rounded-lg border border-error/40 bg-error/10'
+                : 'flex flex-col rounded-lg border border-neutral-200 bg-neutral-50'
+            }
+          >
+            <button
+              type="button"
+              aria-expanded={isExpanded}
+              onClick={() =>
+                setExpandedEpisodeIds((previous) => ({ ...previous, [episodeId]: !isExpanded }))
+              }
+              className="flex w-full items-center gap-2 p-3 text-left"
+            >
+              <AlertTriangle
+                size={16}
+                className={isOpen ? 'shrink-0 text-error' : 'shrink-0 text-ink-muted'}
+                aria-hidden="true"
+              />
+              <span className="text-sm font-medium text-ink">
+                {isOpen ? 'Incidencia' : 'Incidencia resuelta'}
+              </span>
+              {incident.suggestedByAi && <AiSuggestedBadge />}
+              <span className="ml-auto text-sm text-ink-muted">
+                {formatDateTime(new Date(episode.startEntry.changedAt))}
+              </span>
+              <ChevronDown
+                size={16}
+                className={`shrink-0 text-ink-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {isExpanded && (
+              <div className="flex flex-col gap-1 px-3 pb-3">
+                <p className="text-sm whitespace-pre-wrap text-ink">{incident.text}</p>
+
+                {resolution && episode.resolutionEntry && (
+                  <div className="mt-2 flex flex-col gap-1 border-t border-neutral-200 pt-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CheckCircle size={16} className="text-success" aria-hidden="true" />
+                      <span className="text-sm font-medium text-ink">Resuelta</span>
+                      {resolution.suggestedByAi && <AiSuggestedBadge />}
+                    </div>
+                    <span className="text-sm text-ink-muted">
+                      {formatDateTime(new Date(episode.resolutionEntry.changedAt))}
+                    </span>
+                    <p className="text-sm whitespace-pre-wrap text-ink">{resolution.text}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
       {isIncidentModalOpen && (
         <MarkIncidentModal
           orderId={order.id}
           opened
           onClose={() => setIsIncidentModalOpen(false)}
+        />
+      )}
+
+      {isResolveModalOpen && (
+        <ResolveIncidentModal
+          orderId={order.id}
+          resolvedStatus={operationalStatus}
+          opened
+          onClose={() => setIsResolveModalOpen(false)}
         />
       )}
     </div>

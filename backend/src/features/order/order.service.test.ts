@@ -3,9 +3,9 @@ import * as orderModel from './order.model'
 import * as clientModel from '../client/client.model'
 import * as authModel from '../auth/auth.model'
 import * as tagModel from '../tag/tag.model'
+import * as extractionModel from '../extraction/extraction.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import { getUniqueViolationFields } from '../../shared/utils/prismaErrors'
-import { applySureIncidents } from './order-incident.service'
 import {
   createOrder,
   listOrders,
@@ -14,18 +14,20 @@ import {
   deleteOrder,
   assignTagToOrder,
   removeTagFromOrder,
+  applySureIncidents,
+  assertIncidentNote,
+  assertResolutionNote,
+  incidentNoteFromExtraction,
+  relatedOrderIdFromRaw,
 } from './order.service'
 
 vi.mock('./order.model')
 vi.mock('../client/client.model')
 vi.mock('../auth/auth.model')
 vi.mock('../tag/tag.model')
+vi.mock('../extraction/extraction.model')
 vi.mock('../../shared/services/geocoding.service')
 vi.mock('../../shared/utils/prismaErrors')
-vi.mock('./order-incident.service', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./order-incident.service')>()
-  return { ...actual, applySureIncidents: vi.fn() }
-})
 
 describe('createOrder', () => {
   beforeEach(() => {
@@ -73,7 +75,7 @@ describe('createOrder', () => {
     await createOrder('business-1', 'user-1', {
       clientId: 'client-1',
       items: [
-        { product: 'Camiseta', quantity: 2 },
+        { product: 'Camiseta', quantity: 2, unitPrice: null },
         { product: 'Pañuelo', unitPrice: null },
       ],
     })
@@ -321,6 +323,8 @@ describe('listOrders', () => {
     vi.mocked(orderModel.findOrdersPage).mockResolvedValue([])
     vi.mocked(orderModel.countOrders).mockResolvedValue(0)
     vi.mocked(orderModel.countOrdersByStatus).mockResolvedValue([])
+    // No open incident emails by default — applySureIncidents short-circuits without touching orders.
+    vi.mocked(extractionModel.findOpenIncidentExtractions).mockResolvedValue([])
   })
 
   // Given a status, a channel and a date range
@@ -362,7 +366,7 @@ describe('listOrders', () => {
 
     const where = vi.mocked(orderModel.findOrdersPage).mock.calls[0][0]
     expect(where).toEqual({ businessId: 'business-1' })
-    expect(applySureIncidents).toHaveBeenCalledWith('business-1')
+    expect(extractionModel.findOpenIncidentExtractions).toHaveBeenCalledWith('business-1')
   })
 
   // Given the business has orders in only some statuses
@@ -506,6 +510,8 @@ describe('listOrders', () => {
 describe('getOrderById', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    // No open incident emails by default — applySureIncidents short-circuits without touching orders.
+    vi.mocked(extractionModel.findOpenIncidentExtractions).mockResolvedValue([])
   })
 
   // Given no order matches that id in the business
@@ -743,6 +749,63 @@ describe('updateOrder', () => {
     expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
   })
 
+  // Given an order in INCIDENT and a note about how it was fixed
+  // When it is moved back to an operational status
+  // Then the resolution note is stored on the timeline and as an order note
+  it('stores the resolution note on the timeline and as an order note', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'INCIDENT',
+    } as never)
+
+    await updateOrder('business-1', 'user-1', 'order-1', {
+      status: 'PREPARING',
+      resolutionNote: '  Se ha reenviado el pedido  ',
+    })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: 'PREPARING' },
+      undefined,
+      { status: 'PREPARING', changedBy: 'user-1', note: 'Se ha reenviado el pedido' },
+      { content: 'Se ha reenviado el pedido', createdBy: 'user-1' },
+    )
+  })
+
+  // Given a note that is empty or only spaces
+  // When resolving an incident
+  // Then a 400 is thrown and nothing is written
+  it('requires a note when resolving an incident', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'INCIDENT',
+    } as never)
+
+    await expect(
+      updateOrder('business-1', 'user-1', 'order-1', { status: 'PREPARING', resolutionNote: '   ' }),
+    ).rejects.toMatchObject({ statusCode: 400, code: 'MISSING_RESOLUTION_NOTE' })
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given an order staying in INCIDENT (resending the same status)
+  // When it is updated
+  // Then no resolution note should be required, since nothing is actually being resolved
+  it('does not require a resolution note when the status stays INCIDENT', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'INCIDENT',
+    } as never)
+
+    await updateOrder('business-1', 'user-1', 'order-1', { status: 'INCIDENT' })
+
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: 'INCIDENT' },
+      undefined,
+      undefined,
+    )
+  })
+
   // Given an order already DELIVERED
   // When it is resent as DELIVERED again (idempotent update)
   // Then it should be accepted, since it is not actually a transition
@@ -827,7 +890,10 @@ describe('updateOrder', () => {
   // Then the order price and every line price stay null
   it('clears the price when every replacement line has no price', async () => {
     await updateOrder('business-1', 'user-1', 'order-1', {
-      items: [{ product: 'Camiseta' }, { product: 'Pañuelo', unitPrice: null }],
+      items: [
+        { product: 'Camiseta', unitPrice: null },
+        { product: 'Pañuelo', unitPrice: null },
+      ],
     })
 
     const [, data, items] = vi.mocked(orderModel.updateOrderWithItems).mock.calls[0]
@@ -1079,5 +1145,198 @@ describe('removeTagFromOrder', () => {
       statusCode: 404,
       code: 'ORDER_NOT_FOUND',
     })
+  })
+})
+
+const sampleExtraction = {
+  id: 'extraction-1',
+  emailSubject: 'El paquete llegó roto',
+  rawData: {
+    relatedOrderId: 'order-1',
+    evidence: ['La caja venía abierta'],
+  },
+}
+
+describe('assertIncidentNote', () => {
+  // Given a blank or missing note
+  // When marking an incident
+  // Then it should reject it as missing
+  it('rejects an empty or whitespace-only note', () => {
+    expect(() => assertIncidentNote('   ')).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_INCIDENT_NOTE' }),
+    )
+    expect(() => assertIncidentNote(undefined)).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_INCIDENT_NOTE' }),
+    )
+  })
+
+  // Given a note over the max length
+  // When marking an incident
+  // Then it should reject it as too long
+  it('rejects a note over the max length', () => {
+    expect(() => assertIncidentNote('a'.repeat(1001))).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'INCIDENT_NOTE_TOO_LONG' }),
+    )
+  })
+
+  // Given a valid note with surrounding whitespace
+  // When marking an incident
+  // Then it should return it trimmed
+  it('returns the trimmed note', () => {
+    expect(assertIncidentNote('  Llegó dañado  ')).toBe('Llegó dañado')
+  })
+})
+
+describe('assertResolutionNote', () => {
+  // Given a blank or missing note
+  // When resolving an incident
+  // Then it should reject it as missing, with its own error code
+  it('rejects an empty or whitespace-only note', () => {
+    expect(() => assertResolutionNote('   ')).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_RESOLUTION_NOTE' }),
+    )
+    expect(() => assertResolutionNote(undefined)).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_RESOLUTION_NOTE' }),
+    )
+  })
+
+  // Given a note over the max length
+  // When resolving an incident
+  // Then it should reject it as too long, with its own error code
+  it('rejects a note over the max length', () => {
+    expect(() => assertResolutionNote('a'.repeat(1001))).toThrowError(
+      expect.objectContaining({ statusCode: 400, code: 'RESOLUTION_NOTE_TOO_LONG' }),
+    )
+  })
+
+  // Given a valid note with surrounding whitespace
+  // When resolving an incident
+  // Then it should return it trimmed
+  it('returns the trimmed note', () => {
+    expect(assertResolutionNote('  Se ha reenviado el pedido  ')).toBe('Se ha reenviado el pedido')
+  })
+})
+
+describe('relatedOrderIdFromRaw', () => {
+  // Given a finding that only names the client, or a free-text order reference
+  // When looking for the order id
+  // Then nothing is returned
+  it('ignores the client id, a created order id and a free-text reference', () => {
+    expect(relatedOrderIdFromRaw({ clientId: 'client-1', createdOrderId: 'order-9' })).toBeNull()
+    expect(relatedOrderIdFromRaw({ relatedOrderReference: 'pedido 12' })).toBeNull()
+  })
+
+  // Given the order id nested inside findings
+  // When the top level does not have one
+  // Then the nested id is used
+  it('reads relatedOrderId from the first finding', () => {
+    expect(relatedOrderIdFromRaw({ findings: [{ relatedOrderId: ' order-2 ' }] })).toBe('order-2')
+  })
+})
+
+describe('incidentNoteFromExtraction', () => {
+  // Given a subject and quoted sentences
+  // When building the note Sincro will leave on the order
+  // Then it is marked as suggested by the AI and keeps both pieces
+  it('prefixes the subject and the quoted sentences', () => {
+    expect(incidentNoteFromExtraction('El paquete llegó roto', sampleExtraction.rawData)).toBe(
+      'Sugerido por IA: El paquete llegó roto. La caja venía abierta',
+    )
+  })
+})
+
+describe('applySureIncidents', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getUniqueViolationFields).mockReturnValue(null)
+    vi.mocked(extractionModel.findOpenIncidentExtractions).mockResolvedValue([
+      sampleExtraction,
+    ] as never)
+    vi.mocked(orderModel.findAppliedExtractionIds).mockResolvedValue([])
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({
+      id: 'order-1',
+      status: 'PREPARING',
+    } as never)
+    vi.mocked(orderModel.updateOrderWithItems).mockResolvedValue({ id: 'order-1' } as never)
+  })
+
+  // Given an incident email that names an order of this business
+  // When Sincro reviews open incidents
+  // Then that order becomes an incident, with an AI note, and the finding itself is left alone
+  it('marks the matching order and keeps the email finding unchanged', async () => {
+    await applySureIncidents('business-1')
+
+    expect(extractionModel.findOpenIncidentExtractions).toHaveBeenCalledWith('business-1')
+    expect(orderModel.updateOrderWithItems).toHaveBeenCalledWith(
+      'order-1',
+      { status: 'INCIDENT' },
+      undefined,
+      {
+        status: 'INCIDENT',
+        changedBy: null,
+        note: 'Sugerido por IA: El paquete llegó roto. La caja venía abierta',
+        sourceExtractionId: 'extraction-1',
+      },
+      {
+        content: 'Sugerido por IA: El paquete llegó roto. La caja venía abierta',
+        createdBy: null,
+      },
+    )
+  })
+
+  // Given the order id belongs to another business
+  // When Sincro reviews incidents
+  // Then nothing is written
+  it('does nothing when the order is not in this business', async () => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue(null)
+
+    await applySureIncidents('business-1')
+
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given this email already marked the order once
+  // When Sincro reviews incidents again, after the person resolved it
+  // Then it does not mark the order a second time
+  it('does not mark an order again for an email that was already applied', async () => {
+    vi.mocked(orderModel.findAppliedExtractionIds).mockResolvedValue(['extraction-1'])
+
+    await applySureIncidents('business-1')
+
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given the order is already an incident, or it is cancelled
+  // When the email names that order
+  // Then Sincro leaves the current status as it is
+  it.each(['INCIDENT', 'CANCELLED'])('leaves an order that is already %s', async (status) => {
+    vi.mocked(orderModel.findOrderById).mockResolvedValue({ id: 'order-1', status } as never)
+
+    await applySureIncidents('business-1')
+
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given the analyzer marked the message as spam
+  // When it also contains an order id
+  // Then Sincro does not change the order
+  it('ignores a finding marked as spam', async () => {
+    vi.mocked(extractionModel.findOpenIncidentExtractions).mockResolvedValue([
+      { ...sampleExtraction, rawData: { ...sampleExtraction.rawData, isSpam: true } },
+    ] as never)
+
+    await applySureIncidents('business-1')
+
+    expect(orderModel.updateOrderWithItems).not.toHaveBeenCalled()
+  })
+
+  // Given two requests try to store the same email at once
+  // When the second one hits the unique constraint
+  // Then it stops without failing the whole review
+  it('ignores a duplicate write of the same email', async () => {
+    vi.mocked(orderModel.updateOrderWithItems).mockRejectedValue(new Error('unique'))
+    vi.mocked(getUniqueViolationFields).mockReturnValue(['source_extraction_id'])
+
+    await expect(applySureIncidents('business-1')).resolves.toBeUndefined()
   })
 })

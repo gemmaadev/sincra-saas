@@ -323,6 +323,7 @@ describe('getOrdersEvolution', () => {
       { createdAt: new Date('2026-10-01T18:00:00') },
       { createdAt: new Date('2026-10-03T10:00:00') },
     ] as never)
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([])
 
     const evolution = await getOrdersEvolution('business-1', {
       dateFrom: '2026-10-01',
@@ -332,9 +333,36 @@ describe('getOrdersEvolution', () => {
     expect(evolution).toEqual({
       granularity: 'daily',
       points: [
-        { date: '2026-10-01', count: 2 },
-        { date: '2026-10-02', count: 0 },
-        { date: '2026-10-03', count: 1 },
+        { date: '2026-10-01', count: 2, incidentCount: 0 },
+        { date: '2026-10-02', count: 0, incidentCount: 0 },
+        { date: '2026-10-03', count: 1, incidentCount: 0 },
+      ],
+    })
+  })
+
+  // Given an order marked INCIDENT on a day within the range
+  // When getting the daily evolution
+  // Then that day's point should report the incident count alongside the created count
+  it('reports incidents bucketed by when they were marked, separately from created counts', async () => {
+    vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
+      { createdAt: new Date('2026-10-01T09:00:00') },
+    ] as never)
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([
+      { changedAt: new Date('2026-10-02T12:00:00') },
+      { changedAt: new Date('2026-10-02T15:00:00') },
+    ] as never)
+
+    const evolution = await getOrdersEvolution('business-1', {
+      dateFrom: '2026-10-01',
+      dateTo: '2026-10-03',
+    })
+
+    expect(evolution).toEqual({
+      granularity: 'daily',
+      points: [
+        { date: '2026-10-01', count: 1, incidentCount: 0 },
+        { date: '2026-10-02', count: 0, incidentCount: 2 },
+        { date: '2026-10-03', count: 0, incidentCount: 0 },
       ],
     })
   })
@@ -347,6 +375,7 @@ describe('getOrdersEvolution', () => {
       { createdAt: new Date('2026-10-01T09:00:00') }, // Thursday, week of Sep 28
       { createdAt: new Date('2026-10-06T09:00:00') }, // Tuesday, week of Oct 5
     ] as never)
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([])
 
     const evolution = await getOrdersEvolution('business-1', {
       dateFrom: '2026-09-28',
@@ -357,8 +386,8 @@ describe('getOrdersEvolution', () => {
     expect(evolution).toEqual({
       granularity: 'weekly',
       points: [
-        { date: '2026-09-28', count: 1 },
-        { date: '2026-10-05', count: 1 },
+        { date: '2026-09-28', count: 1, incidentCount: 0 },
+        { date: '2026-10-05', count: 1, incidentCount: 0 },
       ],
     })
   })
@@ -371,14 +400,15 @@ describe('getOrdersEvolution', () => {
       { createdAt: new Date('2026-10-03T09:00:00') },
       { createdAt: new Date('2026-10-01T09:00:00') },
     ] as never)
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([])
 
     const evolution = await getOrdersEvolution('business-1', {})
 
     expect(evolution).toEqual({
       granularity: 'daily',
       points: [
-        { date: '2026-10-01', count: 1 },
-        { date: '2026-10-03', count: 1 },
+        { date: '2026-10-01', count: 1, incidentCount: 0 },
+        { date: '2026-10-03', count: 1, incidentCount: 0 },
       ],
     })
   })
@@ -388,6 +418,7 @@ describe('getOrdersEvolution', () => {
   // Then every point should be zero, not omitted
   it('zero-fills every point when there are no orders', async () => {
     vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([])
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([])
 
     const evolution = await getOrdersEvolution('business-1', {
       dateFrom: '2026-10-01',
@@ -397,8 +428,8 @@ describe('getOrdersEvolution', () => {
     expect(evolution).toEqual({
       granularity: 'daily',
       points: [
-        { date: '2026-10-01', count: 0 },
-        { date: '2026-10-02', count: 0 },
+        { date: '2026-10-01', count: 0, incidentCount: 0 },
+        { date: '2026-10-02', count: 0, incidentCount: 0 },
       ],
     })
   })
@@ -631,6 +662,7 @@ describe('getDashboard', () => {
     vi.spyOn(statsModel, 'findOrderCreatedDatesInRange').mockResolvedValue([
       { createdAt: new Date('2026-10-01T09:00:00') },
     ] as never)
+    vi.spyOn(statsModel, 'findOrderIncidentDatesInRange').mockResolvedValue([])
     vi.spyOn(statsModel, 'countClientsByTypeInRange').mockResolvedValue([
       { type: 'particular', _count: 5 },
     ] as never)
@@ -658,8 +690,8 @@ describe('getDashboard', () => {
     expect(dashboard.ordersEvolution).toEqual({
       granularity: 'daily',
       points: [
-        { date: '2026-10-01', count: 1 },
-        { date: '2026-10-02', count: 0 },
+        { date: '2026-10-01', count: 1, incidentCount: 0 },
+        { date: '2026-10-02', count: 0, incidentCount: 0 },
       ],
     })
     expect(dashboard.clientsByType).toEqual({

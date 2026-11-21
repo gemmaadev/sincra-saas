@@ -3,6 +3,7 @@ import type { OrdersEvolution } from '../types/stats.types'
 export interface EvolutionChartPoint {
   label: string
   value: number
+  incidentCount: number
 }
 
 function formatShortDate(isoDate: string): string {
@@ -15,5 +16,6 @@ export function buildOrdersEvolutionChartData(evolution: OrdersEvolution): Evolu
   return evolution.points.map((point) => ({
     label: formatShortDate(point.date),
     value: point.count,
+    incidentCount: point.incidentCount,
   }))
 }

@@ -10,8 +10,8 @@ import {
   deleteOrder,
   assignTagToOrder,
   removeTagFromOrder,
+  assertIncidentNote,
 } from './order.service'
-import { assertIncidentNote } from './order-incident.service'
 import type {
   CreateOrderInput,
   UpdateOrderInput,
@@ -148,8 +148,18 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const body = req.body as UpdateOrderInput
-  const { channel, kind, address, zone, latitude, longitude, description, status, incidentNote } =
-    body
+  const {
+    channel,
+    kind,
+    address,
+    zone,
+    latitude,
+    longitude,
+    description,
+    status,
+    incidentNote,
+    resolutionNote,
+  } = body
 
   const items = req.body.items !== undefined ? assertValidItems(req.body.items) : undefined
   assertValidCoordinates(latitude, longitude)
@@ -168,6 +178,7 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     description,
     status,
     incidentNote: parsedIncidentNote,
+    resolutionNote,
     expectedDate,
   })
 

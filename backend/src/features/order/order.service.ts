@@ -11,6 +11,7 @@ import {
   countOrdersByStatus,
   findOrderById,
   findOrderWithDetails,
+  findAppliedExtractionIds,
   updateOrderWithItems,
   deleteOrderById,
   findActiveOrderTag,
@@ -20,9 +21,9 @@ import {
 import { findClientById } from '../client/client.model'
 import { findTagById } from '../tag/tag.model'
 import { findBusinessCountry } from '../auth/auth.model'
+import { findOpenIncidentExtractions } from '../extraction/extraction.model'
 import { geocodeAddress } from '../../shared/services/geocoding.service'
 import type { GeocodedLocation } from '../../shared/services/geocoding.service'
-import { applySureIncidents, assertIncidentNote } from './order-incident.service'
 import type {
   CreateOrderInput,
   UpdateOrderInput,
@@ -350,15 +351,22 @@ export async function updateOrder(
   }
 
   const incidentNote = markingIncident ? assertIncidentNote(input.incidentNote) : undefined
+
+  const resolvingIncident =
+    existing.status === 'INCIDENT' && input.status !== undefined && input.status !== 'INCIDENT'
+  const resolutionNote = resolvingIncident ? assertResolutionNote(input.resolutionNote) : undefined
+
   const statusChange =
     input.status !== undefined && input.status !== existing.status
       ? {
           status: input.status,
           changedBy: userId,
           ...(incidentNote && { note: incidentNote }),
+          ...(resolutionNote && { note: resolutionNote }),
         }
       : undefined
-  const orderNote = incidentNote ? { content: incidentNote, createdBy: userId ?? null } : undefined
+  const note = incidentNote ?? resolutionNote
+  const orderNote = note ? { content: note, createdBy: userId ?? null } : undefined
 
   return orderNote
     ? updateOrderWithItems(orderId, data, items, statusChange, orderNote)
@@ -396,4 +404,144 @@ export async function removeTagFromOrder(businessId: string, orderId: string, ta
   }
 
   await markOrderTagRemoved(activeAssignment.id)
+}
+
+export const INCIDENT_NOTE_MAX_LENGTH = 1000
+export const AI_INCIDENT_NOTE_PREFIX = 'Sugerido por IA:'
+
+export function assertIncidentNote(value: unknown): string {
+  return assertRequiredNote(value, {
+    missingMessage: 'Cuenta qué ha pasado con el pedido',
+    missingCode: 'MISSING_INCIDENT_NOTE',
+    tooLongMessage: 'La nota de la incidencia es demasiado larga',
+    tooLongCode: 'INCIDENT_NOTE_TOO_LONG',
+  })
+}
+
+export function assertResolutionNote(value: unknown): string {
+  return assertRequiredNote(value, {
+    missingMessage: 'Cuenta cómo se ha resuelto la incidencia',
+    missingCode: 'MISSING_RESOLUTION_NOTE',
+    tooLongMessage: 'La nota de resolución es demasiado larga',
+    tooLongCode: 'RESOLUTION_NOTE_TOO_LONG',
+  })
+}
+
+function assertRequiredNote(
+  value: unknown,
+  options: { missingMessage: string; missingCode: string; tooLongMessage: string; tooLongCode: string },
+): string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new AppError(options.missingMessage, 400, options.missingCode)
+  }
+
+  const note = value.trim()
+  if (note.length > INCIDENT_NOTE_MAX_LENGTH) {
+    throw new AppError(options.tooLongMessage, 400, options.tooLongCode)
+  }
+
+  return note
+}
+
+// The mail analyzer stores the order id here when it is sure. A free-text reference is not enough.
+export function relatedOrderIdFromRaw(rawData: unknown): string | null {
+  const record = asRecord(rawData)
+  if (!record) return null
+
+  const topLevel = readId(record.relatedOrderId)
+  if (topLevel) return topLevel
+
+  if (!Array.isArray(record.findings)) return null
+
+  for (const finding of record.findings) {
+    const nested = readId(asRecord(finding)?.relatedOrderId)
+    if (nested) return nested
+  }
+
+  return null
+}
+
+export function incidentNoteFromExtraction(emailSubject: string | null, rawData: unknown): string {
+  const source = findingRecord(rawData) ?? asRecord(rawData)
+  const evidence = readEvidence(source)
+  const pieces = [emailSubject?.trim(), evidence.join(' ')].filter((piece): piece is string =>
+    Boolean(piece),
+  )
+  const body = pieces.join('. ') || 'Se ha detectado una incidencia en un correo de este pedido.'
+  const note = `${AI_INCIDENT_NOTE_PREFIX} ${body}`
+
+  return note.length <= INCIDENT_NOTE_MAX_LENGTH
+    ? note
+    : note.slice(0, INCIDENT_NOTE_MAX_LENGTH).trimEnd()
+}
+
+// Marks orders Sincro can tie to one INCIDENT email. It does not touch the finding's own status,
+// and it does not run again for an email that already marked an order.
+export async function applySureIncidents(businessId: string) {
+  const extractions = await findOpenIncidentExtractions(businessId)
+  if (extractions.length === 0) return
+
+  const applied = new Set(await findAppliedExtractionIds(extractions.map((row) => row.id)))
+
+  for (const extraction of extractions) {
+    if (applied.has(extraction.id) || isSpam(extraction.rawData)) continue
+
+    const orderId = relatedOrderIdFromRaw(extraction.rawData)
+    if (!orderId) continue
+
+    const order = await findOrderById(businessId, orderId)
+    if (!order || order.status === 'INCIDENT' || order.status === 'CANCELLED') continue
+
+    const note = incidentNoteFromExtraction(extraction.emailSubject, extraction.rawData)
+
+    try {
+      await updateOrderWithItems(
+        order.id,
+        { status: 'INCIDENT' },
+        undefined,
+        {
+          status: 'INCIDENT',
+          changedBy: null,
+          note,
+          sourceExtractionId: extraction.id,
+        },
+        { content: note, createdBy: null },
+      )
+    } catch (error) {
+      // Another request already stored this email. Resolving the incident must stay resolved.
+      if (getUniqueViolationFields(error)) continue
+      throw error
+    }
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+function readId(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
+function findingRecord(rawData: unknown): Record<string, unknown> | null {
+  const record = asRecord(rawData)
+  const findings = record?.findings
+  if (!Array.isArray(findings) || findings.length === 0) return null
+  return asRecord(findings[0])
+}
+
+function readEvidence(source: Record<string, unknown> | null): string[] {
+  const evidence = source?.evidence
+  if (!Array.isArray(evidence)) return []
+
+  return evidence
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map((item) => item.trim())
+}
+
+function isSpam(rawData: unknown): boolean {
+  return asRecord(rawData)?.isSpam === true
 }

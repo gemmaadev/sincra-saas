@@ -18,7 +18,8 @@ export function StatsEvolutionChart({
   infoTooltip,
 }: StatsEvolutionChartProps) {
   const option = {
-    grid: { left: 8, right: 8, top: 16, bottom: 24, containLabel: true },
+    grid: { left: 8, right: 8, top: 40, bottom: 24, containLabel: true },
+    legend: { top: 0, data: ['Pedidos creados', 'Incidencias'] },
     xAxis: {
       type: 'category',
       data: data.map((point) => point.label),
@@ -28,9 +29,17 @@ export function StatsEvolutionChart({
     tooltip: { trigger: 'axis', appendToBody: true },
     series: [
       {
+        name: 'Pedidos creados',
         type: 'bar',
         data: data.map((point) => point.value),
         itemStyle: { color: '#1e5eff', borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 32,
+      },
+      {
+        name: 'Incidencias',
+        type: 'bar',
+        data: data.map((point) => point.incidentCount),
+        itemStyle: { color: '#e11d48', borderRadius: [4, 4, 0, 0] },
         barMaxWidth: 32,
       },
     ],
