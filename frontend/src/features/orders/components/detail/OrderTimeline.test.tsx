@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MantineProvider } from '@mantine/core'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { OrderTimeline } from './OrderTimeline'
 import { api } from '@/shared/services'
@@ -37,9 +38,11 @@ const mockOrder: OrderDetail = {
 function renderTimeline(order: OrderDetail = mockOrder) {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
   return render(
-    <QueryClientProvider client={queryClient}>
-      <OrderTimeline order={order} />
-    </QueryClientProvider>,
+    <MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <OrderTimeline order={order} />
+      </QueryClientProvider>
+    </MantineProvider>,
   )
 }
 
@@ -87,6 +90,7 @@ describe('OrderTimeline', () => {
 
     expect(screen.getByText('Este pedido ha sido cancelado.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Actualizar estado' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Marcar incidencia' })).not.toBeInTheDocument()
   })
 
   // Given an order still moving through the normal flow
@@ -208,5 +212,187 @@ describe('OrderTimeline', () => {
     renderTimeline({ ...mockOrder, status: 'PENDING' })
 
     expect(screen.getByText('En preparación').nextSibling).toHaveTextContent('—')
+  })
+
+  // Given an order in incidencia, paused while it was being prepared
+  // When the timeline is rendered
+  // Then the note and the date are highlighted, and the delivery steps stay in place
+  it('shows the incident note without replacing the delivery steps', () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'El cliente recibió el pedido dañado',
+        },
+      ],
+    })
+
+    expect(screen.getByText('Pedido recibido')).toBeInTheDocument()
+    expect(screen.getByText('En preparación')).toBeInTheDocument()
+    expect(screen.getByText('El cliente recibió el pedido dañado')).toBeInTheDocument()
+    expect(screen.getByText(/20 jun 2026/)).toBeInTheDocument()
+    expect(screen.queryByText('Sugerido por IA')).not.toBeInTheDocument()
+  })
+
+  // Given an order paused by an incident while it was being prepared
+  // When the timeline is rendered
+  // Then the step it's paused on shows a warning icon, not the plain green "done" checkmark
+  it('shows a paused warning icon instead of a success check on the step an incident paused', () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'El cliente recibió el pedido dañado',
+        },
+      ],
+    })
+
+    const pausedStepIcon = screen.getByText('En preparación').parentElement!.previousElementSibling!
+    expect(pausedStepIcon.className).toContain('bg-error')
+    expect(pausedStepIcon.className).not.toContain('bg-success')
+
+    const earlierStepIcon = screen.getByText('Pedido recibido').parentElement!.previousElementSibling!
+    expect(earlierStepIcon.className).toContain('bg-success')
+  })
+
+  // Given Sincro marked the incident from an email
+  // When the timeline is rendered
+  // Then the note is shown as suggested by AI, without the raw prefix
+  it('marks an incident suggested by AI', () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: null,
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'Sugerido por IA: La caja venía abierta',
+        },
+      ],
+    })
+
+    expect(screen.getByText('Sugerido por IA')).toBeInTheDocument()
+    expect(screen.getByText('La caja venía abierta')).toBeInTheDocument()
+    expect(screen.queryByText(/Sugerido por IA:/)).not.toBeInTheDocument()
+  })
+
+  // Given an incident paused at En preparación
+  // When the user resolves it with a note
+  // Then the order returns to En preparación with the resolution note
+  it('returns to the paused step when resolving the incident', async () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'Llegó dañado',
+        },
+      ],
+    })
+    const user = userEvent.setup()
+
+    await user.click(screen.getByRole('button', { name: 'Resolver incidencia' }))
+    const dialog = within(screen.getByRole('dialog'))
+    await user.type(dialog.getByLabelText('Cómo se ha resuelto'), 'Se ha reenviado el pedido')
+    await user.click(dialog.getByRole('button', { name: 'Resolver incidencia' }))
+
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', {
+        status: 'PREPARING',
+        resolutionNote: 'Se ha reenviado el pedido',
+      }),
+    )
+  })
+
+  // Given an order that had an incident which has since been resolved
+  // When the timeline is rendered
+  // Then the resolved episode stays visible as a collapsed header, collapsed by default to
+  // save space, but its note and resolution note appear once expanded
+  it('keeps a resolved incident visible, collapsed by default, with its resolution note', async () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'PREPARING',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'Llegó dañado',
+        },
+        {
+          id: 'change-4',
+          status: 'PREPARING',
+          changedBy: 'user-1',
+          changedAt: '2026-06-21T12:00:00.000Z',
+          note: 'Se ha reenviado el pedido',
+        },
+      ],
+    })
+
+    expect(screen.getByText('Incidencia resuelta')).toBeInTheDocument()
+    expect(screen.queryByText('Llegó dañado')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Resolver incidencia' })).not.toBeInTheDocument()
+
+    await userEvent.setup().click(screen.getByRole('button', { name: /Incidencia resuelta/ }))
+
+    expect(screen.getByText('Llegó dañado')).toBeInTheDocument()
+    expect(screen.getByText('Se ha reenviado el pedido')).toBeInTheDocument()
+  })
+
+  // Given an incident paused at En preparación
+  // When the user clicks Actualizar estado
+  // Then the order leaves the incident and moves on to Enviado
+  it('advances past the incident to the next delivery step', async () => {
+    renderTimeline({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        ...mockOrder.statusHistory,
+        {
+          id: 'change-3',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-06-20T12:00:00.000Z',
+          note: 'Llegó dañado',
+        },
+      ],
+    })
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Actualizar estado' }))
+
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith('/orders/order-1', { status: 'SHIPPED' }),
+    )
+  })
+
+  // Given a delivered order
+  // When the timeline is rendered
+  // Then the person can still mark an incident, and there is no next delivery step
+  it('offers to mark an incident on a delivered order', () => {
+    renderTimeline({ ...mockOrder, status: 'DELIVERED' })
+
+    expect(screen.getByRole('button', { name: 'Marcar incidencia' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Actualizar estado' })).not.toBeInTheDocument()
   })
 })

@@ -1,4 +1,4 @@
-import { ORDER_STATUS_LABELS } from '@/features/orders/orderStatus.constants'
+import { ORDER_STATUS_LABELS } from '@/shared/orderStatus.constants'
 import type { OrderStatus } from '@/features/orders/types/order.types'
 import type { OrdersByStatus } from '../types/stats.types'
 import type { StatsDonutSlice } from '../components/StatsDonutChart'
@@ -9,6 +9,7 @@ const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   PREPARING: '#d99a34',
   SHIPPED: '#1e5eff',
   DELIVERED: '#3fa65c',
+  INCIDENT: '#e11d48',
   CANCELLED: '#e5484d',
 }
 

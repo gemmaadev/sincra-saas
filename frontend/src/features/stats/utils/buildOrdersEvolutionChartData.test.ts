@@ -9,14 +9,14 @@ describe('buildOrdersEvolutionChartData', () => {
     const data = buildOrdersEvolutionChartData({
       granularity: 'daily',
       points: [
-        { date: '2026-10-01', count: 3 },
-        { date: '2026-10-02', count: 0 },
+        { date: '2026-10-01', count: 3, incidentCount: 1 },
+        { date: '2026-10-02', count: 0, incidentCount: 0 },
       ],
     })
 
     expect(data).toEqual([
-      { label: '1 oct', value: 3 },
-      { label: '2 oct', value: 0 },
+      { label: '1 oct', value: 3, incidentCount: 1 },
+      { label: '2 oct', value: 0, incidentCount: 0 },
     ])
   })
 

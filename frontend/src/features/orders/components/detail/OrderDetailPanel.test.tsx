@@ -359,4 +359,33 @@ describe('OrderDetailPanel', () => {
 
     expect(screen.getByLabelText('Cancelar pedido')).toBeDisabled()
   })
+
+  // Given a delivered order that was later marked as an incident
+  // When the panel is rendered
+  // Then cancelling stays disabled, the same as for a delivered order
+  it('disables cancelling a delivered order that is now an incident', async () => {
+    mockApiGet({
+      ...mockOrder,
+      status: 'INCIDENT',
+      statusHistory: [
+        {
+          id: 'change-1',
+          status: 'DELIVERED',
+          changedBy: null,
+          changedAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'change-2',
+          status: 'INCIDENT',
+          changedBy: 'user-1',
+          changedAt: '2026-01-02T00:00:00.000Z',
+          note: 'Llegó dañado',
+        },
+      ],
+    })
+    renderPanel()
+    await screen.findByText('Pedido #7')
+
+    expect(screen.getByLabelText('Cancelar pedido')).toBeDisabled()
+  })
 })

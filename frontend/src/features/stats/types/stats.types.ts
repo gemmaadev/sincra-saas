@@ -33,6 +33,7 @@ export interface OrdersByStatus {
 export interface OrdersEvolutionPoint {
   date: string
   count: number
+  incidentCount: number
 }
 
 export interface OrdersEvolution {

@@ -11,6 +11,7 @@ import { OrderNotesTab } from './OrderNotesTab'
 import { OrderTagsTab } from './OrderTagsTab'
 import { CancelOrderModal } from '../actions/CancelOrderModal'
 import { DeleteOrderModal } from '../actions/DeleteOrderModal'
+import { canCancelOrder } from '../../utils/operationalStatus'
 import { Mail, Phone, Pencil, X, Trash2 } from 'lucide-react'
 
 interface OrderDetailPanelProps {
@@ -55,7 +56,7 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
             icon={X}
             label="Cancelar pedido"
             variant="dangerOutline"
-            disabled={order.status === 'CANCELLED' || order.status === 'DELIVERED'}
+            disabled={!canCancelOrder(order.status, order.statusHistory)}
             onClick={() => setIsCancelModalOpen(true)}
           />
           <IconButton

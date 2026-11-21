@@ -91,6 +91,24 @@ interface OrderItemData {
 interface OrderStatusChangeData {
   status: OrderStatus
   changedBy?: string | null
+  note?: string | null
+  sourceExtractionId?: string | null
+}
+
+interface OrderNoteData {
+  content: string
+  createdBy?: string | null
+}
+
+export async function findAppliedExtractionIds(sourceExtractionIds: string[]) {
+  if (sourceExtractionIds.length === 0) return []
+
+  const rows = await prisma.orderStatusChange.findMany({
+    where: { sourceExtractionId: { in: sourceExtractionIds } },
+    select: { sourceExtractionId: true },
+  })
+
+  return rows.flatMap((row) => (row.sourceExtractionId ? [row.sourceExtractionId] : []))
 }
 
 export async function updateOrderWithItems(
@@ -98,6 +116,7 @@ export async function updateOrderWithItems(
   data: Prisma.OrderUpdateInput,
   items?: OrderItemData[],
   statusChange?: OrderStatusChangeData,
+  orderNote?: OrderNoteData,
 ) {
   return prisma.$transaction(async (tx) => {
     await tx.order.update({ where: { id: orderId }, data })
@@ -109,6 +128,12 @@ export async function updateOrderWithItems(
 
     if (statusChange) {
       await tx.orderStatusChange.create({ data: { orderId, ...statusChange } })
+    }
+
+    if (orderNote) {
+      await tx.note.create({
+        data: { orderId, content: orderNote.content, createdBy: orderNote.createdBy ?? null },
+      })
     }
 
     return tx.order.findUniqueOrThrow({ where: { id: orderId }, include: ORDER_DETAIL_INCLUDE })
