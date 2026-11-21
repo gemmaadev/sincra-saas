@@ -4,6 +4,7 @@ import {
   register,
   getMyBusinesses,
   selectBusiness,
+  switchBusiness,
   logout,
   me,
   loginWithGoogle,
@@ -24,7 +25,9 @@ router.post('/auth/login', authRateLimit, login)
 router.post('/auth/logout', logout)
 router.get('/auth/me', verifyAuth, me)
 router.get('/users/me/businesses', verifyPendingAuth, getMyBusinesses)
+router.get('/auth/me/businesses', verifyAuth, getMyBusinesses)
 router.post('/auth/select-business', selectBusiness)
+router.post('/auth/switch-business', verifyAuth, switchBusiness)
 
 router.post('/auth/google', loginWithGoogle)
 router.get('/auth/microsoft/start', startMicrosoftAuth)

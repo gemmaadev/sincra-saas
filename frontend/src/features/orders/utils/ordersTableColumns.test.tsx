@@ -92,3 +92,32 @@ describe('ordersTableColumns tags', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 })
+
+function renderNumber(aiGenerated: boolean) {
+  const column = ordersTableColumns.find((entry) => entry.key === 'number')
+  if (!column) throw new Error('missing number column')
+
+  render(<MantineProvider>{column.render({ ...order, aiGenerated })}</MantineProvider>)
+}
+
+describe('ordersTableColumns number', () => {
+  // Given an order the AI created
+  // When the Pedido cell is rendered
+  // Then the AI star sits next to the order number
+  it('marks an order the AI created', () => {
+    renderNumber(true)
+
+    expect(screen.getByText('#7')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Sugerido por IA' })).toBeInTheDocument()
+  })
+
+  // Given an order a person created
+  // When the Pedido cell is rendered
+  // Then there is no AI star next to the number
+  it('does not mark an order a person created', () => {
+    renderNumber(false)
+
+    expect(screen.getByText('#7')).toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Sugerido por IA' })).not.toBeInTheDocument()
+  })
+})

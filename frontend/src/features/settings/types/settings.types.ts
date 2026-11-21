@@ -32,4 +32,11 @@ export type ChannelConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'MOCKED'
 export interface ConnectedChannelStatus {
   channel: Channel
   status: ChannelConnectionStatus
+  accountEmail?: string | null
+}
+
+export interface ConnectedChannelMutationResult {
+  connectedChannel?: {
+    accountEmail?: string | null
+  }
 }

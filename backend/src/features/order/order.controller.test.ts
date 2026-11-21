@@ -403,6 +403,78 @@ describe('update', () => {
     )
   })
 
+  // Given an incident status and the explanation
+  // When updating an order
+  // Then both reach the service
+  it('passes the incident note together with the status', async () => {
+    const updateSpy = vi
+      .spyOn(orderService, 'updateOrder')
+      .mockResolvedValue({ id: 'order-1', status: 'INCIDENT' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { id: 'order-1' },
+      body: { status: 'INCIDENT', incidentNote: 'Llegó dañado' },
+    })
+
+    await update(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'user-1',
+      'order-1',
+      expect.objectContaining({ status: 'INCIDENT', incidentNote: 'Llegó dañado' }),
+    )
+  })
+
+  // Given an incident status and no explanation
+  // When updating an order
+  // Then a 400 is thrown and the service is not called
+  it('rejects an incident without a note before calling the service', async () => {
+    const updateSpy = vi.spyOn(orderService, 'updateOrder')
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { id: 'order-1' },
+      body: { status: 'INCIDENT' },
+    })
+    const next = vi.fn()
+
+    await update(req, createMockResponse(), next as NextFunction)
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 400, code: 'MISSING_INCIDENT_NOTE' }),
+    )
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  // Given a resolution note alongside a status that is not INCIDENT
+  // When updating an order
+  // Then it reaches the service untouched — the controller can't know whether the order was
+  // actually in INCIDENT, so the service decides if the note is required
+  it('passes the resolution note through to the service', async () => {
+    const updateSpy = vi
+      .spyOn(orderService, 'updateOrder')
+      .mockResolvedValue({ id: 'order-1', status: 'PREPARING' } as never)
+
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      params: { id: 'order-1' },
+      body: { status: 'PREPARING', resolutionNote: 'Se ha reenviado el pedido' },
+    })
+
+    await update(req, createMockResponse(), vi.fn() as NextFunction)
+
+    expect(updateSpy).toHaveBeenCalledWith(
+      'biz-1',
+      'user-1',
+      'order-1',
+      expect.objectContaining({ status: 'PREPARING', resolutionNote: 'Se ha reenviado el pedido' }),
+    )
+  })
+
   // Given an unknown status value
   // When updating an order
   // Then it should throw a 400 AppError without calling the service

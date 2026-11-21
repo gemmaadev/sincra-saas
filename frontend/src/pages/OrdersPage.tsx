@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useMatch, useNavigate } from 'react-router'
-import { Package, Clock, Truck, CheckCircle, XCircle, Plus, Trash2, Ban } from 'lucide-react'
+import {
+  Package,
+  Clock,
+  Truck,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Plus,
+  Trash2,
+  Ban,
+} from 'lucide-react'
 import { useOrders } from '@/features/orders/hooks/useOrders'
 import { useOrdersFilters } from '@/features/orders/hooks/useOrdersFilters'
 import { OrdersFilterBar } from '@/features/orders/components/OrdersFilterBar'
@@ -123,6 +133,12 @@ export default function OrdersPage() {
             icon: CheckCircle,
             label: 'Entregados',
             value: String(data?.statusCounts?.DELIVERED ?? 0),
+            pending: !data,
+          },
+          {
+            icon: AlertTriangle,
+            label: 'Incidencias',
+            value: String(data?.statusCounts?.INCIDENT ?? 0),
             pending: !data,
           },
           {

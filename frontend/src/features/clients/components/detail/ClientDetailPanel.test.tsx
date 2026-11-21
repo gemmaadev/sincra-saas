@@ -166,6 +166,87 @@ describe('ClientDetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Historial' })).toBeDisabled()
   })
 
+  // Given a client with no orders, notes or tags
+  // When the detail is shown
+  // Then Pedidos, Notas and Etiquetas still show a count of zero
+  it('shows a zero count on Pedidos, Notas and Etiquetas', async () => {
+    mockApiGet()
+    renderPanel()
+    await screen.findByText('Laura García')
+
+    expect(screen.getByRole('tab', { name: 'Pedidos 0' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Etiquetas 0' })).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Notas 0' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Resumen' })).toBeInTheDocument()
+  })
+
+  // Given a client with orders, notes and tags
+  // When the detail is shown
+  // Then those tabs show how many there are
+  it('shows how many orders, notes and tags the client has', async () => {
+    vi.mocked(api.get).mockImplementation((path: string) => {
+      if (String(path).endsWith('/notes')) {
+        return Promise.resolve({
+          notes: [
+            {
+              id: 'note-1',
+              clientId: 'client-1',
+              orderId: null,
+              content: 'Una nota',
+              createdBy: 'user-1',
+              createdAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              id: 'note-2',
+              clientId: 'client-1',
+              orderId: null,
+              content: 'Otra nota',
+              createdBy: 'user-1',
+              createdAt: '2026-01-02T00:00:00.000Z',
+            },
+          ],
+        })
+      }
+      return Promise.resolve({
+        client: {
+          ...mockClient,
+          orders: [
+            {
+              id: 'order-1',
+              number: 4,
+              status: 'PENDING',
+              kind: 'PRODUCT',
+              channel: null,
+              price: null,
+              expectedDate: null,
+              createdAt: '2026-01-02T00:00:00.000Z',
+              description: null,
+            },
+          ],
+          clientTags: [
+            {
+              id: 'assignment-1',
+              tagId: 'tag-1',
+              aiGenerated: false,
+              tag: {
+                id: 'tag-1',
+                name: 'VIP',
+                color: '#ffb800',
+                priority: 'LOW',
+                isDefault: false,
+              },
+            },
+          ],
+        },
+      })
+    })
+    renderPanel()
+
+    expect(await screen.findByRole('tab', { name: 'Pedidos 1' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Etiquetas 1' })).toBeInTheDocument()
+    expect(await screen.findByRole('tab', { name: 'Notas 2' })).toBeInTheDocument()
+  })
+
   // Given the clients tabs
   // When the user selects Notas
   // Then the real ClientNotesTab content (its "add note" form) should be shown
@@ -173,7 +254,7 @@ describe('ClientDetailPanel', () => {
     mockApiGet()
     renderPanel()
     await screen.findByText('Laura García')
-    fireEvent.click(screen.getByRole('tab', { name: 'Notas' }))
+    fireEvent.click(await screen.findByRole('tab', { name: 'Notas 0' }))
     expect(
       await screen.findByPlaceholderText('Escribe una nota sobre este cliente...'),
     ).toBeInTheDocument()

@@ -36,8 +36,8 @@ describe('StatsEvolutionChart', () => {
     render(
       <StatsEvolutionChart
         data={[
-          { label: '1 oct', value: 3 },
-          { label: '2 oct', value: 5 },
+          { label: '1 oct', value: 3, incidentCount: 0 },
+          { label: '2 oct', value: 5, incidentCount: 1 },
         ]}
         granularity="daily"
         onGranularityChange={vi.fn()}

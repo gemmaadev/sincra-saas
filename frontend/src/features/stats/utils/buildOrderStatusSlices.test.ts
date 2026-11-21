@@ -13,6 +13,7 @@ describe('buildOrderStatusSlices', () => {
         { status: 'PREPARING', count: 0, percentage: 0 },
         { status: 'SHIPPED', count: 0, percentage: 0 },
         { status: 'DELIVERED', count: 6, percentage: 60 },
+        { status: 'INCIDENT', count: 2, percentage: 20 },
         { status: 'CANCELLED', count: 1, percentage: 10 },
       ],
     })
@@ -20,6 +21,7 @@ describe('buildOrderStatusSlices', () => {
     expect(slices).toEqual([
       { label: 'Pendiente', value: 3, percentage: 30, color: '#94a3b8' },
       { label: 'Entregado', value: 6, percentage: 60, color: '#3fa65c' },
+      { label: 'Incidencia', value: 2, percentage: 20, color: '#e11d48' },
       { label: 'Cancelado', value: 1, percentage: 10, color: '#e5484d' },
     ])
   })
@@ -35,6 +37,7 @@ describe('buildOrderStatusSlices', () => {
         { status: 'PREPARING', count: 0, percentage: 0 },
         { status: 'SHIPPED', count: 0, percentage: 0 },
         { status: 'DELIVERED', count: 0, percentage: 0 },
+        { status: 'INCIDENT', count: 0, percentage: 0 },
         { status: 'CANCELLED', count: 0, percentage: 0 },
       ],
     })

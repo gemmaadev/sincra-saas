@@ -54,6 +54,41 @@ describe('ClientNotesTab', () => {
     vi.mocked(api.get).mockResolvedValue({ notes: [mockNote] })
     renderClientNotesTab()
     expect(await screen.findByText('Prefiere WhatsApp')).toBeInTheDocument()
+    expect(screen.queryByText('Sugerido por Sincro')).not.toBeInTheDocument()
+  })
+
+  // Given a note the AI wrote, with the raw prefix
+  // When ClientNotesTab is rendered
+  // Then the prefix is replaced by Sincro's name and photo
+  it('shows Sincro instead of the AI prefix', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      notes: [
+        {
+          ...mockNote,
+          content: 'Sugerido por IA: Quiere el pedido el viernes',
+          createdBy: null,
+        },
+      ],
+    })
+    renderClientNotesTab()
+
+    expect(await screen.findByText('Sugerido por Sincro')).toBeInTheDocument()
+    expect(screen.getByText('Quiere el pedido el viernes')).toBeInTheDocument()
+    expect(screen.queryByText(/Sugerido por IA:/)).not.toBeInTheDocument()
+    expect(document.querySelector('img')).toHaveAttribute('src', '/avatar-sincro-agent.png')
+  })
+
+  // Given a note with no author and no prefix
+  // When ClientNotesTab is rendered
+  // Then it is still marked as Sincro's, and the text stays whole
+  it('marks a note with no author', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      notes: [{ ...mockNote, content: 'Llamar mañana', createdBy: null }],
+    })
+    renderClientNotesTab()
+
+    expect(await screen.findByText('Sugerido por Sincro')).toBeInTheDocument()
+    expect(screen.getByText('Llamar mañana')).toBeInTheDocument()
   })
 
   // Given the "add note" form

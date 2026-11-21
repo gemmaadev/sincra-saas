@@ -5,6 +5,8 @@ export interface Tab {
   label: string
   content: ReactNode
   disabled?: boolean
+  /** Shown as a small bubble next to the label. Zero is shown; omit it to hide the bubble. */
+  count?: number
 }
 
 export interface TabsProps {

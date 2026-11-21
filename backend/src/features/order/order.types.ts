@@ -32,6 +32,8 @@ export interface UpdateOrderInput {
   expectedDate?: Date | null
   description?: string | null
   status?: OrderStatus
+  incidentNote?: string
+  resolutionNote?: string
 }
 
 export interface ListOrdersFilters extends PaginationQuery {

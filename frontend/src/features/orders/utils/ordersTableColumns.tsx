@@ -1,18 +1,23 @@
-import { Badge, MissingPrice, TagPill } from '@/shared/components'
+import { AiSuggestedBadge, Badge, MissingPrice, TagPill } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
 import {
   ORDER_STATUS_LABELS,
   ORDER_STATUS_COLORS,
   ORDER_STATUS_ICONS,
-} from '../orderStatus.constants'
+} from '@/shared/orderStatus.constants'
 import type { Order } from '../types/order.types'
 
 export const ordersTableColumns = [
   {
     key: 'number',
     header: 'Pedido',
-    render: (order: Order) => <span className="font-medium text-ink">#{order.number}</span>,
+    render: (order: Order) => (
+      <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+        #{order.number}
+        {order.aiGenerated && <AiSuggestedBadge compact />}
+      </span>
+    ),
   },
   {
     key: 'client',

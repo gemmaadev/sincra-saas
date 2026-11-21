@@ -8,10 +8,17 @@ describe('AiSuggestedBadge', () => {
   // Given something suggested by the AI
   // When the badge is rendered
   // Then it should say so in text
-  it('shows the "Sugerido por IA" label', () => {
-    render(<AiSuggestedBadge />)
+  it('shows the "Sugerido por IA" label on a tag chip', () => {
+    render(
+      <MantineProvider>
+        <AiSuggestedBadge />
+      </MantineProvider>,
+    )
 
-    expect(screen.getByText('Sugerido por IA')).toBeInTheDocument()
+    const chip = screen.getByText('Sugerido por IA')
+    expect(chip).toHaveClass('rounded-full', 'text-sm')
+    expect(chip).toHaveStyle({ color: '#1e5eff' })
+    expect(chip).toContainElement(screen.getByRole('img', { name: 'Sugerido por IA' }))
   })
 
   // Given a tag that needs a smaller mark

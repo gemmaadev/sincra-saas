@@ -183,6 +183,7 @@ describe('updateOrderWithItems', () => {
     order: { update: vi.fn(), findUniqueOrThrow: vi.fn() },
     orderItem: { deleteMany: vi.fn(), createMany: vi.fn() },
     orderStatusChange: { create: vi.fn() },
+    note: { create: vi.fn() },
   }
 
   beforeEach(() => {
@@ -233,6 +234,27 @@ describe('updateOrderWithItems', () => {
 
     expect(tx.orderStatusChange.create).toHaveBeenCalledWith({
       data: { orderId: 'order-1', status: 'SHIPPED', changedBy: 'user-1' },
+    })
+    expect(tx.note.create).not.toHaveBeenCalled()
+  })
+
+  // Given an incident note
+  // When the order is updated
+  // Then the note is stored on the history entry and as an order note
+  it('stores an incident note on the history entry and as an order note', async () => {
+    await updateOrderWithItems(
+      'order-1',
+      { status: 'INCIDENT' },
+      undefined,
+      { status: 'INCIDENT', changedBy: 'user-1', note: 'Llegó dañado' },
+      { content: 'Llegó dañado', createdBy: 'user-1' },
+    )
+
+    expect(tx.orderStatusChange.create).toHaveBeenCalledWith({
+      data: { orderId: 'order-1', status: 'INCIDENT', changedBy: 'user-1', note: 'Llegó dañado' },
+    })
+    expect(tx.note.create).toHaveBeenCalledWith({
+      data: { orderId: 'order-1', content: 'Llegó dañado', createdBy: 'user-1' },
     })
   })
 

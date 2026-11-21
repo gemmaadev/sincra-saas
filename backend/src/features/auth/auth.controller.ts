@@ -7,6 +7,7 @@ import {
   findUserWithBusinesses,
   findUserByEmail,
   findMembership,
+  requireActiveMembership,
   findActiveMembershipWithDetails,
   registerBusinessOwner,
   verifyGoogleAccessToken,
@@ -17,18 +18,18 @@ import {
   resetPassword as resetPasswordService,
 } from './auth.service'
 import { comparePassword } from '../../shared/hash'
+import { isValidEmail } from '../../shared/utils/validation'
 import type {
   LoginBody,
   RegisterInput,
   OnboardingInput,
   SelectBusinessBody,
+  SwitchBusinessBody,
   SocialLoginResult,
   GoogleLoginBody,
   ForgotPasswordBody,
   ResetPasswordBody,
 } from './auth.types'
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const SESSION_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const PENDING_COOKIE_MAX_AGE_MS = 10 * 60 * 1000
@@ -98,7 +99,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isValidEmail(email)) {
     throw new AppError('El email no tiene un formato válido', 400, 'INVALID_EMAIL')
   }
 
@@ -160,6 +161,27 @@ export const selectBusiness = asyncHandler(async (req: Request, res: Response) =
 
   const token = signToken({
     userId,
+    businessId: membership.businessId,
+    role: membership.role,
+  })
+
+  setSessionCookie(res, token)
+  res.json({ success: true })
+})
+
+// The cookie is the only source of req.businessId. Role is taken from the
+// membership the service returns, never from the request body.
+export const switchBusiness = asyncHandler(async (req: Request, res: Response) => {
+  const { businessId } = req.body as SwitchBusinessBody
+
+  if (!businessId?.trim()) {
+    throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
+  }
+
+  const membership = await requireActiveMembership(req.userId!, businessId)
+
+  const token = signToken({
+    userId: membership.userId,
     businessId: membership.businessId,
     role: membership.role,
   })

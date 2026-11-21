@@ -92,7 +92,9 @@ describe('ClientDetailHeader', () => {
       </MantineProvider>,
     )
 
-    expect(screen.getByText('Sugerido por IA')).toBeInTheDocument()
+    const chip = screen.getByText('Sugerido por IA')
+    expect(chip).toHaveClass('rounded-full', 'text-sm')
+    expect(chip).toContainElement(screen.getByRole('img', { name: 'Sugerido por IA' }))
   })
 
   // Given a client a person created

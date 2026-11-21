@@ -10,12 +10,14 @@ import {
   findDeliveredOrdersByChannelInRange,
   findDeliveredOrdersInRange,
   findOrderCreatedDatesInRange,
+  findOrderIncidentDatesInRange,
 } from './stats.model'
 
 vi.mock('../../config/db', () => ({
   default: {
     client: { count: vi.fn(), groupBy: vi.fn() },
     order: { count: vi.fn(), findMany: vi.fn(), groupBy: vi.fn() },
+    orderStatusChange: { findMany: vi.fn() },
   },
 }))
 
@@ -124,6 +126,26 @@ describe('findOrderCreatedDatesInRange', () => {
     expect(prisma.order.findMany).toHaveBeenCalledWith({
       where: { businessId: 'business-1', createdAt: range },
       select: { createdAt: true },
+    })
+  })
+})
+
+describe('findOrderIncidentDatesInRange', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // Given a business and a changedAt range
+  // When finding incident dates in that range
+  // Then it should filter OrderStatusChange by INCIDENT status, the order's business and the range
+  it('finds INCIDENT status changes by business and changedAt range', async () => {
+    const range = { gte: new Date('2026-10-01'), lte: new Date('2026-10-31') }
+
+    await findOrderIncidentDatesInRange('business-1', range)
+
+    expect(prisma.orderStatusChange.findMany).toHaveBeenCalledWith({
+      where: { status: 'INCIDENT', order: { businessId: 'business-1' }, changedAt: range },
+      select: { changedAt: true },
     })
   })
 })

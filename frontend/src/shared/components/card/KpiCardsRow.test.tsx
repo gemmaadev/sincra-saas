@@ -21,12 +21,13 @@ describe('KpiCardsRow', () => {
 
   // Given 5 cards, like the Orders page uses
   // When the row is rendered
-  // Then it should use a 5-column grid, not the 4-column default
+  // Then it should use a 3-column grid at medium widths and only go full-width at xl,
+  // instead of cramming 5 narrow columns as soon as md hits
   it('adapts the grid to the number of cards', () => {
     const { container } = render(
       <KpiCardsRow cards={[1, 2, 3, 4, 5].map((n) => card(`Card ${n}`))} />,
     )
 
-    expect(container.firstChild).toHaveClass('md:grid-cols-5')
+    expect(container.firstChild).toHaveClass('md:grid-cols-3', 'xl:grid-cols-5')
   })
 })

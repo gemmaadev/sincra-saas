@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { AiSuggestedBadge, Avatar, IconButton, Tabs, Spinner } from '@/shared/components'
 import { useOrderDetail } from '../../hooks/useOrderDetail'
+import { useOrderNotes } from '../../hooks/useOrderNotes'
 import { OrderFormModal } from '../form/OrderFormModal'
 import { OrderSummaryTab } from './OrderSummaryTab'
 import { OrderItemsList } from './OrderItemsList'
@@ -10,6 +11,7 @@ import { OrderNotesTab } from './OrderNotesTab'
 import { OrderTagsTab } from './OrderTagsTab'
 import { CancelOrderModal } from '../actions/CancelOrderModal'
 import { DeleteOrderModal } from '../actions/DeleteOrderModal'
+import { canCancelOrder } from '../../utils/operationalStatus'
 import { Mail, Phone, Pencil, X, Trash2 } from 'lucide-react'
 
 interface OrderDetailPanelProps {
@@ -19,6 +21,7 @@ interface OrderDetailPanelProps {
 export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
   const navigate = useNavigate()
   const { data: order, isLoading, isError } = useOrderDetail(id)
+  const notesQuery = useOrderNotes(id)
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState<boolean>(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false)
@@ -53,7 +56,7 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
             icon={X}
             label="Cancelar pedido"
             variant="dangerOutline"
-            disabled={order.status === 'CANCELLED' || order.status === 'DELIVERED'}
+            disabled={!canCancelOrder(order.status, order.statusHistory)}
             onClick={() => setIsCancelModalOpen(true)}
           />
           <IconButton
@@ -92,8 +95,18 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
             content: <OrderItemsList items={order.items} />,
           },
           { key: 'seguimiento', label: 'Seguimiento', content: <OrderTimeline order={order} /> },
-          { key: 'notas', label: 'Notas', content: <OrderNotesTab orderId={order.id} /> },
-          { key: 'etiquetas', label: 'Etiquetas', content: <OrderTagsTab order={order} /> },
+          {
+            key: 'notas',
+            label: 'Notas',
+            count: notesQuery.data?.length,
+            content: <OrderNotesTab orderId={order.id} />,
+          },
+          {
+            key: 'etiquetas',
+            label: 'Etiquetas',
+            count: order.orderTags.length,
+            content: <OrderTagsTab order={order} />,
+          },
         ]}
       />
 

@@ -29,7 +29,7 @@ const mockBusiness = {
 }
 
 const mockChannels = [
-  { channel: 'GMAIL', status: 'CONNECTED' },
+  { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' },
   { channel: 'OUTLOOK', status: 'DISCONNECTED' },
   { channel: 'WHATSAPP', status: 'MOCKED' },
   { channel: 'INSTAGRAM', status: 'MOCKED' },
@@ -53,7 +53,10 @@ const adminAuth: AuthContextValue = {
   logout: async () => {},
 }
 
-const employeeAuth: AuthContextValue = { ...adminAuth, user: { ...adminAuth.user!, role: 'employee' } }
+const employeeAuth: AuthContextValue = {
+  ...adminAuth,
+  user: { ...adminAuth.user!, role: 'employee' },
+}
 
 function renderSettingsPage(authValue: AuthContextValue = adminAuth) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -104,6 +107,7 @@ describe('SettingsPage', () => {
       await screen.findByRole('region', { name: 'Canales conectados' }),
     )
     expect(await channelsSection.findByText('Gmail')).toBeInTheDocument()
+    expect(channelsSection.getByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
     expect(channelsSection.getByRole('button', { name: 'Desconectar Gmail' })).toBeInTheDocument()
     expect(
       channelsSection.getByRole('button', { name: 'Conectar WhatsApp (no disponible)' }),
