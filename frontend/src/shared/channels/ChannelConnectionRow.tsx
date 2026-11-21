@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import { SincraButton } from '@/shared/components/button'
 import type { ChannelBrand } from './channels'
 import { connectedAccountLabel } from './connectedAccountLabel'
 
@@ -6,8 +7,6 @@ interface ChannelConnectionRowProps {
   channel: ChannelBrand
   description: string
   status: 'connected' | 'disconnected' | 'mocked'
-  // null means the channel is connected but the address is unknown.
-  // Omit it to keep the channel description.
   accountEmail?: string | null
   emailAction?: { label: string; onClick: () => void }
   notice?: string | null
@@ -57,29 +56,32 @@ export function ChannelConnectionRow({
 
       <div className="flex shrink-0 items-center gap-2">
         {emailAction && (
-          <button
+          <SincraButton
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={emailAction.onClick}
             disabled={disabled}
-            className="rounded-lg px-2 py-1 text-sm font-medium text-primary transition-colors enabled:hover:bg-primary/5 disabled:opacity-50"
           >
             {emailAction.label}
-          </button>
+          </SincraButton>
         )}
         {status === 'connected' ? (
-          <button
+          <SincraButton
             type="button"
+            variant="ghost"
             onClick={onToggle}
             disabled={disabled}
             aria-pressed
             aria-label={`Desconectar ${channel.name}`}
-            className="shrink-0 rounded-full p-1 text-success transition-colors enabled:hover:bg-success/10 disabled:opacity-50"
+            className="!rounded-full !p-1 text-success transition-colors enabled:hover:bg-success/10 disabled:opacity-50"
           >
             <Check size={26} />
-          </button>
+          </SincraButton>
         ) : (
-          <button
+          <SincraButton
             type="button"
+            variant="secondary"
             onClick={onToggle}
             disabled={disabled || isMocked}
             aria-pressed={false}
@@ -87,7 +89,7 @@ export function ChannelConnectionRow({
             className="shrink-0 rounded-lg border border-primary bg-white px-4 py-2 text-sm font-medium text-primary transition-colors enabled:hover:bg-primary/5 disabled:opacity-50"
           >
             Conectar
-          </button>
+          </SincraButton>
         )}
       </div>
     </div>
