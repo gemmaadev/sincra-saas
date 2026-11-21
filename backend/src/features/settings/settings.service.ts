@@ -1,5 +1,6 @@
 import type { Channel } from '../../generated/prisma/client'
 import { AppError } from '../../shared/AppError'
+import { isValidEmail } from '../../shared/utils/validation'
 import { findBusinessById, updateBusiness } from '../auth/auth.model'
 import { verifyGmailAccessToken } from './gmail-token'
 import { findConnectedChannels, upsertConnectedChannel } from './settings.model'
@@ -9,15 +10,13 @@ import type {
   UpdateBusinessSettingsBody,
 } from './settings.types'
 
-const ACCOUNT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function requireAccountEmail(email: unknown) {
+export function requireAccountEmail(email: unknown) {
   if (typeof email !== 'string' || !email.trim()) {
     throw new AppError('Falta el email de la cuenta', 400, 'ACCOUNT_EMAIL_REQUIRED')
   }
 
   const accountEmail = email.trim().toLowerCase()
-  if (!ACCOUNT_EMAIL_PATTERN.test(accountEmail)) {
+  if (!isValidEmail(accountEmail)) {
     throw new AppError('El email no tiene un formato válido', 400, 'INVALID_ACCOUNT_EMAIL')
   }
 
