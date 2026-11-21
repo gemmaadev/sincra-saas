@@ -66,12 +66,16 @@ export function SidebarContent() {
             return (
               <div
                 key={channel.channel}
-                className="flex items-center gap-2 px-3 py-1 text-sm text-ink-muted"
+                className="flex gap-2 px-3 py-1 text-sm text-ink-muted items-center"
               >
                 {Icon && (
-                  <Icon size={16} className={brand?.colorClassName} aria-hidden="true" />
+                  <Icon
+                    size={16}
+                    className={`shrink-0 ${brand?.colorClassName}`}
+                    aria-hidden="true"
+                  />
                 )}
-                {brand?.name ?? channel.channel}
+                <span>{brand?.name ?? channel.channel}</span>
               </div>
             )
           })}

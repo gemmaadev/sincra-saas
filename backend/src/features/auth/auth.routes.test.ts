@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import request from 'supertest'
 import app from '../../app'
-import { signToken, signPendingToken } from '../../shared/jwt'
+import { signToken, signPendingToken, verifyToken } from '../../shared/jwt'
+import { AppError } from '../../shared/AppError'
 import * as authService from './auth.service'
 import { mockActiveMembership } from '../../shared/test/mockActiveMembership'
 
@@ -83,6 +84,123 @@ describe('auth routes', () => {
 
       expect(res.status).toBe(401)
       expect(businessesSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('GET /auth/me/businesses (protected by a full session)', () => {
+    // Given a request with no session cookie
+    // When listing businesses for the user menu
+    // Then verifyAuth should reject it before it reaches the service
+    it('returns 401 without a session cookie', async () => {
+      const businessesSpy = vi.spyOn(authService, 'getUserBusinesses')
+
+      const res = await request(app).get('/auth/me/businesses')
+
+      expect(res.status).toBe(401)
+      expect(businessesSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a full session cookie
+    // When listing businesses for the user menu
+    // Then it should return the businesses of that user
+    it('returns the businesses when the session cookie is valid', async () => {
+      vi.spyOn(authService, 'getUserBusinesses').mockResolvedValue([
+        { businessId: 'biz-1', name: 'Tienda A', sector: null, role: 'ADMIN' },
+        { businessId: 'biz-2', name: 'Tienda B', sector: null, role: 'EMPLOYEE' },
+      ] as never)
+
+      const res = await request(app).get('/auth/me/businesses').set('Cookie', validCookie)
+
+      expect(res.status).toBe(200)
+      expect(authService.getUserBusinesses).toHaveBeenCalledWith('user-1')
+      expect(res.body.businesses).toHaveLength(2)
+    })
+
+    // Given only the pending token issued before a business is chosen
+    // When listing businesses on the authenticated route
+    // Then it should be rejected — switching requires a full session
+    it('returns 401 with a pending token', async () => {
+      const businessesSpy = vi.spyOn(authService, 'getUserBusinesses')
+
+      const res = await request(app).get('/auth/me/businesses').set('Cookie', pendingCookie)
+
+      expect(res.status).toBe(401)
+      expect(businessesSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('POST /auth/switch-business (protected)', () => {
+    // Given no session cookie
+    // When trying to switch business
+    // Then verifyAuth should reject it before checking membership
+    it('returns 401 without a session cookie', async () => {
+      const membershipSpy = vi.spyOn(authService, 'requireActiveMembership')
+
+      const res = await request(app).post('/auth/switch-business').send({ businessId: 'biz-2' })
+
+      expect(res.status).toBe(401)
+      expect(membershipSpy).not.toHaveBeenCalled()
+    })
+
+    // Given a valid session and a membership in the target business
+    // When switching to it
+    // Then the response cookie should be a session for that business and its role
+    it('sets a session cookie for the chosen business', async () => {
+      vi.spyOn(authService, 'requireActiveMembership').mockResolvedValue({
+        businessId: 'biz-2',
+        userId: 'user-1',
+        role: 'EMPLOYEE',
+      })
+
+      const res = await request(app)
+        .post('/auth/switch-business')
+        .set('Cookie', validCookie)
+        .send({ businessId: 'biz-2', role: 'ADMIN' })
+
+      expect(res.status).toBe(200)
+      expect(authService.requireActiveMembership).toHaveBeenCalledWith('user-1', 'biz-2')
+      const setCookie = res.headers['set-cookie']
+      const cookie = Array.isArray(setCookie) ? setCookie.join(';') : (setCookie ?? '')
+      const token = cookie.match(/token=([^;]+)/)?.[1]
+      expect(verifyToken(token!)).toMatchObject({
+        userId: 'user-1',
+        businessId: 'biz-2',
+        role: 'EMPLOYEE',
+      })
+    })
+
+    // Given the service rejects the chosen business
+    // When switching to it
+    // Then the route returns 403 and does not replace the session cookie
+    it('returns 403 when the user does not belong to that business', async () => {
+      vi.spyOn(authService, 'requireActiveMembership').mockRejectedValue(
+        new AppError('No perteneces a ese negocio', 403, 'FORBIDDEN'),
+      )
+
+      const res = await request(app)
+        .post('/auth/switch-business')
+        .set('Cookie', validCookie)
+        .send({ businessId: 'biz-ajeno' })
+
+      expect(res.status).toBe(403)
+      expect(res.body.error.code).toBe('FORBIDDEN')
+      expect(res.headers['set-cookie']).toBeUndefined()
+    })
+
+    // Given a valid session and a body without a business id
+    // When switching
+    // Then it should return 400 before looking up a membership
+    it('returns 400 when the business id is missing', async () => {
+      const membershipSpy = vi.spyOn(authService, 'requireActiveMembership')
+
+      const res = await request(app)
+        .post('/auth/switch-business')
+        .set('Cookie', validCookie)
+        .send({})
+
+      expect(res.status).toBe(400)
+      expect(res.body.error.code).toBe('MISSING_FIELDS')
+      expect(membershipSpy).not.toHaveBeenCalled()
     })
   })
 
