@@ -22,27 +22,49 @@ describe('connectChannel', () => {
     vi.clearAllMocks()
   })
 
-  // Given a business and a channel other than Gmail
-  // When connecting it
-  // Then it should upsert the ConnectedChannel row with status CONNECTED
-  it('upserts the channel as CONNECTED', async () => {
-    await connectChannel('biz-1', 'OUTLOOK', 'user-1')
+  // Given an Outlook address with spaces and capitals
+  // When connecting that channel
+  // Then the stored email is trimmed and lowercase
+  it('saves a non-Gmail account email trimmed and in lowercase', async () => {
+    await connectChannel('biz-1', 'OUTLOOK', 'user-1', {
+      accountEmail: '  Tienda@Outlook.com ',
+    })
 
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
       'biz-1',
       'OUTLOOK',
       'CONNECTED',
       'user-1',
+      { accountEmail: 'tienda@outlook.com' },
     )
   })
 
+  // Given a missing or invalid account email
+  // When connecting a channel that is not Gmail
+  // Then it rejects the request and does not write a row
+  it('rejects a non-Gmail channel without a valid email', async () => {
+    await expect(connectChannel('biz-1', 'OUTLOOK', 'user-1')).rejects.toMatchObject({
+      code: 'ACCOUNT_EMAIL_REQUIRED',
+    })
+    await expect(
+      connectChannel('biz-1', 'OUTLOOK', 'user-1', { accountEmail: 'no-es-un-email' }),
+    ).rejects.toMatchObject({ code: 'INVALID_ACCOUNT_EMAIL' })
+    expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
+  })
+
+  // Given a verified Google token and a different email sent by the client
+  // When connecting Gmail
+  // Then only the verified Google email and sub are stored
   it('saves the Gmail email and sub after the token is verified', async () => {
     vi.mocked(gmailToken.verifyGmailAccessToken).mockResolvedValue({
       email: 'tienda@gmail.com',
       sub: 'sub-1',
     })
 
-    await connectChannel('biz-1', 'GMAIL', 'user-1', 'token-1')
+    await connectChannel('biz-1', 'GMAIL', 'user-1', {
+      accessToken: 'token-1',
+      accountEmail: 'otro@gmail.com',
+    })
 
     expect(gmailToken.verifyGmailAccessToken).toHaveBeenCalledWith('token-1')
     expect(settingsModel.upsertConnectedChannel).toHaveBeenCalledWith(
@@ -54,6 +76,9 @@ describe('connectChannel', () => {
     )
   })
 
+  // Given a missing or rejected Gmail token
+  // When connecting Gmail
+  // Then nothing is stored
   it('does not save Gmail when the token is missing or rejected', async () => {
     await expect(connectChannel('biz-1', 'GMAIL', 'user-1')).rejects.toMatchObject({
       code: 'GMAIL_TOKEN_REQUIRED',
@@ -64,7 +89,9 @@ describe('connectChannel', () => {
         code: 'GMAIL_TOKEN_INVALID',
       }),
     )
-    await expect(connectChannel('biz-1', 'GMAIL', 'user-1', 'bad-token')).rejects.toMatchObject({
+    await expect(
+      connectChannel('biz-1', 'GMAIL', 'user-1', { accessToken: 'bad-token' }),
+    ).rejects.toMatchObject({
       code: 'GMAIL_TOKEN_INVALID',
     })
     expect(settingsModel.upsertConnectedChannel).not.toHaveBeenCalled()
@@ -100,7 +127,10 @@ describe('getBusinessSettings', () => {
   // When fetching its settings
   // Then it should return the business as-is
   it('returns the business', async () => {
-    vi.mocked(authModel.findBusinessById).mockResolvedValue({ id: 'biz-1', name: 'Tienda' } as never)
+    vi.mocked(authModel.findBusinessById).mockResolvedValue({
+      id: 'biz-1',
+      name: 'Tienda',
+    } as never)
 
     const business = await getBusinessSettings('biz-1')
 
@@ -172,10 +202,11 @@ describe('getConnectedChannelsStatus', () => {
 
     const channels = await getConnectedChannelsStatus('biz-1')
 
+    expect(settingsModel.findConnectedChannels).toHaveBeenCalledWith('biz-1')
     expect(channels).toEqual(
       expect.arrayContaining([
-        { channel: 'GMAIL', status: 'CONNECTED' },
-        { channel: 'OUTLOOK', status: 'DISCONNECTED' },
+        { channel: 'GMAIL', status: 'CONNECTED', accountEmail: null },
+        { channel: 'OUTLOOK', status: 'DISCONNECTED', accountEmail: null },
       ]),
     )
   })
@@ -192,9 +223,9 @@ describe('getConnectedChannelsStatus', () => {
 
     expect(channels).toEqual(
       expect.arrayContaining([
-        { channel: 'WHATSAPP', status: 'MOCKED' },
-        { channel: 'INSTAGRAM', status: 'MOCKED' },
-        { channel: 'MESSENGER', status: 'MOCKED' },
+        { channel: 'WHATSAPP', status: 'MOCKED', accountEmail: null },
+        { channel: 'INSTAGRAM', status: 'MOCKED', accountEmail: null },
+        { channel: 'MESSENGER', status: 'MOCKED', accountEmail: null },
       ]),
     )
   })
@@ -208,5 +239,47 @@ describe('getConnectedChannelsStatus', () => {
     const channels = await getConnectedChannelsStatus('biz-1')
 
     expect(channels).toHaveLength(5)
+    expect(channels.every((channel) => channel.accountEmail === null)).toBe(true)
+  })
+
+  // Given this business has a connected Gmail with a mixed-case email, a connected
+  // Outlook with a blank email, and a mocked channel that still stores an address
+  // When reading the channels status
+  // Then only the real connection exposes the email, trimmed and lowercased
+  it('returns the connected account email in lowercase for this business only', async () => {
+    vi.mocked(settingsModel.findConnectedChannels).mockResolvedValue([
+      { channel: 'GMAIL', status: 'CONNECTED', accountEmail: '  Tienda@Gmail.com ' },
+      { channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: '   ' },
+      { channel: 'WHATSAPP', status: 'CONNECTED', accountEmail: 'wa@negocio.com' },
+    ] as never)
+
+    const channels = await getConnectedChannelsStatus('biz-1')
+
+    expect(settingsModel.findConnectedChannels).toHaveBeenCalledWith('biz-1')
+    expect(channels).toEqual([
+      { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' },
+      { channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null },
+      { channel: 'WHATSAPP', status: 'MOCKED', accountEmail: null },
+      { channel: 'INSTAGRAM', status: 'MOCKED', accountEmail: null },
+      { channel: 'MESSENGER', status: 'MOCKED', accountEmail: null },
+    ])
+  })
+
+  // Given a disconnected channel that still stores an address
+  // When reading the channels status for that business
+  // Then the address is not exposed
+  it('hides a stored email once the channel is disconnected', async () => {
+    vi.mocked(settingsModel.findConnectedChannels).mockResolvedValue([
+      { channel: 'OUTLOOK', status: 'DISCONNECTED', accountEmail: 'Vieja@Outlook.com' },
+    ] as never)
+
+    const channels = await getConnectedChannelsStatus('biz-2')
+
+    expect(settingsModel.findConnectedChannels).toHaveBeenCalledWith('biz-2')
+    expect(channels.find((channel) => channel.channel === 'OUTLOOK')).toEqual({
+      channel: 'OUTLOOK',
+      status: 'DISCONNECTED',
+      accountEmail: null,
+    })
   })
 })

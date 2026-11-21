@@ -18,6 +18,7 @@ import {
   resetPassword as resetPasswordService,
 } from './auth.service'
 import { comparePassword } from '../../shared/hash'
+import { isValidEmail } from '../../shared/utils/validation'
 import type {
   LoginBody,
   RegisterInput,
@@ -29,8 +30,6 @@ import type {
   ForgotPasswordBody,
   ResetPasswordBody,
 } from './auth.types'
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const SESSION_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const PENDING_COOKIE_MAX_AGE_MS = 10 * 60 * 1000
@@ -100,7 +99,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Faltan datos obligatorios', 400, 'MISSING_FIELDS')
   }
 
-  if (!EMAIL_REGEX.test(email)) {
+  if (!isValidEmail(email)) {
     throw new AppError('El email no tiene un formato válido', 400, 'INVALID_EMAIL')
   }
 

@@ -44,8 +44,10 @@ describe('connect', () => {
 
     await connect(req, res, vi.fn() as NextFunction)
 
-    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', 'token-1')
-    expect(res.json).toHaveBeenCalledWith({ connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' } })
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'GMAIL', 'user-1', { accessToken: 'token-1' })
+    expect(res.json).toHaveBeenCalledWith({
+      connectedChannel: { channel: 'GMAIL', status: 'CONNECTED' },
+    })
   })
 
   // Given a request with an invalid channel name
@@ -54,7 +56,11 @@ describe('connect', () => {
   it('throws a 400 AppError when the channel is invalid', async () => {
     const connectSpy = vi.spyOn(settingsService, 'connectChannel')
 
-    const req = createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'FAX' } })
+    const req = createMockRequest({
+      businessId: 'biz-1',
+      userId: 'user-1',
+      body: { channel: 'FAX' },
+    })
     const res = createMockResponse()
     const next = vi.fn()
 
@@ -78,6 +84,54 @@ describe('connect', () => {
     )
 
     expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'GMAIL_TOKEN_REQUIRED' })
+    expect(connectSpy).not.toHaveBeenCalled()
+  })
+
+  // Given an Outlook email with spaces and capitals
+  // When connecting that channel for this business
+  // Then the service receives the trimmed lowercase email
+  it('saves a trimmed lowercase email when connecting Outlook', async () => {
+    const connectSpy = vi.spyOn(settingsService, 'connectChannel').mockResolvedValue({} as never)
+
+    await connect(
+      createMockRequest({
+        businessId: 'biz-1',
+        userId: 'user-1',
+        body: { channel: 'OUTLOOK', accountEmail: '  Tienda@Outlook.com ' },
+      }),
+      createMockResponse(),
+      vi.fn() as NextFunction,
+    )
+
+    expect(connectSpy).toHaveBeenCalledWith('biz-1', 'OUTLOOK', 'user-1', {
+      accountEmail: 'tienda@outlook.com',
+    })
+  })
+
+  // Given Outlook without an email, or with one that is not an email
+  // When connecting it
+  // Then the request is rejected before the service runs
+  it('rejects Outlook without a valid email', async () => {
+    const connectSpy = vi.spyOn(settingsService, 'connectChannel')
+    const next = vi.fn()
+
+    await connect(
+      createMockRequest({ businessId: 'biz-1', userId: 'user-1', body: { channel: 'OUTLOOK' } }),
+      createMockResponse(),
+      next as NextFunction,
+    )
+    await connect(
+      createMockRequest({
+        businessId: 'biz-1',
+        userId: 'user-1',
+        body: { channel: 'OUTLOOK', accountEmail: 'correo' },
+      }),
+      createMockResponse(),
+      next as NextFunction,
+    )
+
+    expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'ACCOUNT_EMAIL_REQUIRED' })
+    expect(next.mock.calls[1][0]).toMatchObject({ statusCode: 400, code: 'INVALID_ACCOUNT_EMAIL' })
     expect(connectSpy).not.toHaveBeenCalled()
   })
 })
@@ -187,7 +241,7 @@ describe('getChannelsStatus', () => {
   // When fetching the channels status
   // Then it should return the channels from the service
   it('returns the channels for the authenticated business', async () => {
-    const channels = [{ channel: 'GMAIL', status: 'CONNECTED' }]
+    const channels = [{ channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'tienda@gmail.com' }]
     vi.spyOn(settingsService, 'getConnectedChannelsStatus').mockResolvedValue(channels as never)
 
     const req = createMockRequest({ businessId: 'biz-1' })

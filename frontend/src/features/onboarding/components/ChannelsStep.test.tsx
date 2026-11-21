@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MantineProvider } from '@mantine/core'
 import { ChannelsStep } from './ChannelsStep'
 import { api } from '@/shared/services'
 import { withQueryClient } from '@/shared/test/withQueryClient'
@@ -9,6 +10,7 @@ import { notifyError } from '@/shared/utils/notify'
 
 const googleLogin = vi.hoisted(() => ({
   outcome: 'success' as 'success' | 'cancel' | 'error',
+  hint: undefined as string | undefined,
 }))
 
 vi.mock('@react-oauth/google', () => ({
@@ -18,7 +20,8 @@ vi.mock('@react-oauth/google', () => ({
     onError: () => void
     onNonOAuthError: () => void
   }) => {
-    return () => {
+    return (override?: { hint?: string }) => {
+      googleLogin.hint = override?.hint
       if (googleLogin.outcome === 'cancel') options.onNonOAuthError()
       else if (googleLogin.outcome === 'error') options.onError()
       else options.onSuccess({ access_token: 'google-access-token' })
@@ -28,7 +31,7 @@ vi.mock('@react-oauth/google', () => ({
 
 vi.mock('@/shared/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/shared/services')>()
-  return { ...actual, api: { post: vi.fn() } }
+  return { ...actual, api: { get: vi.fn(), post: vi.fn() } }
 })
 
 vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
@@ -36,20 +39,31 @@ vi.mock('@/shared/utils/notify', () => ({ notifyError: vi.fn() }))
 function renderChannelsStep(props: Partial<React.ComponentProps<typeof ChannelsStep>> = {}) {
   render(
     withQueryClient(
-      <ChannelsStep
-        connectedChannels={[]}
-        onChange={vi.fn()}
-        onBack={vi.fn()}
-        onNext={vi.fn()}
-        {...props}
-      />,
+      <MantineProvider>
+        <ChannelsStep
+          connectedChannels={[]}
+          onChange={vi.fn()}
+          onBack={vi.fn()}
+          onNext={vi.fn()}
+          {...props}
+        />
+      </MantineProvider>,
     ),
   )
+}
+
+async function confirmEmail(dialogName: string, email: string, buttonName: string) {
+  const user = userEvent.setup()
+  const dialog = await screen.findByRole('dialog', { name: dialogName })
+  await user.type(within(dialog).getByLabelText('Email'), email)
+  await user.click(within(dialog).getByRole('button', { name: buttonName }))
 }
 
 describe('ChannelsStep', () => {
   beforeEach(() => {
     googleLogin.outcome = 'success'
+    googleLogin.hint = undefined
+    vi.mocked(api.get).mockReset().mockResolvedValue({ channels: [] })
     vi.mocked(api.post).mockReset().mockResolvedValue({})
     vi.mocked(notifyError).mockReset()
   })
@@ -86,6 +100,7 @@ describe('ChannelsStep', () => {
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     const connectButton = within(gmailCard).getByRole('button', { name: 'Conectar' })
     await user.click(connectButton)
+    await confirmEmail('Conectar Gmail', 'tienda@gmail.com', 'Continuar')
 
     expect(handleChange).toHaveBeenCalledWith(['gmail'])
   })
@@ -103,6 +118,29 @@ describe('ChannelsStep', () => {
     await user.click(disconnectButton)
 
     expect(handleChange).toHaveBeenCalledWith(['outlook'])
+  })
+
+  // Given Gmail is connected with an email and Outlook is connected without one
+  // When the step renders
+  // Then Gmail shows the account and Outlook only offers to add the email
+  it('Scenario: a connected channel shows which account it is', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      channels: [
+        { channel: 'GMAIL', status: 'CONNECTED', accountEmail: 'Tienda@Gmail.com' },
+        { channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null },
+      ],
+    })
+    renderChannelsStep({ connectedChannels: ['gmail', 'outlook', 'whatsapp'] })
+
+    expect(await screen.findByText('Conectado como tienda@gmail.com')).toBeInTheDocument()
+    const outlookCard = screen
+      .getByText('Outlook')
+      .closest('div[class*="rounded-xl"]') as HTMLElement
+    expect(within(outlookCard).getByRole('button', { name: 'Añadir email' })).toBeInTheDocument()
+    expect(within(outlookCard).queryByText('Cuenta conectada')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('Recibe y gestiona tus mensajes de WhatsApp en la plataforma.'),
+    ).toBeInTheDocument()
   })
 
   it('Scenario: a connected channel is shown as a check, not a button', () => {
@@ -154,7 +192,9 @@ describe('ChannelsStep', () => {
 
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    await confirmEmail('Conectar Gmail', 'Tienda@Gmail.com', 'Continuar')
 
+    expect(googleLogin.hint).toBe('tienda@gmail.com')
     expect(api.post).toHaveBeenCalledWith('/channels/connect', {
       channel: 'GMAIL',
       accessToken: 'google-access-token',
@@ -172,8 +212,10 @@ describe('ChannelsStep', () => {
 
     googleLogin.outcome = 'cancel'
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    await confirmEmail('Conectar Gmail', 'tienda@gmail.com', 'Continuar')
     googleLogin.outcome = 'error'
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    await confirmEmail('Conectar Gmail', 'tienda@gmail.com', 'Continuar')
 
     expect(api.post).not.toHaveBeenCalled()
     expect(handleChange).not.toHaveBeenCalled()
@@ -225,6 +267,7 @@ describe('ChannelsStep', () => {
 
     const gmailCard = screen.getByText('Gmail').closest('div[class*="rounded-xl"]') as HTMLElement
     await user.click(within(gmailCard).getByRole('button', { name: 'Conectar' }))
+    await confirmEmail('Conectar Gmail', 'tienda@gmail.com', 'Continuar')
 
     expect(handleChange).toHaveBeenNthCalledWith(1, ['gmail'])
     expect(handleChange).toHaveBeenNthCalledWith(2, [])

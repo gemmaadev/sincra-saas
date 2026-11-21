@@ -20,11 +20,21 @@ function renderSidebar() {
   )
 }
 
-function mockApiGet(channels: Array<{ channel: string; status: string }>) {
+function mockApiGet(
+  channels: Array<{ channel: string; status: string; accountEmail?: string | null }>,
+) {
   vi.mocked(api.get).mockImplementation((path: string) => {
     if (path === '/tags') {
       return Promise.resolve({
-        tags: [{ id: 'tag-1', name: 'Nuevo cliente', color: '#3b91ff', priority: 'LOW', isDefault: true }],
+        tags: [
+          {
+            id: 'tag-1',
+            name: 'Nuevo cliente',
+            color: '#3b91ff',
+            priority: 'LOW',
+            isDefault: true,
+          },
+        ],
       })
     }
     if (path === '/settings/channels') return Promise.resolve({ channels })
@@ -38,8 +48,8 @@ describe('Sidebar', () => {
   // Then nav items, labels and only the really connected channel should be visible
   it('renders all nav items, labels, and only the connected channels', async () => {
     mockApiGet([
-      { channel: 'GMAIL', status: 'CONNECTED' },
-      { channel: 'OUTLOOK', status: 'DISCONNECTED' },
+      { channel: 'GMAIL', status: 'CONNECTED', accountEmail: '  Tienda@Gmail.com ' },
+      { channel: 'OUTLOOK', status: 'DISCONNECTED', accountEmail: 'vieja@outlook.com' },
       { channel: 'WHATSAPP', status: 'MOCKED' },
     ])
     renderSidebar()
@@ -56,7 +66,22 @@ describe('Sidebar', () => {
       expect(screen.getByText('Gmail')).toBeInTheDocument()
     })
     expect(screen.queryByText('Outlook')).not.toBeInTheDocument()
+    expect(screen.queryByText(/vieja@outlook.com/)).not.toBeInTheDocument()
     expect(screen.queryByText('WhatsApp')).not.toBeInTheDocument()
+  })
+
+  // Given Outlook is connected and has no email
+  // When the sidebar renders
+  // Then the channel name is shown and there is no status line
+  it('lists a connected channel without an email and without a status line', async () => {
+    mockApiGet([{ channel: 'OUTLOOK', status: 'CONNECTED', accountEmail: null }])
+    renderSidebar()
+
+    await waitFor(() => {
+      expect(screen.getByText('Outlook')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Cuenta conectada')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Conectado como/)).not.toBeInTheDocument()
   })
 
   // Given a business with no channel really connected (only disconnected/mocked ones)
