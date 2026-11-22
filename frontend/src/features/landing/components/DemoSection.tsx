@@ -31,10 +31,17 @@ export function DemoSection() {
             <div className="absolute -bottom-12 -left-12 h-72 w-72 rounded-full bg-blob-4 blur-3xl max-lg:h-44 max-lg:w-44" />
           </div>
 
-          <div className="relative flex aspect-video items-center justify-center rounded-card border border-dashed border-neutral-300 bg-surface-card text-sm text-ink-muted">
+          <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-card border border-neutral-300 bg-surface-card">
+            <img
+              src="/demo-product-preview.webp"
+              alt="Captura del panel de pedidos de Sincra con el banner 'Demo de producto'"
+              width={1920}
+              height={1080}
+              className="h-full w-full object-cover"
+            />
             <button
               aria-label="Reproducir vídeo demo"
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105"
+              className="absolute flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105"
             >
               <Play size={24} fill="currentColor" />
             </button>
