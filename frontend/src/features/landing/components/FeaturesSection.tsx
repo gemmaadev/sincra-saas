@@ -40,8 +40,8 @@ const FEATURES = [
   },
   {
     icon: <Sparkles size={22} />,
-    title: 'Asistente de IA',
-    description: 'Clasifica, responde y prioriza con inteligencia artificial.',
+    title: 'Agentes de IA',
+    description: 'Sincra y Sincro detectan clientes y pedidos desde tus mensajes y los dejan listos.',
   },
 ]
 

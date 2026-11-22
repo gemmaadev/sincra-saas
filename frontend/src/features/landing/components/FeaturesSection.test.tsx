@@ -10,6 +10,6 @@ describe('FeaturesSection', () => {
     render(<FeaturesSection />)
     expect(screen.getByText('Diseñada para tu día a día')).toBeInTheDocument()
     expect(screen.getByText('Inbox unificado')).toBeInTheDocument()
-    expect(screen.getByText('Asistente de IA')).toBeInTheDocument()
+    expect(screen.getByText('Agentes de IA')).toBeInTheDocument()
   })
 })
