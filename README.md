@@ -35,7 +35,7 @@ Order and client management platform for small businesses: client records with a
 
 ### 🖥️ Desktop
 
-<img src="docs/demo-desktop.gif" alt="Sincra desktop demo" width="800" />
+<img src="frontend/public/demo-desktop.gif" alt="Sincra desktop demo" width="800" />
 
 ## What it solves
 

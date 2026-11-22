@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Play } from 'lucide-react'
 import { Section } from '@/shared/components/section'
 
 export function DemoSection() {
+  const [isPlaying, setIsPlaying] = useState<boolean>(false)
+
   return (
     <Section id="demo" className="bg-blob-3/30">
       <div className="grid grid-cols-2 items-center gap-12 max-lg:grid-cols-1">
@@ -14,7 +17,10 @@ export function DemoSection() {
             todo desde un solo lugar.
           </p>
 
-          <button className="flex w-fit items-center gap-3 text-left">
+          <button
+            className="flex w-fit cursor-pointer items-center gap-3 text-left"
+            onClick={() => setIsPlaying(true)}
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
               <Play size={16} fill="currentColor" />
             </span>
@@ -32,19 +38,31 @@ export function DemoSection() {
           </div>
 
           <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-card border border-neutral-300 bg-surface-card">
-            <img
-              src="/demo-product-preview.webp"
-              alt="Captura del panel de pedidos de Sincra con el banner 'Demo de producto'"
-              width={1920}
-              height={1080}
-              className="h-full w-full object-cover"
-            />
-            <button
-              aria-label="Reproducir vídeo demo"
-              className="absolute flex h-16 w-16 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105"
-            >
-              <Play size={24} fill="currentColor" />
-            </button>
+            {isPlaying ? (
+              <video
+                src="/demo-video.mp4"
+                controls
+                autoPlay
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                <img
+                  src="/demo-product-preview.webp"
+                  alt="Captura del panel de pedidos de Sincra con el banner 'Demo de producto'"
+                  width={1920}
+                  height={1080}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  aria-label="Reproducir vídeo demo"
+                  onClick={() => setIsPlaying(true)}
+                  className="absolute flex h-16 w-16 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform hover:scale-105"
+                >
+                  <Play size={24} fill="currentColor" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
