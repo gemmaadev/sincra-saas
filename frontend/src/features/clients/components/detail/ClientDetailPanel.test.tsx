@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ClientDetailPanel } from './ClientDetailPanel'
 import { api, ApiError } from '@/shared/services'
@@ -45,11 +46,13 @@ function mockApiGet() {
 function renderPanel(id = 'client-1', onDeleted = vi.fn()) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MantineProvider>
-      <QueryClientProvider client={queryClient}>
-        <ClientDetailPanel id={id} onDeleted={onDeleted} />
-      </QueryClientProvider>
-    </MantineProvider>,
+    <MemoryRouter>
+      <MantineProvider>
+        <QueryClientProvider client={queryClient}>
+          <ClientDetailPanel id={id} onDeleted={onDeleted} />
+        </QueryClientProvider>
+      </MantineProvider>
+    </MemoryRouter>,
   )
 }
 

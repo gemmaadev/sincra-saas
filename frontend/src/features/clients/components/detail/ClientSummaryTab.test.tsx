@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect } from 'vitest'
 import { ClientSummaryTab } from './ClientSummaryTab'
 import type { ClientDetail } from '../../types/client.types'
@@ -25,9 +26,11 @@ const mockClient: ClientDetail = {
 
 function renderClientSummaryTab(client: ClientDetail) {
   return render(
-    <MantineProvider>
-      <ClientSummaryTab client={client} />
-    </MantineProvider>,
+    <MemoryRouter>
+      <MantineProvider>
+        <ClientSummaryTab client={client} />
+      </MantineProvider>
+    </MemoryRouter>,
   )
 }
 
