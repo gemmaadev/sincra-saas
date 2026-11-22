@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router'
 import { Badge, InfoTooltip, MissingPrice, NoPriceDataHint } from '@/shared/components'
 import { missingPricesLabel } from '@/shared/components/tooltip/missingPricesLabel'
 import { formatDate, formatCurrency } from '@/shared/utils'
@@ -15,6 +16,7 @@ interface ClientSummaryTabProps {
 }
 
 export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
+  const navigate = useNavigate()
   const location = [client.address, client.zone].filter(Boolean).join(', ')
   // Only delivered orders are guaranteed revenue — a pending/shipped order could still
   // be cancelled before it completes, and a cancelled one was never actually paid.
@@ -67,7 +69,19 @@ export function ClientSummaryTab({ client }: ClientSummaryTabProps) {
         ) : (
           <ul className="flex flex-col w-full gap-2">
             {recentOrders.map((order) => (
-              <li key={order.id} className="grid grid-cols-8  gap-2">
+              <li
+                key={order.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/orders/${order.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    navigate(`/orders/${order.id}`)
+                  }
+                }}
+                className="grid cursor-pointer grid-cols-8 gap-2 rounded-lg p-1 hover:bg-surface-hover focus:outline-2 focus:outline-primary"
+              >
                 <div className="flex items-center col-span-4 gap-2">
                   <span className="text-sm text-ink">#{order.number}</span>
                   {order.description && (

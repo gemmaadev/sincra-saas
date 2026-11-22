@@ -28,12 +28,23 @@ export function HeroSection() {
             <SincraButton variant="primary" onClick={() => navigate('/register')}>
               Empieza gratis
             </SincraButton>
-            <SincraButton variant="secondary">Ver cómo funciona</SincraButton>
+            <SincraButton
+              variant="secondary"
+              onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Ver cómo funciona
+            </SincraButton>
           </div>
         </div>
 
-        <div className="flex aspect-video items-center justify-center rounded-card border border-dashed border-neutral-300 bg-surface-card text-sm text-ink-muted">
-          Mockup de la bandeja pendiente
+        <div className="flex aspect-video items-center justify-center overflow-hidden rounded-card border border-neutral-300 bg-surface-card">
+          <img
+            src="/stats-dashboard-screenshot.webp"
+            alt="Panel de estadísticas de Sincra con KPIs de clientes y pedidos, gráficos de pedidos por estado, clientes por tipo y evolución de pedidos"
+            width={2940}
+            height={1670}
+            className="h-full w-full object-cover"
+          />
         </div>
       </div>
     </Section>

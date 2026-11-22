@@ -1,6 +1,4 @@
-// Example/demo data only. WhatsApp, Instagram and Messenger have no real adapter or
-// inbox yet (not MVP) — the channels values below are just metadata on the Client record. Gmail/Outlook are real OAuth integrations elsewhere in the app.
-
+// Example/demo data only — WhatsApp/Instagram/Messenger are just metadata here, no real adapter yet.
 // Run with: npx prisma db seed
 import 'dotenv/config'
 import prisma from '../src/config/db'
@@ -48,36 +46,35 @@ const CITIES: City[] = [
 ]
 
 const CHANNEL_POOL: Channel[] = ['GMAIL', 'OUTLOOK', 'WHATSAPP', 'INSTAGRAM', 'MESSENGER']
-const CLIENT_TYPES = ['particular', 'mayorista', 'autónomo', 'empresa', 'distribuidor'] as const
+const CLIENT_TYPES = ['restaurante', 'bar', 'hotel', 'frutería', 'distribuidor'] as const
 
-// 25 unique people + 3 repeated on purpose
-// to demo "possible duplicate" detection later.
+// 25 unique businesses + 3 repeated on purpose, to demo "possible duplicate" detection later
 const DEMO_NAMES = [
-  'Laura García',
-  'Carlos Ruiz',
-  'Ana Torres',
-  'Javier Martín',
-  'Marta López',
-  'Elena Fernández',
-  'Pablo Sánchez',
-  'Lucía Gómez',
-  'José Martínez',
-  'Cristina Rodríguez',
-  'Marc Soler',
-  'Nuria Puig',
-  'Jordi Ferran',
-  'Anna Vidal',
-  'David Serra',
-  'Sara Font',
-  'Alex Roca',
-  'Clara Mas',
-  'Daniel Prat',
-  'Irene Call',
-  'Oriol Bosch',
-  'Paula Riera',
-  'Marc Soler', // duplicate 1: same person, different channel/city on purpose
-  'Anna Vidal', // duplicate 2
-  'David Serra', // duplicate 3
+  'Laura García (Restaurant Can García)',
+  'Carlos Ruiz (Bar Ruiz)',
+  'Ana Torres (Hotel Torres)',
+  'Javier Martín (Frutería Martín)',
+  'Marta López (Restaurant La Lloreta)',
+  'Elena Fernández (Bar Fernández)',
+  'Pablo Sánchez (Hotel Can Sánchez)',
+  'Lucía Gómez (Frutería Gómez)',
+  'José Martínez (Restaurant Martínez)',
+  'Cristina Rodríguez (Bar Rodríguez)',
+  'Marc Soler (Hotel Soler)',
+  'Nuria Roig (Fruites Roig)',
+  'Jordi Ferran (Cafès Ferran)',
+  'Anna Vidal (Restaurant Vidal)',
+  'David Serra (Bar La Serra)',
+  'Sara Font (Hotel Font)',
+  'Alex Roca (Bar Can Roca)',
+  'Clara Mas (Pastisseria Can Mas)',
+  'Daniel Prat (Restaurant Can Prat)',
+  'Irene Call (Frutería Call)',
+  'Oriol Bosch (Hotel Bosch)',
+  'Paula Riera (Bar Riera)',
+  'Marc Soler (Hotel Soler)', // duplicate 1: same business, different channel/city on purpose
+  'Anna Vidal (Restaurant Vidal)', // duplicate 2
+  'David Serra (Bar La Serra)', // duplicate 3
 ]
 
 function pickRandom<T>(items: readonly T[]): T {
@@ -91,44 +88,91 @@ function pickRandomChannels(): Channel[] {
 }
 
 function slugify(name: string): string {
-  return name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '.')
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[()]/g, '')
+    .trim()
+    .replace(/\s+/g, '.')
 }
 
 interface CatalogItem {
   product: string
-  description?: string
+  unit: string
+  minQty: number
+  maxQty: number
   unitPrice: number | null
 }
 
-function priceFromItems(items: CatalogItem[]): number | null {
-  if (items.length === 0) return null
+interface OrderLine {
+  product: string
+  description: string
+  quantity: number
+  unitPrice: number | null
+}
+
+function buildOrderLine(item: CatalogItem): OrderLine {
+  const quantity = Math.floor(item.minQty + Math.random() * (item.maxQty - item.minQty + 1))
+  return {
+    product: item.product,
+    description: item.unit,
+    quantity,
+    unitPrice: item.unitPrice,
+  }
+}
+
+// Mirrors how a real order's price is computed server-side: sum(unitPrice * quantity)
+function priceFromLines(lines: OrderLine[]): number | null {
+  if (lines.length === 0) return null
 
   let total = 0
-  for (const item of items) {
-    if (item.unitPrice == null) return null
-    total += item.unitPrice
+  for (const line of lines) {
+    if (line.unitPrice == null) return null
+    total += line.unitPrice * line.quantity
   }
 
-  return total
+  return Math.round(total * 100) / 100
 }
 
 const PRODUCT_CATALOG: CatalogItem[] = [
-  { product: 'Chaqueta oversize', description: 'Talla M, beige', unitPrice: 89.9 },
-  { product: 'Zapatillas urbanas', description: 'Talla 42, negro', unitPrice: 59.9 },
-  { product: 'Camiseta personalizada', description: 'Talla L, blanco', unitPrice: 24.9 },
-  { product: 'Pack 3 camisetas', description: 'Tallas M, L, XL, colores varios', unitPrice: 49.9 },
-  { product: 'Bolso de piel', description: 'Color marrón', unitPrice: 129.9 },
-  { product: 'Sudadera con capucha', description: 'Talla L, gris', unitPrice: 54.9 },
-  { product: 'Pantalón vaquero', description: 'Talla 38, azul', unitPrice: 39.9 },
-  { product: 'Gorra personalizada', description: 'Talla única, negra', unitPrice: 19.9 },
-  { product: 'Mochila urbana', description: 'Color negro', unitPrice: 69.9 },
-  { product: 'Pañuelo de seda', unitPrice: 15 },
+  { product: 'Tomate pera', unit: 'kg', minQty: 10, maxQty: 40, unitPrice: 1.85 },
+  { product: 'Lechuga romana', unit: 'cajas', minQty: 2, maxQty: 10, unitPrice: 12.9 },
+  { product: 'Cebolla tierna', unit: 'manojos', minQty: 4, maxQty: 12, unitPrice: 2.4 },
+  { product: 'Pimiento rojo', unit: 'kg', minQty: 8, maxQty: 30, unitPrice: 1.99 },
+  { product: 'Aceite de oliva virgen extra', unit: 'garrafas de 5L', minQty: 1, maxQty: 4, unitPrice: 34.9 },
+  { product: 'Patata', unit: 'sacos de 25kg', minQty: 1, maxQty: 3, unitPrice: 22.5 },
+  { product: 'Harina de trigo', unit: 'sacos de 25kg', minQty: 1, maxQty: 2, unitPrice: 19.9 },
+  { product: 'Bolsas kraft con logo', unit: 'packs de 500 uds', minQty: 1, maxQty: 3, unitPrice: 89.9 },
+  { product: 'Calabacín', unit: 'kg', minQty: 10, maxQty: 25, unitPrice: 1.35 },
+  { product: 'Fruta de temporada variada', unit: 'cajas mixtas de 15kg', minQty: 1, maxQty: 4, unitPrice: 27.9 },
+  { product: 'Pan de pagès', unit: 'uds', minQty: 10, maxQty: 30, unitPrice: 3.2 },
+  { product: 'Queso curado', unit: 'piezas', minQty: 1, maxQty: 5, unitPrice: 14.5 },
+]
+
+const CLIENT_NOTES = [
+  'Cliente habitual, pide todos los lunes por la mañana.',
+  'Prefiere pago por transferencia a 30 días, no en efectivo.',
+  'Pide confirmación de entrega antes de las 9:00.',
+  'Avisar por WhatsApp antes de llegar, el acceso de carga es complicado.',
+  'Factura siempre a nombre de la sociedad, no del contacto personal.',
+  'Hace pedidos grandes los jueves, de cara al fin de semana.',
+  'Cliente nuevo, primera entrega hace un par de semanas.',
+  'Ha tenido un problema con un pedido anterior, revisar con cuidado.',
+]
+
+const ORDER_NOTES = [
+  'Entregar antes de las 9:00, tienen el servicio de desayunos.',
+  'Confirmar stock antes de salir, es un pedido grande.',
+  'Cliente pidió cambiar la cantidad por teléfono a última hora.',
+  'Pago contra entrega en efectivo.',
+  'Pedido urgente, el cliente ha insistido varias veces.',
+  'Repetir el pedido de la semana pasada, mismas cantidades.',
 ]
 
 const ORDER_KIND_POOL: OrderKind[] = ['PRODUCT', 'PRODUCT', 'PRODUCT', 'PRODUCT', 'SERVICE']
 
-// Weighted so most demo orders are already resolved one way or another,
-// with cancellations being the rarer case (closer to how a real shop looks).
+// Weighted so most orders are resolved, cancellations are the rarer case
 const ORDER_STATUS_POOL: OrderStatus[] = [
   'PENDING',
   'PENDING',
@@ -144,8 +188,6 @@ const ORDER_STATUS_POOL: OrderStatus[] = [
 
 const STATUS_PROGRESSION: OrderStatus[] = ['PENDING', 'PREPARING', 'SHIPPED', 'DELIVERED']
 
-// Builds a believable status history leading up to the final status, instead of
-// a single entry — useful once the order detail timeline gets built.
 function buildStatusHistory(finalStatus: OrderStatus) {
   if (finalStatus === 'CANCELLED') {
     return [{ status: 'PENDING' as OrderStatus }, { status: 'CANCELLED' as OrderStatus }]
@@ -179,16 +221,19 @@ async function main() {
 
   const businessId = owner.memberships[0].businessId
 
-  // Idempotent: clear previously-seeded data before reseeding. Orders must go first —
-  // the schema blocks deleting a client that still has orders (onDelete: NoAction).
-  await prisma.order.deleteMany({ where: { businessId } })
-  await prisma.client.deleteMany({ where: { businessId } })
-  await prisma.tag.deleteMany({ where: { businessId } })
+  await prisma.business.update({ where: { id: businessId }, data: { name: 'Horta Fresca' } })
 
+  // Never touch aiGenerated rows — those are real, written by Sincro
+  await prisma.order.deleteMany({ where: { businessId, aiGenerated: false } })
+  await prisma.client.deleteMany({ where: { businessId, aiGenerated: false } })
+
+  // Upsert, not delete+recreate — a tag id must stay stable across reseeds
   const tags = await Promise.all(
     DEFAULT_TAGS.map((tag) =>
-      prisma.tag.create({
-        data: { businessId, name: tag.name, color: tag.color, isDefault: true },
+      prisma.tag.upsert({
+        where: { businessId_name: { businessId, name: tag.name } },
+        update: {},
+        create: { businessId, name: tag.name, color: tag.color, isDefault: true },
       }),
     ),
   )
@@ -223,6 +268,12 @@ async function main() {
     if (Math.random() < 0.3) {
       await prisma.clientTag.create({ data: { clientId: client.id, tagId: pickRandom(tags).id } })
     }
+
+    if (Math.random() < 0.4) {
+      await prisma.note.create({
+        data: { clientId: client.id, content: pickRandom(CLIENT_NOTES) },
+      })
+    }
   }
 
   const ordersCreated = await seedOrders(businessId, clients)
@@ -235,8 +286,7 @@ async function main() {
 async function seedOrders(businessId: string, clients: Client[]): Promise<number> {
   const ORDERS_TO_CREATE = 60
 
-  // Order numbers increase over time in real use — generate the random dates
-  // first and sort them, so the number assigned below stays chronological.
+  // Sorted so the order number assigned below stays chronological
   const createdAtDates = Array.from({ length: ORDERS_TO_CREATE }, () => randomPastDate(45)).sort(
     (a, b) => a.getTime() - b.getTime(),
   )
@@ -245,13 +295,13 @@ async function seedOrders(businessId: string, clients: Client[]): Promise<number
     const client = pickRandom(clients)
     const status = pickRandom(ORDER_STATUS_POOL)
     const itemsCount = Math.random() < 0.75 ? 1 : 2
-    const items = Array.from({ length: itemsCount }, () => pickRandom(PRODUCT_CATALOG))
-    const price = priceFromItems(items)
+    const lines = Array.from({ length: itemsCount }, () => buildOrderLine(pickRandom(PRODUCT_CATALOG)))
+    const price = priceFromLines(lines)
     const createdAt = createdAtDates[index]
     const channel =
       Math.random() < 0.7 && client.channels.length > 0 ? pickRandom(client.channels) : undefined
 
-    await prisma.order.create({
+    const order = await prisma.order.create({
       data: {
         businessId,
         clientId: client.id,
@@ -261,11 +311,15 @@ async function seedOrders(businessId: string, clients: Client[]): Promise<number
         price,
         createdAt,
         expectedDate: Math.random() < 0.6 ? randomFutureDate(createdAt, 10) : undefined,
-        items: { create: items.map((item) => ({ ...item })) },
+        items: { create: lines },
         statusHistory: { create: buildStatusHistory(status) },
         status,
       },
     })
+
+    if (Math.random() < 0.3) {
+      await prisma.note.create({ data: { orderId: order.id, content: pickRandom(ORDER_NOTES) } })
+    }
   }
 
   return ORDERS_TO_CREATE

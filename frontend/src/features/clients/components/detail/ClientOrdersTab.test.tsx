@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect } from 'vitest'
 import { ClientOrdersTab } from './ClientOrdersTab'
 import type { ClientDetail } from '../../types/client.types'
@@ -28,7 +29,11 @@ describe('ClientOrdersTab', () => {
   // When ClientOrdersTab is rendered
   // Then it should explain there are none yet, not show an empty list
   it('shows an empty message when the client has no orders', () => {
-    render(<ClientOrdersTab client={mockClient} />)
+    render(
+      <MemoryRouter>
+        <ClientOrdersTab client={mockClient} />
+      </MemoryRouter>,
+    )
     expect(screen.getByText('Todavía no hay pedidos para este cliente.')).toBeInTheDocument()
   })
 
@@ -37,24 +42,26 @@ describe('ClientOrdersTab', () => {
   // Then each order's number, description, status and price should be shown
   it('shows the number, description, status and price of each order', () => {
     render(
-      <ClientOrdersTab
-        client={{
-          ...mockClient,
-          orders: [
-            {
-              id: 'order-1',
-              number: 42,
-              status: 'DELIVERED',
-              kind: 'PRODUCT',
-              channel: 'WHATSAPP',
-              price: '89.90',
-              expectedDate: null,
-              createdAt: '2026-10-07T10:16:33.000Z',
-              description: 'Chaqueta oversize x2, Bolso de piel',
-            },
-          ],
-        }}
-      />,
+      <MemoryRouter>
+        <ClientOrdersTab
+          client={{
+            ...mockClient,
+            orders: [
+              {
+                id: 'order-1',
+                number: 42,
+                status: 'DELIVERED',
+                kind: 'PRODUCT',
+                channel: 'WHATSAPP',
+                price: '89.90',
+                expectedDate: null,
+                createdAt: '2026-10-07T10:16:33.000Z',
+                description: 'Chaqueta oversize x2, Bolso de piel',
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>,
     )
 
     expect(screen.getByText('#42')).toBeInTheDocument()
@@ -68,26 +75,28 @@ describe('ClientOrdersTab', () => {
   // Then that order should show a missing-price mark and no invented amount
   it('shows a missing-price mark when an order has no price', () => {
     render(
-      <MantineProvider>
-        <ClientOrdersTab
-          client={{
-            ...mockClient,
-            orders: [
-              {
-                id: 'order-1',
-                number: 42,
-                status: 'PENDING',
-                kind: 'PRODUCT',
-                channel: null,
-                price: null,
-                expectedDate: null,
-                createdAt: '2026-10-07T10:16:33.000Z',
-                description: null,
-              },
-            ],
-          }}
-        />
-      </MantineProvider>,
+      <MemoryRouter>
+        <MantineProvider>
+          <ClientOrdersTab
+            client={{
+              ...mockClient,
+              orders: [
+                {
+                  id: 'order-1',
+                  number: 42,
+                  status: 'PENDING',
+                  kind: 'PRODUCT',
+                  channel: null,
+                  price: null,
+                  expectedDate: null,
+                  createdAt: '2026-10-07T10:16:33.000Z',
+                  description: null,
+                },
+              ],
+            }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
     )
 
     expect(screen.getByLabelText('Precio aún no definido')).toBeInTheDocument()
