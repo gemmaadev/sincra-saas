@@ -67,23 +67,36 @@ export function OrderDetailPanel({ id }: OrderDetailPanelProps) {
           />
         </div>
       </div>
-      <div className="flex flex-row gap-2 text-xs  w-full">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate(`/clients/${order.client.id}`)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            navigate(`/clients/${order.client.id}`)
+          }
+        }}
+        className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-1 text-xs hover:bg-surface-hover focus:outline-2 focus:outline-primary"
+      >
         <Avatar name={order.client.name} size="xs" roundness="rounded" />
-        <div className="flex items-center text-xs  gap-2">
-          <span className=" text-ink">{order.client.name} </span>
+        <div className="flex flex-col gap-1">
+          <span className="text-ink">{order.client.name}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {order.client.email && (
+              <span className="flex items-center gap-1.5 text-ink-muted">
+                <Mail size={14} aria-hidden="true" />
+                {order.client.email}
+              </span>
+            )}
+            {order.client.phone && (
+              <span className="flex items-center gap-1.5 text-ink-muted">
+                <Phone size={14} aria-hidden="true" />
+                {order.client.phone}
+              </span>
+            )}
+          </div>
         </div>
-        {order.client.email && (
-          <span className="flex items-center gap-1.5  text-ink-muted">
-            <Mail size={14} aria-hidden="true" />
-            {order.client.email}
-          </span>
-        )}
-        {order.client.phone && (
-          <span className="flex items-center gap-1.5  text-ink-muted">
-            <Phone size={14} aria-hidden="true" />
-            {order.client.phone}
-          </span>
-        )}
       </div>
       <Tabs
         fillHeight

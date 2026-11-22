@@ -1,4 +1,5 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router'
 import { SincraModal, SincraButton } from '@/shared/components'
 import { formatDateRange } from '@/shared/utils'
 import type { CalendarItem } from '../../types/calendar.types'
@@ -18,7 +19,19 @@ export function EventDetailModal({
   onDelete,
   event,
 }: EventDetailModalProps) {
+  const navigate = useNavigate()
   const linkedTo = event.clientName ?? event.orderLabel
+  const linkedPath = event.clientId
+    ? `/clients/${event.clientId}`
+    : event.orderId
+      ? `/orders/${event.orderId}`
+      : null
+
+  function goToLinkedEntity() {
+    if (!linkedPath) return
+    onClose()
+    navigate(linkedPath)
+  }
 
   return (
     <SincraModal
@@ -38,7 +51,19 @@ export function EventDetailModal({
           {linkedTo && (
             <div className="flex justify-between gap-4">
               <dt className="text-ink-muted">Vinculado a</dt>
-              <dd className="text-ink">{linkedTo}</dd>
+              <dd>
+                {linkedPath ? (
+                  <button
+                    type="button"
+                    onClick={goToLinkedEntity}
+                    className="text-primary underline-offset-2 hover:underline"
+                  >
+                    {linkedTo}
+                  </button>
+                ) : (
+                  <span className="text-ink">{linkedTo}</span>
+                )}
+              </dd>
             </div>
           )}
         </dl>
