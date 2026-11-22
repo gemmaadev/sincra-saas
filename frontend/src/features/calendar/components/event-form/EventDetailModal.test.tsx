@@ -1,15 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MantineProvider } from '@mantine/core'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi } from 'vitest'
 import { EventDetailModal } from './EventDetailModal'
 import type { CalendarItem } from '../../types/calendar.types'
 
 function renderModal(props: React.ComponentProps<typeof EventDetailModal>) {
   return render(
-    <MantineProvider>
-      <EventDetailModal {...props} />
-    </MantineProvider>,
+    <MemoryRouter>
+      <MantineProvider>
+        <EventDetailModal {...props} />
+      </MantineProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -176,6 +179,19 @@ describe('EventDetailModal', () => {
     renderModal({ opened: true, onClose, onEdit: vi.fn(), onDelete: vi.fn(), event: manualEvent })
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  // Given an event linked to a client
+  // When the user clicks the linked client's name
+  // Then the modal should close so the client detail drawer can open
+  it('closes the modal when the linked client is clicked', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    renderModal({ opened: true, onClose, onEdit: vi.fn(), onDelete: vi.fn(), event: manualEvent })
+
+    await user.click(screen.getByRole('button', { name: 'Juan' }))
 
     expect(onClose).toHaveBeenCalledOnce()
   })

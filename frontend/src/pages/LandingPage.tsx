@@ -5,6 +5,7 @@ import { FeaturesSection } from '@/features/landing/components/FeaturesSection'
 import { PricingSection } from '@/features/landing/components/PricingSection'
 import { CtaSection } from '@/features/landing/components/CtaSection'
 import { HowWorksSection } from '@/features/landing/components/HowWorksSection'
+import { AiAgentsSection } from '@/features/landing/components/AiAgentsSection'
 
 export default function LandingPage() {
   return (
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <DemoSection />
       <HowWorksSection />
       <FeaturesSection />
+      <AiAgentsSection />
       <PricingSection />
       <CtaSection />
     </div>

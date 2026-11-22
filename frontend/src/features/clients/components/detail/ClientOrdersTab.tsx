@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router'
 import { Badge, MissingPrice } from '@/shared/components'
 import { ChannelIcons } from '@/shared/channels/ChannelIcons'
 import { formatDate, formatCurrency } from '@/shared/utils'
@@ -13,6 +14,8 @@ interface ClientOrdersTabProps {
 }
 
 export function ClientOrdersTab({ client }: ClientOrdersTabProps) {
+  const navigate = useNavigate()
+
   if (client.orders.length === 0) {
     return <p className="text-sm text-ink-muted">Todavía no hay pedidos para este cliente.</p>
   }
@@ -22,7 +25,16 @@ export function ClientOrdersTab({ client }: ClientOrdersTabProps) {
       {client.orders.map((order) => (
         <li
           key={order.id}
-          className="flex items-center justify-between gap-2 rounded-lg border border-neutral-100 p-3"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate(`/orders/${order.id}`)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              navigate(`/orders/${order.id}`)
+            }
+          }}
+          className="flex cursor-pointer items-center justify-between gap-2 rounded-lg border border-neutral-100 p-3 hover:bg-surface-hover focus:outline-2 focus:outline-primary"
         >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">

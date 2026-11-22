@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MantineProvider } from '@mantine/core'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import CalendarPage from './CalendarPage'
 import { api } from '@/shared/services'
@@ -35,11 +36,13 @@ const manualEvent = {
 function renderCalendarPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <MantineProvider>
-      <QueryClientProvider client={queryClient}>
-        <CalendarPage />
-      </QueryClientProvider>
-    </MantineProvider>,
+    <MemoryRouter>
+      <MantineProvider>
+        <QueryClientProvider client={queryClient}>
+          <CalendarPage />
+        </QueryClientProvider>
+      </MantineProvider>
+    </MemoryRouter>,
   )
 }
 

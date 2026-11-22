@@ -6,7 +6,7 @@ export function ChannelsSection() {
   return (
     <Section id="channels">
       <div className="grid grid-cols-2 items-center gap-12 max-lg:grid-cols-1">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 order-2 max-lg:order-1">
           <h2 className="max-w-xl text-4xl font-bold text-ink max-sm:text-3xl">
             Todos los canales que son importantes para{' '}
             <span className="text-primary">tu negocio</span>
@@ -26,11 +26,13 @@ export function ChannelsSection() {
           </div>
         </div>
 
-        <OmnichannelHub
-          accent="var(--color-primary)"
-          speed={1.2}
-          avatars={['/avatar-cliente-1.webp', '/avatar-cliente-2.webp', '/avatar-cliente-3.webp']}
-        />
+        <div className="order-1 max-lg:order-2">
+          <OmnichannelHub
+            accent="var(--color-primary)"
+            speed={1.2}
+            avatars={['/avatar-cliente-1.webp', '/avatar-cliente-2.webp', '/avatar-cliente-3.webp']}
+          />
+        </div>
       </div>
     </Section>
   )
